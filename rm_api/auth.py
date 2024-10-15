@@ -16,9 +16,10 @@ def get_token(api: 'API'):
             "code": code,
             "deviceDesc": "desktop-windows",
             "deviceID": uuid4().hex,
+            "secret": ""
         },
         headers={
-            "Authorization": 'Bearer ',
+            "Authorization": f"Bearer "
         }
     )
     if response.status_code != 200:

@@ -2,7 +2,8 @@ import os.path
 import threading
 from typing import List, TYPE_CHECKING
 
-from rm_api.storage.old_sync import TEMP, get_file_contents
+from rm_api.storage import TEMP
+from rm_api.storage.v3 import get_file_contents
 
 if TYPE_CHECKING:
     from rm_api import API

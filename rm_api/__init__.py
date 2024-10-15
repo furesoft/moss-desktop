@@ -5,8 +5,9 @@ import requests
 
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document
-from rm_api.storage.new_sync import get_documents_new_sync
-from rm_api.storage.old_sync import get_document_storage, get_documents_old_sync
+from rm_api.storage.common import get_document_storage
+from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
+from rm_api.storage.old_sync import get_documents_old_sync
 
 
 class API:
@@ -18,7 +19,7 @@ class API:
         self.uri = os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
         self.discovery_uri = os.environ.get("DISCOVERY_URI", "https://service-manager-production-dot-remarkable-production.appspot.com/")
         self.document_storage_uri = None
-        self.use_new_sync = False
+        self._use_new_sync = False
         # noinspection PyTypeChecker
         self.document_collections = None
         # noinspection PyTypeChecker
@@ -36,6 +37,16 @@ class API:
                 self.get_token()
         else:
             self.token = token
+
+    @property
+    def use_new_sync(self):
+        return self._use_new_sync
+
+    @use_new_sync.setter
+    def use_new_sync(self, value):
+        if not self._use_new_sync and value:
+            handle_new_api_steps(self)
+        self._use_new_sync = value
 
     @property
     def token(self):
