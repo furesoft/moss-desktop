@@ -162,8 +162,11 @@ cython_debug/
 .idea/
 sync/
 token
+config.json
 /Screenshot_20241013_104208.png
 /Screenshot_20241013_104219.png
 /screenshot_for_reference.png
 /screenshot_for_reference2.png
 /webrtc_event_logs/
+/screenshot_for_reference4.png
+/screenshot_for_reference3.png
