@@ -31,7 +31,8 @@ class File:
 
 
 class Metadata:
-    def __init__(self, metadata: dict):
+    def __init__(self, metadata: dict, hash: str):
+        self.hash = hash
         self.__metadata = metadata
         self.type = metadata['type']
         self.parent = metadata['parent'] or None
@@ -51,6 +52,9 @@ class Metadata:
     def __setattr__(self, key, value):
         super().__setattr__(key, value)
 
+        if key == 'hash':
+            return
+
         # A dirty translation of the keys to metadata keys
         if key == 'created_time':
             key = 'createdTime'
@@ -64,6 +68,7 @@ class Metadata:
             key = 'lastOpened'
         if key == 'last_opened_page':
             key = 'lastOpenedPage'
+
 
         self.__metadata[key] = value
 

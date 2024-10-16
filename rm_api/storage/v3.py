@@ -90,7 +90,17 @@ def get_documents_using_root(api: 'API', progress, root):
             if item.uuid == f'{file.uuid}.content':
                 content = get_file_contents(api, item.hash)
             if item.uuid == f'{file.uuid}.metadata':
-                metadata = models.Metadata(get_file_contents(api, item.hash))
+                if api.document_collections.get(file.uuid) is not None:
+                    if api.document_collections[file.uuid].metadata.hash == item.hash:
+                        if file.uuid in deleted_document_collections_list:
+                            deleted_document_collections_list.remove(file.uuid)
+                        continue
+                elif api.documents.get(file.uuid) is not None:
+                    if api.documents[file.uuid].metadata.hash == item.hash:
+                        if file.uuid in deleted_documents_list:
+                            deleted_documents_list.remove(file.uuid)
+                        continue
+                metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
                 if metadata.type == 'CollectionType':
                     api.document_collections[file.uuid] = models.DocumentCollection(
                         [models.Tag(tag) for tag in content['tags']],

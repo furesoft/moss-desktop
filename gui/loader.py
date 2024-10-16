@@ -6,11 +6,13 @@ from logging import lastResort
 import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
+from rm_api.notifications.models import SyncCompleted
 from .defaults import Defaults
 from .main_menu import MainMenu
 
 if TYPE_CHECKING:
     from .gui import GUI
+    from rm_api import API
 
 
 class ReusedIcon:
@@ -34,6 +36,7 @@ class Loader(pe.ChildContext):
 
     LAYER = pe.AFTER_LOOP_LAYER
     icons: Dict[str, pe.Image]
+    api: 'API'
 
     def __init__(self, parent: 'GUI'):
         super().__init__(parent)
@@ -61,6 +64,9 @@ class Loader(pe.ChildContext):
         self.last_progress = 0
         self.current_progress = 0
         threading.Thread(target=self.load, daemon=True).start()
+        self.start_syncing()
+
+    def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=False).start()
 
     def load(self):
@@ -124,3 +130,9 @@ class Loader(pe.ChildContext):
     def post_loop(self):
         if self.current_progress == 1 and self.last_progress == 1:
             self.screens.put(MainMenu(self.parent_context))
+            self.api.connect_to_notifications()
+            self.api.add_hook('loader', self.loader_hook)
+
+    def loader_hook(self, event):
+        if isinstance(event, SyncCompleted):
+            self.start_syncing()

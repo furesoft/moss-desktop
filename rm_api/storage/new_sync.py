@@ -25,4 +25,5 @@ def get_documents_new_sync(api: 'API', progress):
 def handle_new_api_steps(api: 'API'):
     token_info = jwt.decode(api.token, algorithms=["HS256"], options={"verify_signature": False})
     tectonic = token_info['tectonic']
-    api.document_storage_uri = f'https://{tectonic}.tectonic.remarkable.com/'
+    api.document_notifications_uri = api.document_storage_uri = f'https://{tectonic}.tectonic.remarkable.com/'
+

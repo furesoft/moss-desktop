@@ -6,7 +6,8 @@ import colorama
 
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document
-from rm_api.storage.common import get_document_storage
+from rm_api.notifications import handle_notifications
+from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync
 
@@ -23,13 +24,15 @@ class API:
         self.discovery_uri = os.environ.get("DISCOVERY_URI",
                                             "https://service-manager-production-dot-remarkable-production.appspot.com/")
         self.document_storage_uri = None
-        self._hook_list = {}
+        self.document_notifications_uri = None
+        self._hook_list = {}  # Used for event hooks
         self._use_new_sync = False
         # noinspection PyTypeChecker
         self.document_collections = {}
         # noinspection PyTypeChecker
         self.documents = {}
         self._token = None
+        self.connected_to_notifications = False
         if not self.uri.endswith("/"):
             self.uri += "/"
         if not self.discovery_uri.endswith("/"):
@@ -46,6 +49,13 @@ class API:
     @property
     def use_new_sync(self):
         return self._use_new_sync
+
+    def connect_to_notifications(self):
+        if self.connected_to_notifications:
+            return
+        self.check_for_document_notifications()
+        handle_notifications(self)
+        self.connected_to_notifications = True
 
     @use_new_sync.setter
     def use_new_sync(self, value):
@@ -85,7 +95,7 @@ class API:
 
     def check_for_document_storage(self):
         if not self.document_storage_uri:
-            uri = get_document_storage(self)
+            uri = get_document_storage_uri(self)
             if not uri:
                 return
             elif uri == 'local.appspot.com':
@@ -95,3 +105,17 @@ class API:
                     uri += "/"
                 uri = f'https://{uri}'
             self.document_storage_uri = uri
+
+
+    def check_for_document_notifications(self):
+        if not self.document_notifications_uri:
+            uri = get_document_notifications_uri(self)
+            if not uri:
+                return
+            elif uri == 'local.appspot.com':
+                uri = self.uri
+            else:
+                if not uri.endswith("/"):
+                    uri += "/"
+                uri = f'https://{uri}'
+            self.document_notifications_uri = uri
