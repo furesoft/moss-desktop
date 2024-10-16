@@ -8,6 +8,8 @@ from queue import Queue
 from box import Box
 from colorama import Fore
 
+from .code_screen import CodeScreen
+
 try:
     from CEF4pygame import CEFpygame
 except Exception:
@@ -80,13 +82,16 @@ class GUI(pe.GameContext):
     def __init__(self):
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
         super().__init__()
-        self.api = API()
+        self.api = API(require_token=False)
         self.screens = Queue()
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
         self.config = load_config()
         self.api.uri = self.config.uri
-        self.screens.put(Loader(self))
+        if self.api.token:
+            self.screens.put(Loader(self))
+        else:
+            self.screens.put(CodeScreen(self))
         self.running = True
         self.doing_fake_screen_refresh = False
         self.reset_fake_screen_refresh = True

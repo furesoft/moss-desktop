@@ -8,8 +8,19 @@ TOKEN_URL = "{0}token/json/2/device/new"
 TOKEN_REFRESH_URL = "{0}token/json/2/user/new"
 
 
-def get_token(api: 'API'):
-    code = input("Enter your connect code: ")
+class FailedToRefreshToken(Exception):
+    pass
+
+
+class FailedToGetToken(Exception):
+    pass
+
+
+def get_token(api: 'API', code: str = None):
+    if not api.require_token and not code:
+        return None
+    if not code:
+        code = input("Enter your connect code: ")
     response = api.session.post(
         TOKEN_URL.format(api.uri),
         json={
@@ -23,8 +34,11 @@ def get_token(api: 'API'):
         }
     )
     if response.status_code != 200:
-        print(f'Got status code {response.status_code}')
-        return get_token(api)
+        if api.require_token:
+            print(f'Got status code {response.status_code}')
+            return get_token(api)
+        else:
+            raise FailedToGetToken("Could not get token")
 
     with open("token", "w") as f:
         f.write(response.text)
@@ -38,6 +52,9 @@ def refresh_token(api: 'API', token: str):
         headers={"Authorization": f"Bearer {token}"},
     )
     if response.status_code != 200:
-        return refresh_token(api, get_token(api))
+        if api.require_token:
+            return refresh_token(api, get_token(api))
+        else:
+            raise FailedToRefreshToken("Could not refresh token")
 
     return response.text

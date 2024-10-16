@@ -18,7 +18,7 @@ class API:
     document_collections: Dict[str, DocumentCollection]
     documents: Dict[str, Document]
 
-    def __init__(self):
+    def __init__(self, require_token: bool = True):
         self.session = requests.Session()
         self.uri = os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
         self.discovery_uri = os.environ.get("DISCOVERY_URI",
@@ -33,6 +33,7 @@ class API:
         self.documents = {}
         self._token = None
         self.connected_to_notifications = False
+        self.require_token = require_token
         if not self.uri.endswith("/"):
             self.uri += "/"
         if not self.discovery_uri.endswith("/"):
@@ -69,12 +70,14 @@ class API:
 
     @token.setter
     def token(self, value):
+        if not value:
+            return
         token = refresh_token(self, value)
         self.session.headers["Authorization"] = f"Bearer {token}"
         self._token = token
 
-    def get_token(self):
-        self.token = get_token(self)
+    def get_token(self, code: str = None):
+        self.token = get_token(self, code)
 
     def get_documents(self, progress=lambda d, i: None):
         self.check_for_document_storage()

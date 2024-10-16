@@ -10,6 +10,7 @@ class Defaults:
 
     CUSTOM_FONT = os.path.join(FONT_DIR, 'Imperator.ttf')
     CUSTOM_FONT_BOLD = os.path.join(FONT_DIR, 'Imperator Bold.ttf')
+    MONO_FONT = os.path.join(FONT_DIR, 'JetBrainsMono-Bold.ttf')
     FOLDER_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
     PATH_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
     DOCUMENT_TITLE_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
@@ -17,12 +18,17 @@ class Defaults:
 
     LOGO_FONT = CUSTOM_FONT_BOLD
     MAIN_MENU_FONT = CUSTOM_FONT_BOLD
+    CODE_FONT = MONO_FONT
 
     TEXT_COLOR = (pe.colors.black, pe.colors.white)
     DOCUMENT_TITLE_COLOR = ((20, 20, 20), pe.colors.white)
     DOCUMENT_SUBTITLE_COLOR = ((100, 100, 100), pe.colors.white)
-    TEXT_COLOR_T = (pe.colors.black, None)
+    TEXT_COLOR_T = (TEXT_COLOR[0], None)
+    CODE_COLOR = ((120, 120, 120), None)
     LINE_GRAY = (88, 88, 88)
     DOCUMENT_GRAY = (184, 184, 184)
     TRANSPARENT_COLOR = (0, 0, 0, 0)
     BUTTON_ACTIVE_COLOR = (0, 0, 0, 25)
+
+    # Colors
+    RED = (255, 50, 50)
