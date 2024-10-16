@@ -32,6 +32,7 @@ jobs:
       - name: Build
         run: |
           pyinstaller run_gui.spec
+          dir dist
           move dist/gui.exe dist/"${{ env.APP_NAME }} CEF.exe"
 
       - name: Upload artifact
