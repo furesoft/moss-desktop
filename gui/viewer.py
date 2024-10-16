@@ -26,16 +26,20 @@ if TYPE_CHECKING:
     from .gui import GUI
     from queue import Queue
     from rm_api.models import Document
+    from .gui import ConfigType
 
 
 class DocumentRenderer(pe.ChildContext):
     LAYER = pe.BEFORE_POST_LAYER
     DOT_TIME = .4
 
+    config: 'ConfigType'
+
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
         self.loading = True
         self.pdf: CEFpygame = None
+        self._error = None
 
         self.loading_rect = pe.Rect(
             0, 0,
@@ -48,12 +52,28 @@ class DocumentRenderer(pe.ChildContext):
         self.second_dot = self.loading_rect.x + split * 1.5
         self.third_dot = self.loading_rect.x + split * 2.5
         self.loading_timer = time.time()
+        self.mode = 'nocontent'
 
         super().__init__(parent)
 
         self.load()
 
-    def load_pdf(self, pdf_raw: bytes):
+    @property
+    def error(self):
+        return self._error
+
+    @error.setter
+    def error(self, value):
+        self._error = pe.Text(
+            value,
+            Defaults.CUSTOM_FONT,
+            self.ratios.document_viewer_error_font_size,
+            pe.Rect(0, 0, *self.size).center,
+            Defaults.TEXT_COLOR
+        )
+        self.loading = False
+
+    def load_pdf_with_cef(self, pdf_raw: bytes):
         pdf_html = os.path.join(Defaults.HTML_DIR, 'pdf.html')
         url = f'{os.path.abspath(pdf_html)}'
         self.pdf = CEFpygame(
@@ -77,7 +97,7 @@ class DocumentRenderer(pe.ChildContext):
         self.pdf.__setattr__('inject_js', js_code)
         self.pdf.__setattr__('injected_js', False)
 
-    def handle_event(self, event):
+    def handle_events_with_cef(self, event):
         browser = None
         if self.pdf:
             browser = self.pdf
@@ -97,13 +117,25 @@ class DocumentRenderer(pe.ChildContext):
         if event.type == pe.pygame.KEYUP:
             browser.keyup(event.key)
 
+    def handle_event(self, event):
+        if self.mode.endswith('cef'):
+            self.handle_events_with_cef(event)
+
     def load(self):
         if self.document.content['fileType'] == 'pdf':
             pdf_raw = self.document.content_data[self.document.content_files[0]]
-            self.load_pdf(pdf_raw)
+            if self.config.pdf_render_mode == 'cef' and CEFpygame:
+                self.load_pdf_with_cef(pdf_raw)
+            elif self.config.pdf_render_mode == 'none':
+                self.error = 'Could not render PDF'
+            else:
+                self.error = 'Could not render PDF. Make sure you have a compatible PDF renderer'
+        else:
+            self.error = 'Unknown format. Could not render document'
         self.loading = False
 
     def pre_loop(self):
+        # Draw the loading icon
         if self.loading:
             pe.draw.rect(pe.colors.black, self.loading_rect)
             section = (time.time() - self.loading_timer) / self.DOT_TIME
@@ -119,17 +151,26 @@ class DocumentRenderer(pe.ChildContext):
             if section > 3.5:
                 self.loading_timer = time.time()
 
-    def loop(self):
-        if self.loading:
-            return
-        if self.pdf and self.pdf.image.get_at((0, 0))[2] != 51:
+    def render_pdf_with_cef(self):
+        if self.pdf.image.get_at((0, 0))[2] != 51:
             if not self.pdf.injected_js:
                 self.pdf.browser.ExecuteJavascript(self.pdf.inject_js)
                 self.pdf.injected_js = True
             pe.display.blit(self.pdf.image)
 
+    def loop(self):
+        if self.loading:
+            return
+        if self.pdf:
+            self.render_pdf_with_cef()
+
     def close(self):
-        self.pdf.browser.CloseBrowser()
+        if self.pdf and self.mode.ends_with('cef'):
+            self.pdf.browser.CloseBrowser()
+
+    def post_loop(self):
+        if self.error:
+            self.error.display()
 
 
 class DocumentViewer(pe.ChildContext):

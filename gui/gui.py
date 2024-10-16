@@ -1,17 +1,17 @@
 import json
 import os
 import time
-from typing import TypedDict
+from typing import TypedDict, Literal
 
 import pygameextra as pe
 from queue import Queue
 from box import Box
+from colorama import Fore
 
 try:
     from CEF4pygame import CEFpygame
 except Exception:
     CEFpygame = None
-from pygameextra import event
 
 from rm_api import API
 from .aspect_ratio import Ratios
@@ -20,22 +20,28 @@ from .main_menu import MainMenu
 
 pe.init()
 
+PDF_RENDER_MODES = Literal['cef']
+
 
 class ConfigDict(TypedDict):
     enable_fake_screen_refresh: bool
     wait_for_everything_to_load: bool
     uri: str
+    pdf_render_mode: PDF_RENDER_MODES
 
 
 DEFAULT_CONFIG: ConfigDict = {
     'enable_fake_screen_refresh': True,
     # TODO: Fix the fact that disabling this, makes loading much slower
     'wait_for_everything_to_load': True,
-    'uri': 'https://webapp.cloud.remarkable.com/'
+    'uri': 'https://webapp.cloud.remarkable.com/',
+    'pdf_render_mode': 'cef'
 }
 
+ConfigType = Box[ConfigDict]
 
-def load_config() -> Box[ConfigDict]:
+
+def load_config() -> ConfigType:
     config = DEFAULT_CONFIG
     changes = False
     if os.path.exists("config.json"):
@@ -53,6 +59,11 @@ def load_config() -> Box[ConfigDict]:
             json.dump(config, f, indent=4)
         if not exists:
             print("Config file created. You can edit it manually if you want.")
+    if config['pdf_render_mode'] not in PDF_RENDER_MODES.__args__:
+        raise ValueError(f"Invalid pdf_render_mode: {config['pdf_render_mode']}")
+    if config['pdf_render_mode'] == 'cef' and CEFpygame is None:
+        print(f"{Fore.YELLOW}Cef is not installed or is not compatible with your python version.{Fore.RESET}")
+        config['pdf_render_mode'] = 'none'
     return Box(config)
 
 

@@ -2,6 +2,8 @@ import os.path
 import threading
 from typing import List, TYPE_CHECKING
 
+from colorama import Fore
+
 from rm_api.storage import TEMP
 from rm_api.storage.v3 import get_file_contents
 
@@ -99,6 +101,8 @@ class DocumentCollection:
 
 
 class Document:
+    unknown_file_types = set()
+
     def __init__(self, api: 'API', content: dict, metadata: Metadata, files: List[File], uuid: str):
         self.api = api
         self.content = content
@@ -107,9 +111,18 @@ class Document:
         self.uuid = uuid
         self.files_available = self.check_files_availability()
         self.downloading = False
-        if self.content['fileType'] == 'pdf':
+        if self.file_type == 'pdf':
             self.content_files = [f'{self.uuid}.pdf']
+        else:
+            if not self.file_type in self.unknown_file_types:
+                self.unknown_file_types.add(self.file_type)
+                print(f'{Fore.RED}Unknown file type: {self.file_type}{Fore.RESET}')
+            self.content_files = []
         self.content_data = {}
+
+    @property
+    def file_type(self):
+        return self.content['fileType']
 
     @property
     def available(self):
@@ -122,6 +135,7 @@ class Document:
                 continue
             self.content_data[file.uuid] = get_file_contents(self.api, file.hash, binary=True)
         self.downloading = False
+        self.files_available = self.check_files_availability()
         callback()
 
     def _load_files(self):

@@ -2,12 +2,15 @@ import os
 from typing import Dict
 
 import requests
+import colorama
 
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document
 from rm_api.storage.common import get_document_storage
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync
+
+colorama.init()
 
 
 class API:

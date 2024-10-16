@@ -1,5 +1,6 @@
 import pygameextra as pe
 
+
 class Ratios:
     def __init__(self, scale):
         """
@@ -19,7 +20,6 @@ class Ratios:
         self.loader_loading_bar_width = int(200 * scale)
         self.loader_loading_bar_height = int(10 * scale)
         self.loader_loading_bar_padding = int(20 * scale)
-
 
         # MAIN MENU
         self.main_menu_top_height = int(64 * scale)
@@ -50,6 +50,7 @@ class Ratios:
         self.document_viewer_top_draggable_height = int(48 * scale)  # Accurate to device
         self.document_viewer_loading_square = int(100 * scale)
         self.document_viewer_loading_circle_radius = int(5 * scale)
+        self.document_viewer_error_font_size = int(20 * scale)
 
     def pixel(self, value):
         return max(1, int(value * self.scale))

@@ -26,6 +26,7 @@ class Loader(pe.ChildContext):
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
+        'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
         'notebook_large': ReusedIcon('notebook', 3),
         # 'screenshot': 'screenshot_for_reference2.png',

@@ -68,20 +68,24 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
     )
 
     # Render the availability cloud icon
-    cloud_icon: pe.Image = gui.icons['cloud']
-    cloud_icon_rect = pe.Rect(0, 0, *cloud_icon.size)
+    if not document.available:
+        if document.downloading:
+            cloud_icon: pe.Image = gui.icons['cloud_download']
+        else:
+            cloud_icon: pe.Image = gui.icons['cloud']
+        cloud_icon_rect = pe.Rect(0, 0, *cloud_icon.size)
 
-    # Add padding
-    cloud_icon_padded_rect = cloud_icon_rect.inflate(gui.ratios.main_menu_document_cloud_padding,
-                                                     gui.ratios.main_menu_document_cloud_padding)
+        # Add padding
+        cloud_icon_padded_rect = cloud_icon_rect.inflate(gui.ratios.main_menu_document_cloud_padding,
+                                                         gui.ratios.main_menu_document_cloud_padding)
 
-    cloud_icon_padded_rect.scale_by_ip(1, .75)  # The icon itself is square, but the padded box is not
-    cloud_icon_padded_rect.bottomright = rect.bottomright
+        cloud_icon_padded_rect.scale_by_ip(1, .75)  # The icon itself is square, but the padded box is not
+        cloud_icon_padded_rect.bottomright = rect.bottomright
 
-    cloud_icon_rect.center = cloud_icon_padded_rect.center
+        cloud_icon_rect.center = cloud_icon_padded_rect.center
 
-    pe.draw.rect(pe.colors.white, cloud_icon_padded_rect)  # Give the cloud icon a white background with padding
-    cloud_icon.display(cloud_icon_rect.topleft)
+        pe.draw.rect(pe.colors.white, cloud_icon_padded_rect)  # Give the cloud icon a white background with padding
+        cloud_icon.display(cloud_icon_rect.topleft)
 
     # Render the notebook icon
     notebook_large = gui.icons['notebook_large']
