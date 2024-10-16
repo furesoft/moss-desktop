@@ -67,6 +67,29 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
         disabled=disabled
     )
 
+    # Render the availability cloud icon
+    cloud_icon: pe.Image = gui.icons['cloud']
+    cloud_icon_rect = pe.Rect(0, 0, *cloud_icon.size)
+
+    # Add padding
+    cloud_icon_padded_rect = cloud_icon_rect.inflate(gui.ratios.main_menu_document_cloud_padding,
+                                                     gui.ratios.main_menu_document_cloud_padding)
+
+    cloud_icon_padded_rect.scale_by_ip(1, .75)  # The icon itself is square, but the padded box is not
+    cloud_icon_padded_rect.bottomright = rect.bottomright
+
+    cloud_icon_rect.center = cloud_icon_padded_rect.center
+
+    pe.draw.rect(pe.colors.white, cloud_icon_padded_rect)  # Give the cloud icon a white background with padding
+    cloud_icon.display(cloud_icon_rect.topleft)
+
+    # Render the notebook icon
+    notebook_large = gui.icons['notebook_large']
+    notebook_large_rect = pe.Rect(0, 0, *notebook_large.size)
+    notebook_large_rect.center = rect.center
+    notebook_large.display(notebook_large_rect.topleft)
+
+
     # Render the passive outline
     pe.draw.rect(
         Defaults.DOCUMENT_GRAY,
@@ -81,6 +104,9 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
         data=data,
         disabled=disabled
     )
+
+
+
 
 
 def render_button_using_text(

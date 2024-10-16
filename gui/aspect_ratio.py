@@ -43,10 +43,11 @@ class Ratios:
         self.main_menu_label_size = int(13 * scale)
         self.main_menu_document_title_size = int(15 * scale)
         self.main_menu_document_title_height_margin = int(8 * scale)
+        self.main_menu_document_cloud_padding = int(20 * scale)  # 10 on each size (left and right) / (top and bottom)
         self.main_menu_path_size = int(15.8 * scale)
 
         # Document Viewer
-        self.document_viewer_top_draggable_height = int(50 * scale)
+        self.document_viewer_top_draggable_height = int(48 * scale)  # Accurate to device
         self.document_viewer_loading_square = int(100 * scale)
         self.document_viewer_loading_circle_radius = int(5 * scale)
 

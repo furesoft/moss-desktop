@@ -4,13 +4,19 @@ import time
 from logging import lastResort
 
 import pygameextra as pe
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Dict
 
 from .defaults import Defaults
 from .main_menu import MainMenu
 
 if TYPE_CHECKING:
     from .gui import GUI
+
+
+class ReusedIcon:
+    def __init__(self, key: str, scale: float):
+        self.key = key
+        self.scale = scale
 
 
 class Loader(pe.ChildContext):
@@ -20,9 +26,13 @@ class Loader(pe.ChildContext):
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
-        #'screenshot': 'screenshot_for_reference2.png',
+        'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
+        'notebook_large': ReusedIcon('notebook', 3),
+        # 'screenshot': 'screenshot_for_reference2.png',
     }
+
     LAYER = pe.AFTER_LOOP_LAYER
+    icons: Dict[str, pe.Image]
 
     def __init__(self, parent: 'GUI'):
         super().__init__(parent)
@@ -54,7 +64,12 @@ class Loader(pe.ChildContext):
 
     def load(self):
         for key, item in self.TO_LOAD.items():
-            if item.endswith('.svg'):
+            if isinstance(item, ReusedIcon):
+                self.icons[key] = self.icons[item.key].copy()
+                self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
+            elif not isinstance(item, str):
+                continue
+            elif item.endswith('.svg'):
                 # SVGs are 40px, but we use 1000px height, so they are 23px
                 # 23 / 40 = 0.575
                 # but, I find 0.5 to better match
@@ -67,13 +82,14 @@ class Loader(pe.ChildContext):
         def progress(loaded, to_load):
             self.files_loaded = loaded
             self.files_to_load = to_load
+
         self.loading_feedback = 0
         self.api.get_documents(progress)
         self.files_to_load = None
 
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)
-        self.icons[key].resize(tuple(self.ratios.pixel(v*multiplier) for v in self.icons[key].size))
+        self.icons[key].resize(tuple(self.ratios.pixel(v * multiplier) for v in self.icons[key].size))
 
     def progress(self):
         if self.files_to_load is None and self.config.wait_for_everything_to_load and not self.current_progress:
