@@ -20,7 +20,7 @@ def get_root(api: 'API'):
     return make_storage_request(api, "GET", SYNC_ROOT_URL)
 
 
-def get_documents_old_sync(api: 'API', document_collections, documents, progress):
+def get_documents_old_sync(api: 'API', progress):
     root = get_root(api)['hash']
-    return get_documents_using_root(api, document_collections, documents, progress, root)
+    return get_documents_using_root(api, progress, root)
 
