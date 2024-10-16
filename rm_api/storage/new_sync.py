@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 import jwt
-from pycparser.ply.yacc import token
 
 from rm_api.storage.v3 import get_documents_using_root
 
