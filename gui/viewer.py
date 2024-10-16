@@ -7,11 +7,16 @@ from logging import lastResort
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
-import CEF4pygame
+try:
+    import CEF4pygame
 
-CEF4pygame.print = lambda *args, **kwargs: None
-from CEF4pygame import CEFpygame
-from cefpython3 import cefpython as cef
+    CEF4pygame.print = lambda *args, **kwargs: None
+    from CEF4pygame import CEFpygame
+    from cefpython3 import cefpython as cef
+except Exception:
+    CEFpygame = None
+    cef = None
+
 from PIL import Image
 
 from .defaults import Defaults

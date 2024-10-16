@@ -7,7 +7,10 @@ import pygameextra as pe
 from queue import Queue
 from box import Box
 
-from CEF4pygame import CEFpygame
+try:
+    from CEF4pygame import CEFpygame
+except Exception:
+    CEFpygame = None
 from pygameextra import event
 
 from rm_api import API

@@ -36,7 +36,7 @@ class MainMenu(pe.ChildContext):
         # obviously, non reversed is ascending
         self.current_sorting_reverse = True
         super().__init__(parent)
-        self.icons['screenshot'].set_alpha(100)
+        #self.icons['screenshot'].set_alpha(100)
         self.get_items()
 
         self.texts['my_files'] = pe.Text("My files", Defaults.MAIN_MENU_FONT, self.ratios.main_menu_my_files_size,

@@ -4,7 +4,7 @@ import time
 from logging import lastResort
 
 import pygameextra as pe
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from .defaults import Defaults
 from .main_menu import MainMenu
@@ -19,7 +19,7 @@ class Loader(pe.ChildContext):
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
-        'screenshot': 'screenshot_for_reference4.png',
+        #'screenshot': 'screenshot_for_reference2.png',
     }
     LAYER = pe.AFTER_LOOP_LAYER
 
@@ -44,12 +44,11 @@ class Loader(pe.ChildContext):
         self.line_rect.top += self.ratios.loader_loading_bar_padding
         self.items_loaded = 0
         self.files_loaded = 0
-        self.loading_feedback = 0  # Used by main menu to know if enough changes have been made since last checked
-        self.files_to_load: Union[int, None] = None
+        self.files_to_load = 999
         self.last_progress = 0
         self.current_progress = 0
-        threading.Thread(target=self.load, daemon=True).start()
-        threading.Thread(target=self.get_documents, daemon=False).start()
+        threading.Thread(target=self.load).start()
+        threading.Thread(target=self.get_documents).start()
 
     def load(self):
         for key, item in self.TO_LOAD.items():
@@ -66,34 +65,25 @@ class Loader(pe.ChildContext):
         def progress(loaded, to_load):
             self.files_loaded = loaded
             self.files_to_load = to_load
-        self.loading_feedback = 0
+
         self.api.get_documents(progress)
-        self.files_to_load = None
 
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)
-        self.icons[key].resize(tuple(self.ratios.pixel(v * multiplier) for v in self.icons[key].size))
+        self.icons[key].resize(tuple(self.ratios.pixel(v*multiplier) for v in self.icons[key].size))
 
     def progress(self):
-        if self.files_to_load is None and self.config.wait_for_everything_to_load and not self.current_progress:
-            # Before we know the file count, just return 0 progress
-            return 0
         try:
-            if not self.files_to_load or not self.config.wait_for_everything_to_load:
-                self.current_progress = self.items_loaded / len(self.TO_LOAD)
-            else:
-                self.current_progress = (
-                                                self.items_loaded +
-                                                self.files_loaded
-                                        ) / (
-                                                len(self.TO_LOAD) +
-                                                self.files_to_load
-                                        )
+            self.current_progress = (
+                    self.items_loaded +
+                    self.files_loaded
+            ) / (
+                    len(self.TO_LOAD) +
+                    self.files_to_load
+            )
         except ZeroDivisionError:
             self.current_progress = 0
         self.last_progress = self.last_progress + (self.current_progress - self.last_progress) / (self.FPS * .1)
-        if self.last_progress > .98:
-            self.last_progress = 1
         return self.last_progress
 
     def loop(self):
@@ -104,5 +94,5 @@ class Loader(pe.ChildContext):
         pe.draw.rect(pe.colors.black, progress_rect, 0)
 
     def post_loop(self):
-        if self.current_progress == 1 and self.last_progress == 1:
+        if self.current_progress == 1 and self.last_progress > .95:
             self.screens.put(MainMenu(self.parent_context))
