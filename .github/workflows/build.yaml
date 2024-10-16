@@ -34,7 +34,7 @@ jobs:
           pyinstaller --onefile run_gui.py --name="${{ env.APP_NAME }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APP_NAME }}
           path: dist/*
