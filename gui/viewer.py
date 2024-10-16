@@ -66,7 +66,7 @@ class DocumentRenderer(pe.ChildContext):
     def error(self, value):
         self._error = pe.Text(
             value,
-            Defaults.CUSTOM_FONT,
+            Defaults.DOCUMENT_ERROR_FONT,
             self.ratios.document_viewer_error_font_size,
             pe.Rect(0, 0, *self.size).center,
             Defaults.TEXT_COLOR
@@ -123,7 +123,11 @@ class DocumentRenderer(pe.ChildContext):
 
     def load(self):
         if self.document.content['fileType'] == 'pdf':
-            pdf_raw = self.document.content_data[self.document.content_files[0]]
+            try:
+                pdf_raw = self.document.content_data[self.document.content_files[0]]
+            except IndexError:
+                self.error = 'PDF file missing'
+                return
             if self.config.pdf_render_mode == 'cef' and CEFpygame:
                 self.load_pdf_with_cef(pdf_raw)
             elif self.config.pdf_render_mode == 'none':
@@ -165,7 +169,7 @@ class DocumentRenderer(pe.ChildContext):
             self.render_pdf_with_cef()
 
     def close(self):
-        if self.pdf and self.mode.ends_with('cef'):
+        if self.pdf and self.mode.endswith('cef'):
             self.pdf.browser.CloseBrowser()
 
     def post_loop(self):

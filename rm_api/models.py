@@ -111,13 +111,16 @@ class Document:
         self.uuid = uuid
         self.files_available = self.check_files_availability()
         self.downloading = False
+        pdf_file_uuid = f'{self.uuid}.pdf'
+        self.content_files = []
         if self.file_type == 'pdf':
-            self.content_files = [f'{self.uuid}.pdf']
+            for file in self.files:
+                if file.uuid == pdf_file_uuid:
+                    self.content_files.append(file.uuid)
         else:
             if not self.file_type in self.unknown_file_types:
                 self.unknown_file_types.add(self.file_type)
                 print(f'{Fore.RED}Unknown file type: {self.file_type}{Fore.RESET}')
-            self.content_files = []
         self.content_data = {}
 
     @property

@@ -13,6 +13,7 @@ class Defaults:
     FOLDER_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
     PATH_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
     DOCUMENT_TITLE_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
+    DOCUMENT_ERROR_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
 
     LOGO_FONT = CUSTOM_FONT_BOLD
     MAIN_MENU_FONT = CUSTOM_FONT_BOLD

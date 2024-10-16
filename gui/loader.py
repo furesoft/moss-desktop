@@ -28,7 +28,7 @@ class Loader(pe.ChildContext):
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
         'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
-        'notebook_large': ReusedIcon('notebook', 3),
+        'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
         # 'screenshot': 'screenshot_for_reference2.png',
     }
 
