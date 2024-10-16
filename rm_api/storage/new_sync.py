@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 import jwt
 from pycparser.ply.yacc import token
 
-from rm_api.storage.v3 import get_documents_api_root
+from rm_api.storage.v3 import get_documents_using_root
 
 if TYPE_CHECKING:
     from rm_api import API
@@ -19,7 +19,7 @@ def get_root(api: 'API') -> dict:
 
 def get_documents_new_sync(api: 'API', progress):
     root = get_root(api)['hash']
-    return get_documents_api_root(api, progress, root)
+    return get_documents_using_root(api, progress, root)
 
 
 def handle_new_api_steps(api: 'API'):

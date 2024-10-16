@@ -76,7 +76,7 @@ def get_file_contents(api: 'API', file, binary: bool = False) -> Union[str, None
     return make_files_request(api, "GET", file, binary=binary)
 
 
-def get_documents_api_root(api: 'API', progress, root):
+def get_documents_using_root(api: 'API', progress, root):
     _, files = get_file(api, root)
     deleted_document_collections_list = set(api.document_collections.keys())
     deleted_documents_list = set(api.documents.keys())
