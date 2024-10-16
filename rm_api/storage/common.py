@@ -9,4 +9,8 @@ if TYPE_CHECKING:
 
 def get_document_storage(api: 'API'):
     response = api.session.get(DOCUMENT_STORAGE_URL.format(api.discovery_uri))
-    return response.json().get("Host")
+    host = response.json().get("Host")
+    if not api.session.get(f"https://{host}/sync/v3/root").ok:
+        api.use_new_sync = True
+        return None
+    return host

@@ -17,13 +17,15 @@ class API:
     def __init__(self):
         self.session = requests.Session()
         self.uri = os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
-        self.discovery_uri = os.environ.get("DISCOVERY_URI", "https://service-manager-production-dot-remarkable-production.appspot.com/")
+        self.discovery_uri = os.environ.get("DISCOVERY_URI",
+                                            "https://service-manager-production-dot-remarkable-production.appspot.com/")
         self.document_storage_uri = None
+        self._hook_list = {}
         self._use_new_sync = False
         # noinspection PyTypeChecker
-        self.document_collections = None
+        self.document_collections = {}
         # noinspection PyTypeChecker
-        self.documents = None
+        self.documents = {}
         self._token = None
         if not self.uri.endswith("/"):
             self.uri += "/"
@@ -64,15 +66,26 @@ class API:
     def get_documents(self, progress=lambda d, i: None):
         self.check_for_document_storage()
         if self.use_new_sync:
-            self.document_collections, self.documents = get_documents_new_sync(self, progress)
+            get_documents_new_sync(self, progress)
         else:
-            self.document_collections, self.documents = get_documents_old_sync(self, progress)
-        return
+            get_documents_old_sync(self, progress)
+
+    def spread_event(self, event: object):
+        for hook in self._hook_list.values():
+            hook(event)
+
+    def add_hook(self, hook_id, hook):
+        self._hook_list[hook_id] = hook
+
+    def remove_hook(self, hook_id):
+        del self._hook_list[hook_id]
 
     def check_for_document_storage(self):
         if not self.document_storage_uri:
             uri = get_document_storage(self)
-            if uri == 'local.appspot.com':
+            if not uri:
+                return
+            elif uri == 'local.appspot.com':
                 uri = self.uri
             else:
                 if not uri.endswith("/"):

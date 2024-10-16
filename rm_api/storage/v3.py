@@ -78,8 +78,11 @@ def get_file_contents(api: 'API', file, binary: bool = False) -> Union[str, None
 
 def get_documents_api_root(api: 'API', progress, root):
     _, files = get_file(api, root)
-    document_collections = {}
-    documents = {}
+    deleted_document_collections_list = set(api.document_collections.keys())
+    deleted_documents_list = set(api.documents.keys())
+
+    total = len(files)
+
     for i, file in enumerate(files):
         _, file_content = get_file(api, file.hash)
         content = None
@@ -89,12 +92,28 @@ def get_documents_api_root(api: 'API', progress, root):
             if item.uuid == f'{file.uuid}.metadata':
                 metadata = models.Metadata(get_file_contents(api, item.hash))
                 if metadata.type == 'CollectionType':
-                    document_collections[file.uuid] = models.DocumentCollection(
+                    api.document_collections[file.uuid] = models.DocumentCollection(
                         [models.Tag(tag) for tag in content['tags']],
                         metadata, file.uuid
                     )
+                    if file.uuid in deleted_document_collections_list:
+                        deleted_document_collections_list.remove(file.uuid)
                 elif metadata.type == 'DocumentType':
-                    documents[file.uuid] = models.Document(api, content, metadata, file_content, file.uuid)
-        progress(i + 1, len(files))
+                    api.documents[file.uuid] = models.Document(api, content, metadata, file_content, file.uuid)
+                    if file.uuid in deleted_documents_list:
+                        deleted_documents_list.remove(file.uuid)
+        progress(i + 1, total)
+    else:
+        i = 0
 
-    return document_collections, documents
+    total += len(deleted_document_collections_list) + len(deleted_documents_list)
+
+    for j, uuid in enumerate(deleted_document_collections_list):
+        del api.document_collections[uuid]
+        progress(i + j + 1, total)
+    else:
+        j = 0
+
+    for k, uuid in enumerate(deleted_documents_list):
+        del api.documents[uuid]
+        progress(i + j + k + 1, total)
