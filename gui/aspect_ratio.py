@@ -11,6 +11,9 @@ class Ratios:
 
         self.scale = scale
 
+        # GENERAL
+        self.bottom_loading_bar_height = int(40 * scale)
+
         # LOADER
         self.loader_logo_text_size = int(50 * scale)
         self.loader_loading_bar_width = int(200 * scale)

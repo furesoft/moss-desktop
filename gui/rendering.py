@@ -138,3 +138,10 @@ def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: '
             texts[text_key].rect.midleft = (x, y)
             render_button_using_text(gui, texts[text_key], action=callback, data=item)
             x += texts[text_key].rect.width
+
+
+def draw_bottom_loading_bar(gui: 'GUI'):
+    pe.draw.rect(
+        pe.colors.black,
+        (0, gui.height - gui.ratios.bottom_loading_bar_height, gui.width, gui.ratios.bottom_loading_bar_height)
+    )

@@ -6,11 +6,12 @@ import pygameextra as pe
 
 from .defaults import Defaults
 from .helpers import shorten_name, shorten_path, shorten_folder, shorten_document
-from .rendering import render_document, render_collection, render_header
+from .rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
 
 if TYPE_CHECKING:
     from gui import GUI
     from rm_api import API
+    from .loader import Loader
 
 
 class MainMenu(pe.ChildContext):
@@ -44,27 +45,31 @@ class MainMenu(pe.ChildContext):
             self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
 
     def get_items(self):
+        # Copy the document collections and documents incase they change
+        document_collections = dict(self.api.document_collections)
+        documents = dict(self.api.documents)
+
         # Filtering the document collections and documents with the current parent
         self.document_collections = {
             key: item for key, item in
-            self.api.document_collections.items()
+            document_collections.items()
             if item.parent == self.navigation_parent
         }
         self.documents = {
             key: item for key, item in
-            self.api.documents.items()
+            documents.items()
             if item.parent == self.navigation_parent
         }
 
         # Preparing the document collection texts
-        for uuid, document_collection in self.document_collections.items():
+        for uuid, document_collection in document_collections.items():
             if self.texts.get(uuid) is None:
                 self.texts[uuid] = pe.Text(shorten_folder(document_collection.metadata.visible_name),
                                            Defaults.FOLDER_FONT,
                                            self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
-        for uuid, document in self.documents.items():
+        for uuid, document in documents.items():
             if self.texts.get(uuid) is None:
                 self.texts[uuid] = pe.Text(shorten_document(document.metadata.visible_name),
                                            Defaults.DOCUMENT_TITLE_FONT,
@@ -84,17 +89,17 @@ class MainMenu(pe.ChildContext):
                 # Render the path text
                 if self.texts.get(text_key) is None:
                     self.texts[text_key] = pe.Text(
-                        shorten_path(self.api.document_collections[parent].metadata.visible_name),
+                        shorten_path(document_collections[parent].metadata.visible_name),
                         Defaults.PATH_FONT,
                         self.ratios.main_menu_path_size,
                         (0, 0), Defaults.TEXT_COLOR
                     )
 
-                parent = self.api.document_collections[parent].parent
+                parent = document_collections[parent].parent
 
     def pre_loop(self):
         pe.fill.interlace((240, 240, 240), 5)
-        # self.icons['screenshot'].display()
+        self.icons['screenshot'].display()
 
     def set_parent(self, uuid=None):
         self.navigation_parent = uuid
@@ -152,3 +157,15 @@ class MainMenu(pe.ChildContext):
             if i % 4 == 3:
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
+
+    def post_loop(self):
+        loader: 'Loader' = self.parent_context.screens.queue[0]
+        if loader.files_to_load is not None:
+            draw_bottom_loading_bar(self.parent_context)
+            # Update the data if the loader has loaded more files
+            if loader.loading_feedback + 3 < loader.files_loaded:
+                self.get_items()
+                loader.loading_feedback = loader.files_loaded
+        elif loader.loading_feedback:
+            self.get_items()
+            loader.loading_feedback = 0

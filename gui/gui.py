@@ -20,11 +20,14 @@ pe.init()
 
 class ConfigDict(TypedDict):
     enable_fake_screen_refresh: bool
+    wait_for_everything_to_load: bool
     uri: str
 
 
 DEFAULT_CONFIG: ConfigDict = {
     'enable_fake_screen_refresh': True,
+    # TODO: Fix the fact that disabling this, makes loading much slower
+    'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/'
 }
 
