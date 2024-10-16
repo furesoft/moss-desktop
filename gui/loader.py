@@ -19,7 +19,7 @@ class Loader(pe.ChildContext):
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
-        'screenshot': 'screenshot_for_reference2.png',
+        #'screenshot': 'screenshot_for_reference2.png',
     }
     LAYER = pe.AFTER_LOOP_LAYER
 
