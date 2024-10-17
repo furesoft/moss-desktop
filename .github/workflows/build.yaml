@@ -44,4 +44,4 @@ jobs:
         with:
           name: ${{ env.APP_NAME }}
           path: |
-            dist/*
+            build/run_gui.exe
