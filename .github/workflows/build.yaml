@@ -28,6 +28,8 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
+          include-module: |
+            pygameextra
           script-name: run_gui.py
           standalone: true
           onefile: true
