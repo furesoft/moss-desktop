@@ -37,7 +37,7 @@ jobs:
           include-data-dir: |
             assets=assets
           include-data-files: |
-            LICENSE
+            LICENSE=LICENSE
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
