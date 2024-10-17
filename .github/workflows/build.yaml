@@ -39,6 +39,21 @@ jobs:
           include-data-files: |
             LICENSE=LICENSE
 
+#      - name: Zip dist
+#        run: |
+#          python -c "import zipfile,shutil; shutil.make_archive('dist-signed', 'zip', 'build/main.dist')"
+#
+#      - name: Zip onefile
+#        run: |
+#          python -c "import zipfile,shutil; shutil.make_archive('onefile-unsigned', 'zip', 'zipped')"
+
+      - name: Print contents
+        run: |
+          ls -l build
+          ls -l build/run_gui.dist
+          ls -l build/run_gui.dist/run_gui.app
+        shell: bash
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
