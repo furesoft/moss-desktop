@@ -32,6 +32,9 @@ jobs:
           standalone: true
           onefile: true
           macos-create-app-bundle: true
+          include-data-dir: assets
+          include-data-files: |
+            LICENSE
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
