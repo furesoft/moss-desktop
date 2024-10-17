@@ -31,7 +31,7 @@ jobs:
           script-name: run_gui.py
           standalone: true
           onefile: true
-          disable-console: true
+          disable-console: ${{ github.ref == 'refs/heads/main' }}
           macos-create-app-bundle: true
           deployment: ${{ github.ref == 'refs/heads/main' }}
           include-data-dir: |
