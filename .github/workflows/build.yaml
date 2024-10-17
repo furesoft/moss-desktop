@@ -39,5 +39,5 @@ jobs:
           name: ${{ env.APP_NAME }} ${{ runner.os }}
           path: |
             build/run_gui.exe
-            build/run_gui
+            build/run_gui.bin
             build/run_gui.app
