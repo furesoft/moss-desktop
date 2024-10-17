@@ -1,11 +1,11 @@
 import json
 import os
+from functools import lru_cache
 from json import JSONDecodeError
 
 import rm_api.models as models
 from typing import TYPE_CHECKING, Union, Tuple, List
 
-from rm_api.storage import TEMP
 from rm_api.storage.exceptions import NewSyncRequired
 
 FILES_URL = "{0}sync/v3/files/{1}"
@@ -32,10 +32,13 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
     except JSONDecodeError:
         return response.text
 
-
+@lru_cache
 def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False) -> Union[str, None, dict]:
-    location = os.path.join(TEMP, file)
-    if os.path.exists(location):
+    if api.sync_file_path:
+        location = os.path.join(api.sync_file_path, file)
+    else:
+        location = None
+    if location and os.path.exists(location):
         if binary:
             with open(location, 'rb') as f:
                 return f.read()
@@ -55,12 +58,14 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
         print(response.text, response.status_code)
         return None
     if binary:
-        with open(location, "wb") as f:
-            f.write(response.content)
+        if location:
+            with open(location, "wb") as f:
+                f.write(response.content)
         return response.content
     else:
-        with open(location, "w") as f:
-            f.write(response.text)
+        if location:
+            with open(location, "w") as f:
+                f.write(response.text)
         try:
             return response.json()
         except JSONDecodeError:

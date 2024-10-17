@@ -118,7 +118,7 @@ class DocumentRenderer(pe.ChildContext):
             browser.keyup(event.key)
 
     def handle_event(self, event):
-        if self.mode.endswith('cef'):
+        if self.pdf and self.mode.endswith('cef'):
             self.handle_events_with_cef(event)
 
     def load(self):
@@ -165,7 +165,7 @@ class DocumentRenderer(pe.ChildContext):
     def loop(self):
         if self.loading:
             return
-        if self.pdf:
+        if self.pdf and self.mode.endswith('cef'):
             self.render_pdf_with_cef()
 
     def close(self):
