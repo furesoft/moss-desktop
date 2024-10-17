@@ -29,8 +29,6 @@ jobs:
         with:
           nuitka-version: main
           script-name: run_gui.py
-          include-package: |
-            pygameextra
           standalone: true
           onefile: true
           disable-console: ${{ github.ref == 'refs/heads/main' }}
