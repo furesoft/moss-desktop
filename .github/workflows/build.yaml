@@ -16,12 +16,14 @@ jobs:
 #        , ubuntu-latest, macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
@@ -30,8 +32,12 @@ jobs:
           pip install pyinstaller
 
       - name: Build
-        run: |
-          pyinstaller --onefile run_gui.py --name="${{ env.APP_NAME }} CEF" --noconsole
+        uses Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: run_gui.py
+          standalone: true
+          onefile: true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
