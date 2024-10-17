@@ -31,10 +31,13 @@ jobs:
           script-name: run_gui.py
           standalone: true
           onefile: true
+          macos-create-app-bundle: true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_NAME }}
+          name: ${{ env.APP_NAME }} ${{ runner.os }}
           path: |
-            build/*
+            build/run_gui.exe
+            build/run_gui
+            build/run_gui.app
