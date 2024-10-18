@@ -66,14 +66,17 @@ class MainMenu(pe.ChildContext):
 
         # Preparing the document collection texts
         for uuid, document_collection in document_collections.items():
-            if self.texts.get(uuid) is None:
+            if self.texts.get(uuid) is None or self.texts[uuid+'_full'].text != document_collection.metadata.visible_name:
                 self.texts[uuid] = pe.Text(shorten_folder(document_collection.metadata.visible_name),
+                                           Defaults.FOLDER_FONT,
+                                           self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
+                self.texts[uuid+'_full'] = pe.Text(document_collection.metadata.visible_name,
                                            Defaults.FOLDER_FONT,
                                            self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
         for uuid, document in documents.items():
-            if self.texts.get(uuid) is None:
+            if self.texts.get(uuid) is None or self.texts[uuid+'_full'].text != document.metadata.visible_name:
                 self.texts[uuid] = pe.Text(shorten_document(document.metadata.visible_name),
                                            Defaults.DOCUMENT_TITLE_FONT,
                                            self.ratios.main_menu_document_title_size, (0, 0), Defaults.DOCUMENT_TITLE_COLOR)
@@ -134,7 +137,7 @@ class MainMenu(pe.ChildContext):
         # Rendering the folders
         for i, document_collection in enumerate(self.get_sorted_document_collections()):
 
-            render_collection(self.parent_context, document_collection, self.texts[document_collection.uuid],
+            render_collection(self.parent_context, document_collection, self.texts,
                               self.set_parent, x, y)
 
             x += self.ratios.main_menu_folder_distance

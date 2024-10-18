@@ -11,10 +11,18 @@ if TYPE_CHECKING:
     from rm_api.models import Document
     from queue import Queue
 
+def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
+    pe.draw.rect(Defaults.LINE_GRAY, rect, gui.ratios.pixel(3))
+    text = texts[collection_uuid]
+    text_full = texts[collection_uuid + '_full']
+    if text.text != text_full.text:
+        FullTextPopup.create(gui, text_full, text)()
 
-def render_collection(gui: 'GUI', collection: 'DocumentCollection', text: pe.Text, callback, x, y):
+
+def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y):
     icon = gui.icons['folder_inverted']
     icon.display((x, y))
+    text = texts[collection.uuid]
     text.rect.midleft = (x, y)
     text.rect.x += icon.width + gui.ratios.main_menu_folder_padding
     text.rect.y += icon.height // 1.5
@@ -26,13 +34,22 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', text: pe.Tex
         icon.height
     )
     rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
-    pe.button.rect(
-        rect,
+    render_button_using_text(
+        gui, text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
+        name=collection.uuid + '_title_hover',
+        hover_draw_action=render_full_collection_title,
+        hover_draw_data=(gui, texts, collection.uuid, rect),
         action=callback, data=collection.uuid,
-        hover_draw_action=pe.draw.rect,
-        hover_draw_data=(Defaults.LINE_GRAY, rect, gui.ratios.pixel(3))
+        rect=rect
     )
+    # pe.button.rect(
+    #     rect,
+    #     Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
+    #     action=callback, data=collection.uuid,
+    #     hover_draw_action=pe.draw.rect,
+    #     hover_draw_data=(Defaults.LINE_GRAY, rect, gui.ratios.pixel(3))
+    # )
 
 
 def render_full_document_title(gui: 'GUI', texts, document_uuid: str):
@@ -118,11 +135,12 @@ def render_button_using_text(
         inactive_color=Defaults.TRANSPARENT_COLOR, active_color=Defaults.BUTTON_ACTIVE_COLOR,
         *args,
         name: str = None, action=None, data=None,
+        rect: pe.Rect = None,
         **kwargs
 ):
     text.display()
     pe.button.rect(
-        gui.ratios.pad_button_rect(text.rect),
+        rect or gui.ratios.pad_button_rect(text.rect),
         inactive_color, active_color,
         *args,
         name=name,
