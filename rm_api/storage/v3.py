@@ -13,6 +13,7 @@ FILES_URL = "{0}sync/v3/files/{1}"
 if TYPE_CHECKING:
     from rm_api import API
 
+DEFAULT_ENCODING = 'utf-8'
 
 def make_storage_request(api: 'API', method, request, data: dict = None) -> Union[str, None, dict]:
     response = api.session.request(
@@ -43,7 +44,7 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
             with open(location, 'rb') as f:
                 return f.read()
         else:
-            with open(location, 'r') as f:
+            with open(location, 'r', encoding=DEFAULT_ENCODING) as f:
                 data = f.read()
             try:
                 return json.loads(data)
@@ -64,7 +65,7 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
         return response.content
     else:
         if location:
-            with open(location, "w") as f:
+            with open(location, "w", encoding=DEFAULT_ENCODING) as f:
                 f.write(response.text)
         try:
             return response.json()
