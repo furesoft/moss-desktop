@@ -78,7 +78,8 @@ class DocumentDebugPopup(pe.ChildContext):
         self.document = document
         self.position = position
         self.used_at = time.time()
-        self.popup_rect = pe.Rect(*position, parent.ratios.main_menu_document_width, parent.ratios.main_menu_document_height)
+        self.popup_rect = pe.Rect(*position, parent.ratios.main_menu_document_width,
+                                  parent.ratios.main_menu_document_height)
         self.popup_rect.clamp_ip(pe.Rect(0, 0, *parent.size))
         self.button_actions = {
             'extract': self.extract_files,
@@ -102,8 +103,8 @@ class DocumentDebugPopup(pe.ChildContext):
         y = self.popup_rect.top
         h = self.popup_rect.height // len(self.button_actions)
         for (item, action), text in zip(
-            self.button_actions.items(),
-            self.texts
+                self.button_actions.items(),
+                self.texts
         ):
             pe.button.rect(
                 (x, y, self.popup_rect.width, h),
@@ -112,7 +113,6 @@ class DocumentDebugPopup(pe.ChildContext):
                 text=text
             )
             y += h
-
 
     def post_loop(self):
         pe.draw.rect(pe.colors.brown, self.popup_rect, self.ratios.pixel(3))
@@ -137,17 +137,22 @@ class DocumentDebugPopup(pe.ChildContext):
     @property
     @lru_cache
     def extract_location(self):
-        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent), self.document.uuid)
+        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent),
+                            self.document.uuid)
 
     def clean_extract_location(self):
         if os.path.isdir(self.extract_location):
             shutil.rmtree(self.extract_location, ignore_errors=True)
         os.makedirs(self.extract_location, exist_ok=True)
-        with open(os.path.join(self.extract_location, f'$ {self.document.metadata.visible_name}'), 'w') as f:
+        with open(os.path.join(self.extract_location, f'$ {self.clean_filename(self.document.metadata.visible_name)}'), 'w') as f:
             f.write('')
 
     def clean_file_uuid(self, file):
         return file.uuid.replace(f'{self.document.uuid}/', '')
+
+    @staticmethod
+    def clean_filename(filename):
+        return "".join(c for c in filename if c.isalpha() or c.isdigit() or c == ' ').rstrip()
 
     def extract_files(self):
         self.clean_extract_location()
@@ -160,7 +165,6 @@ class DocumentDebugPopup(pe.ChildContext):
             # Save the file
             with open(file_path, 'wb') as f:
                 f.write(data)
-
 
 
 class DraggablePuller(pe.ChildContext):

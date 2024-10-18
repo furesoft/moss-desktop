@@ -106,6 +106,9 @@ class DocumentCollection:
 
 class Document:
     unknown_file_types = set()
+    KNOWN_FILE_TYPES = [
+        'pdf'
+    ]
 
     def __init__(self, api: 'API', content: dict, metadata: Metadata, files: List[File], uuid: str):
         self.api = api
@@ -116,20 +119,18 @@ class Document:
         self.files_available = self.check_files_availability()
         self.downloading = False
         pdf_file_uuid = f'{self.uuid}.pdf'
-        self.content_files = []
-        if self.file_type == 'pdf':
-            for file in self.files:
-                if file.uuid == pdf_file_uuid:
-                    self.content_files.append(file.uuid)
-        else:
-            if not self.file_type in self.unknown_file_types:
-                self.unknown_file_types.add(self.file_type)
-                print(f'{Fore.RED}Unknown file type: {self.file_type}{Fore.RESET}')
+        if self.file_type not in self.KNOWN_FILE_TYPES and not self.file_type in self.unknown_file_types:
+            self.unknown_file_types.add(self.file_type)
+            print(f'{Fore.RED}Unknown file type: {self.file_type}{Fore.RESET}')
         self.content_data = {}
 
     @property
     def file_type(self):
         return self.content['fileType']
+
+    @property
+    def content_files(self):
+        return [file.uuid for file in self.files]
 
     @property
     def available(self):
