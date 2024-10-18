@@ -4,7 +4,10 @@ import os
 import threading
 import time
 import pygameextra as pe
-from CEF4pygame import CEFpygame
+try:
+    from CEF4pygame import CEFpygame
+except Exception:
+    CEFpygame = None
 
 from gui.defaults import Defaults
 from ..shared_model import AbstractRenderer

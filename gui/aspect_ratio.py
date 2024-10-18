@@ -17,7 +17,7 @@ class Ratios:
 
         # DEBUG
         self.small_debug_text_size = int(10 * scale)
-        self.debug_text_size = int(20 * scale)
+        self.debug_text_size = int(15 * scale)
 
         # LOADER
         self.loader_logo_text_size = int(50 * scale)

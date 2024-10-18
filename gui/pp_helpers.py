@@ -2,12 +2,15 @@
 PP stands for Post Processing
 This script contains small child contexts to render on top of everything else
 """
+import io
 import os
 import shutil
 import time
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
+import rmscene
 
 from gui.defaults import Defaults
 from rm_api.storage.v3 import get_file_contents
@@ -131,22 +134,32 @@ class DocumentDebugPopup(pe.ChildContext):
     def close(self):
         self.EXISTING.clear()
 
+    @property
+    @lru_cache
+    def extract_location(self):
+        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent), self.document.uuid+'_extract')
+
+    def clean_extract_location(self):
+        if os.path.isdir(self.extract_location):
+            shutil.rmtree(self.extract_location, ignore_errors=True)
+        os.makedirs(self.extract_location, exist_ok=True)
+        with open(os.path.join(self.extract_location, f'$ {self.document.metadata.visible_name}'), 'w') as f:
+            f.write('')
+
+    def clean_file_uuid(self, file):
+        return file.uuid.replace(f'{self.document.uuid}/', '')
+
     def extract_files(self):
-        save_location = os.path.join(Defaults.SYNC_FILE_PATH, self.document.parent, self.document.uuid+'_extract')
-        if os.path.isdir(save_location):
-            shutil.rmtree(save_location, ignore_errors=True)
-        os.makedirs(save_location, exist_ok=True)
+        self.clean_extract_location()
+
         for file in self.document.files:
             # Fetch the file
             data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
-            file_path = os.path.join(save_location, file.uuid.replace(f'{self.document.uuid}/', ''))
+            file_path = os.path.join(self.extract_location, self.clean_file_uuid(file))
 
             # Save the file
             with open(file_path, 'wb') as f:
                 f.write(data)
-        with open(os.path.join(save_location, f'$ {self.document.metadata.visible_name}'), 'w') as f:
-            f.write('')
-
 
 
 

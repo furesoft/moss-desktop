@@ -4,7 +4,7 @@ import __main__
 
 try:
     from cefpython3 import cefpython as cef
-except ImportError:
+except Exception:
     cef = None
 import pygameextra as pe
 
