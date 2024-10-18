@@ -10,7 +10,6 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
-import rmscene
 
 from gui.defaults import Defaults
 from rm_api.storage.v3 import get_file_contents
