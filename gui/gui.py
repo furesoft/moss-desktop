@@ -8,6 +8,7 @@ from queue import Queue
 from box import Box
 from colorama import Fore
 
+from rm_api.auth import FailedToRefreshToken
 from .code_screen import CodeScreen
 from .defaults import Defaults
 
@@ -88,7 +89,11 @@ class GUI(pe.GameContext):
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
         super().__init__()
         self.config = load_config()
-        self.api = API(require_token=False, token_file_path=Defaults.TOKEN_FILE_PATH, sync_file_path=Defaults.SYNC_FILE_PATH, uri=self.config.uri, discovery_uri=self.config.discovery_uri)
+        try:
+            self.api = API(**self.api_kwargs)
+        except FailedToRefreshToken:
+            os.remove(Defaults.TOKEN_FILE_PATH)
+            self.api = API(**self.api_kwargs)
         self.screens = Queue()
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
@@ -103,6 +108,16 @@ class GUI(pe.GameContext):
         self.original_screen_refresh_surface: pe.Surface = None
         self.fake_screen_refresh_surface: pe.Surface = None
         self.last_screen_count = 1
+
+    @property
+    def api_kwargs(self):
+        return {
+            'require_token': False,
+            'token_file_path': Defaults.TOKEN_FILE_PATH,
+            'sync_file_path': Defaults.SYNC_FILE_PATH,
+            'uri': self.config.uri,
+            'discovery_uri': self.config.discovery_uri
+        }
 
     def pre_loop(self):
         if self.config.enable_fake_screen_refresh and (len(

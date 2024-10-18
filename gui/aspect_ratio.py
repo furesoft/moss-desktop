@@ -15,6 +15,10 @@ class Ratios:
         # GENERAL
         self.bottom_loading_bar_height = int(40 * scale)
 
+        # DEBUG
+        self.small_debug_text_size = int(10 * scale)
+        self.debug_text_size = int(20 * scale)
+
         # LOADER
         self.loader_logo_text_size = int(50 * scale)
         self.loader_loading_bar_width = int(200 * scale)

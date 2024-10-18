@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict
 import pygameextra as pe
 
 from gui.defaults import Defaults
-from gui.pp_helpers import FullTextPopup
+from gui.pp_helpers import FullTextPopup, DocumentDebugPopup
 from gui.viewer import DocumentViewer
 
 if TYPE_CHECKING:
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from rm_api.models import DocumentCollection
     from rm_api.models import Document
     from queue import Queue
+
 
 def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
     pe.draw.rect(Defaults.LINE_GRAY, rect, gui.ratios.pixel(3))
@@ -63,7 +64,13 @@ def open_document(gui: 'GUI', document_uuid: str):
     gui.screens.put(DocumentViewer(gui, document_uuid))
 
 
+def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
+    DocumentDebugPopup.create(gui, document, position)()
+
+
 def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
+    # Check if the document is being debugged and keep the debug menu open
+
     title_text = texts[document.uuid]
 
     title_text.rect.topleft = rect.bottomleft
@@ -110,7 +117,6 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
     notebook_large_rect.center = rect.center
     notebook_large.display(notebook_large_rect.topleft)
 
-
     # Render the passive outline
     pe.draw.rect(
         Defaults.DOCUMENT_GRAY,
@@ -125,9 +131,35 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
         data=data,
         disabled=disabled
     )
+    if gui.config.debug and (popup := DocumentDebugPopup.EXISTING.get(id(document))) is not None:
+        open_document_debug_menu(gui, document, rect.topleft)
+    elif gui.config.debug:
+        debug_text = pe.Text(
+            'DEBUG',
+            Defaults.DEBUG_FONT,
+            gui.ratios.small_debug_text_size,
+            colors=Defaults.TEXT_COLOR_H
+        )
+        # Inflate a rect around the debug text
+        inflated_rect = debug_text.rect.inflate(gui.ratios.pixel(20), gui.ratios.pixel(20))
+        inflated_rect.topright = rect.topright
+        debug_text.rect.center = inflated_rect.center
 
+        def draw_debug_background():
+            # Draw the original_background
+            pe.draw.rect(Defaults.BUTTON_ACTIVE_COLOR, rect)
+            # Draw a background for the debug button
+            pe.draw.rect(pe.colors.darkgray, inflated_rect)
 
+        pe.button.action(
+            inflated_rect,
+            hover_draw_action=draw_debug_background,
+            name=document.uuid + '_debug',
+            action=open_document_debug_menu,
+            data=(gui, document, rect.topleft)
+        )
 
+        debug_text.display()
 
 
 def render_button_using_text(

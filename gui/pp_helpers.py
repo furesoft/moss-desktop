@@ -2,9 +2,19 @@
 PP stands for Post Processing
 This script contains small child contexts to render on top of everything else
 """
+import os
+import shutil
 import time
+from typing import TYPE_CHECKING
 
 import pygameextra as pe
+
+from gui.defaults import Defaults
+from rm_api.storage.v3 import get_file_contents
+
+if TYPE_CHECKING:
+    from gui.aspect_ratio import Ratios
+    from gui import GUI
 
 
 class FullTextPopup(pe.ChildContext):
@@ -49,6 +59,95 @@ class FullTextPopup(pe.ChildContext):
         else:
             del cls.EXISTING[id(text)]
             return cls.create(parent, text, referral_text)
+
+
+class DocumentDebugPopup(pe.ChildContext):
+    LAYER = pe.AFTER_LOOP_LAYER
+    EXISTING = {}
+
+    ratios: 'Ratios'
+    TEXTS = [
+        "Extract files",
+        "Close"
+    ]
+
+    def __init__(self, parent: 'GUI', document: 'Document', position):
+        self.document = document
+        self.position = position
+        self.used_at = time.time()
+        self.popup_rect = pe.Rect(*position, parent.ratios.main_menu_document_width, parent.ratios.main_menu_document_height)
+        self.popup_rect.clamp_ip(pe.Rect(0, 0, *parent.size))
+        self.button_actions = {
+            'extract': self.extract_files,
+            'close': self.close
+        }
+        self.texts = [
+            pe.Text(
+                text,
+                Defaults.DEBUG_FONT, parent.ratios.debug_text_size,
+                colors=Defaults.TEXT_COLOR_H
+            )
+            for text in self.TEXTS
+        ]
+        super().__init__(parent)
+
+    def pre_loop(self):
+        pe.draw.rect((0, 0, 0, 100), self.popup_rect, 0)
+
+    def loop(self):
+        x = self.popup_rect.left
+        y = self.popup_rect.top
+        h = self.popup_rect.height // len(self.button_actions)
+        for (item, action), text in zip(
+            self.button_actions.items(),
+            self.texts
+        ):
+            pe.button.rect(
+                (x, y, self.popup_rect.width, h),
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=action,
+                text=text
+            )
+            y += h
+
+
+    def post_loop(self):
+        pe.draw.rect(pe.colors.brown, self.popup_rect, self.ratios.pixel(3))
+        self.used_at = time.time()
+
+    @classmethod
+    def create(cls, parent: 'GUI', document: 'Document', position):
+        key = id(document)
+        if cls.EXISTING.get(key) is None:
+            cls.EXISTING.clear()
+            cls.EXISTING[key] = cls(parent, document, position)
+            return cls.EXISTING[key]
+        if time.time() - cls.EXISTING[key].used_at < .05:
+            return cls.EXISTING[key]
+        else:
+            cls.EXISTING.clear()
+            return cls.create(parent, document, position)
+
+    def close(self):
+        self.EXISTING.clear()
+
+    def extract_files(self):
+        save_location = os.path.join(Defaults.SYNC_FILE_PATH, self.document.parent, self.document.uuid+'_extract')
+        if os.path.isdir(save_location):
+            shutil.rmtree(save_location, ignore_errors=True)
+        os.makedirs(save_location, exist_ok=True)
+        for file in self.document.files:
+            # Fetch the file
+            data: bytes = get_file_contents(self.api, file.hash, binary=True)
+            file_path = os.path.join(save_location, file.uuid.replace(f'{self.document.uuid}/', ''))
+
+            # Save the file
+            with open(file_path, 'wb') as f:
+                f.write(data)
+        with open(os.path.join(save_location, f'$ {self.document.metadata.visible_name}'), 'w') as f:
+            f.write('')
+
+
 
 
 class DraggablePuller(pe.ChildContext):

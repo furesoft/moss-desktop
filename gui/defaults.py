@@ -77,11 +77,13 @@ class Defaults:
     LOGO_FONT = CUSTOM_FONT_BOLD
     MAIN_MENU_FONT = CUSTOM_FONT_BOLD
     CODE_FONT = MONO_FONT
+    DEBUG_FONT = MONO_FONT
 
     TEXT_COLOR = (pe.colors.black, pe.colors.white)
-    DOCUMENT_TITLE_COLOR = ((20, 20, 20), pe.colors.white)
-    DOCUMENT_SUBTITLE_COLOR = ((100, 100, 100), pe.colors.white)
+    DOCUMENT_TITLE_COLOR = ((20, 20, 20), TEXT_COLOR[1])
+    DOCUMENT_SUBTITLE_COLOR = ((100, 100, 100), TEXT_COLOR[1])
     TEXT_COLOR_T = (TEXT_COLOR[0], None)
+    TEXT_COLOR_H = (TEXT_COLOR[1], None)
     CODE_COLOR = ((120, 120, 120), None)
     LINE_GRAY = (88, 88, 88)
     DOCUMENT_GRAY = (184, 184, 184)
