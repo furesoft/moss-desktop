@@ -10,7 +10,10 @@ if TYPE_CHECKING:
 def get_document_storage_uri(api: 'API'):
     response = api.session.get(DOCUMENT_STORAGE_URL.format(api.discovery_uri))
     host = response.json().get("Host")
-    if not api.session.get(f"https://{host}/sync/v3/root").ok:
+    if host == 'local.appspot.com':
+        host = api.uri.split("://")[1].split("/")[0]
+    root_response = api.session.get(f"https://{host}/sync/v3/root")
+    if not root_response.ok:
         api.use_new_sync = True
         return None
     return host
@@ -19,4 +22,6 @@ def get_document_storage_uri(api: 'API'):
 def get_document_notifications_uri(api: 'API'):
     response = api.session.get(DOCUMENT_NOTIFICATIONS_URL.format(api.discovery_uri))
     host = response.json().get("Host")
+    if host == 'local.appspot.com':
+        host = api.uri.split("://")[1].split("/")[0]
     return host

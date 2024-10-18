@@ -30,6 +30,7 @@ class ConfigDict(TypedDict):
     enable_fake_screen_refresh: bool
     wait_for_everything_to_load: bool
     uri: str
+    discovery_uri: str
     pdf_render_mode: PDF_RENDER_MODES
 
 
@@ -38,6 +39,7 @@ DEFAULT_CONFIG: ConfigDict = {
     # TODO: Fix the fact that disabling this, makes loading much slower
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
+    'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'pdf_render_mode': 'cef'
 }
 
@@ -83,12 +85,11 @@ class GUI(pe.GameContext):
     def __init__(self):
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
         super().__init__()
-        self.api = API(require_token=False, token_file_path=Defaults.TOKEN_FILE_PATH, sync_file_path=Defaults.SYNC_FILE_PATH)
+        self.config = load_config()
+        self.api = API(require_token=False, token_file_path=Defaults.TOKEN_FILE_PATH, sync_file_path=Defaults.SYNC_FILE_PATH, uri=self.config.uri, discovery_uri=self.config.discovery_uri)
         self.screens = Queue()
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
-        self.config = load_config()
-        self.api.uri = self.config.uri
         if self.api.token:
             self.screens.put(Loader(self))
         else:
