@@ -9,6 +9,7 @@ import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
 from gui.viewer.renderers.pdf.cef import PDF_CEF_Viewer
+
 try:
     import CEF4pygame
 
@@ -36,11 +37,17 @@ class DocumentRenderer(pe.ChildContext):
 
     config: 'ConfigType'
 
+    PAGE_NAVIGATION_DELAY = 0.2  # Initial button press delay
+    PAGE_NAVIGATION_SPEED = 0.1  # After initial button press delay
+
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
         self.loading = True
         self.began_loading = False
         self._error = None
+        self.hold_next = False
+        self.hold_previous = False
+        self.hold_timer = 0
 
         self.loading_rect = pe.Rect(
             0, 0,
@@ -76,17 +83,44 @@ class DocumentRenderer(pe.ChildContext):
         self.loading = False
 
     def handle_navigation(self, event):
-        next_page = any([
-            pe.event.key_DOWN(key)
-            for key in Defaults.NAVIGATION_KEYS['next']
-        ])
-        previous_page = any([
-            pe.event.key_DOWN(key)
-            for key in Defaults.NAVIGATION_KEYS['previous']
-        ])
-        if next_page and self.renderer.page < self.renderer.page_count:
+        if not self.hold_timer:
+            if any([
+                pe.event.key_DOWN(key)
+                for key in Defaults.NAVIGATION_KEYS['next']
+            ]):
+                self.hold_next = True
+                self.hold_timer = time.time() + self.PAGE_NAVIGATION_DELAY
+                self.do_next()
+            if any([
+                pe.event.key_DOWN(key)
+                for key in Defaults.NAVIGATION_KEYS['previous']
+            ]):
+                self.hold_previous = True
+                self.hold_timer = time.time() + self.PAGE_NAVIGATION_DELAY
+                self.do_previous()
+        else:
+            if any([
+                pe.event.key_UP(key)
+                for key in Defaults.NAVIGATION_KEYS['next'] + Defaults.NAVIGATION_KEYS['previous']
+            ]):
+                self.hold_next = False
+                self.hold_previous = False
+                self.hold_timer = None
+
+    @property
+    def can_do_next(self):
+        return self.renderer.page < self.renderer.page_count
+
+    @property
+    def can_do_previous(self):
+        return self.renderer.page > 0
+
+    def do_next(self):
+        if self.can_do_next:
             self.renderer.next()
-        elif previous_page and self.renderer.page > 0:
+
+    def do_previous(self):
+        if self.can_do_previous:
             self.renderer.previous()
 
     def handle_event(self, event):
@@ -141,6 +175,13 @@ class DocumentRenderer(pe.ChildContext):
     def post_loop(self):
         if self.error:
             self.error.display()
+        if self.hold_timer and time.time() > self.hold_timer:
+            if self.hold_next:
+                self.do_next()
+            elif self.hold_previous:
+                self.do_previous()
+            self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
+
 
 
 class DocumentViewer(pe.ChildContext):
@@ -196,5 +237,7 @@ class DocumentViewer(pe.ChildContext):
 
         # Draw the outline, the line and the arrow icon
         pe.draw.rect(pe.colors.white, outline_rect)
-        pe.draw.line(Defaults.LINE_GRAY, (x_pos := self.top_puller.rect.centerx-self.ratios.pixel(2), self.top_puller.rect.centery), (x_pos, icon_rect.centery), self.ratios.pixel(3))
+        pe.draw.line(Defaults.LINE_GRAY,
+                     (x_pos := self.top_puller.rect.centerx - self.ratios.pixel(2), self.top_puller.rect.centery),
+                     (x_pos, icon_rect.centery), self.ratios.pixel(3))
         icon.display(icon_rect.topleft)

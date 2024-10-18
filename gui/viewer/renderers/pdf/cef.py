@@ -15,9 +15,10 @@ class PDF_CEF_Viewer(AbstractRenderer):
 
     def __init__(self, document_renderer):
         super().__init__(document_renderer)
-        self.pdf = None
+        self.pdf: CEFpygame = None
         self.injected_js = False
         self.js_code = None
+        self.url_should_be = None
     
     @property
     @lru_cache
@@ -66,27 +67,33 @@ class PDF_CEF_Viewer(AbstractRenderer):
             run = 0
         if event.type == pe.pygame.MOUSEMOTION:
             browser.motion_at(*event.pos)
-        if event.type == pe.pygame.MOUSEBUTTONDOWN:
+
+        # Prevent right-click context menu
+        if event.type == pe.pygame.MOUSEBUTTONDOWN and event.button == 1:
             browser.mousedown_at(*event.pos, event.button)
-        if event.type == pe.pygame.MOUSEBUTTONUP:
+        if event.type == pe.pygame.MOUSEBUTTONUP and event.button == 1:
             browser.mouseup_at(*event.pos, event.button)
-        if event.type == pe.pygame.KEYDOWN:
-            browser.keydown(event.key)
-        if event.type == pe.pygame.KEYUP:
-            browser.keyup(event.key)
 
     def render(self):
         if not self.pdf:
             return
-        if self.pdf.image.get_at((0, 0))[2] != 51:
+        if self.url_should_be:
+            if self.pdf.browser.GetUrl() != self.url_should_be:
+                self.close()
+                self.document_renderer.load()
+                return
             if not self.injected_js:
                 self.pdf.browser.ExecuteJavascript(self.js_code)
                 self.injected_js = True
             pe.display.blit(self.pdf.image)
+        elif (url := self.pdf.browser.GetUrl()) and self.pdf.image.get_at((0, 0))[2] != 51:
+            self.url_should_be = url
+        else:
+            _ = self.pdf.image
 
     def close(self):
         if self.pdf:
-            self.pdf.browser.CloseBrowser()
+            self.pdf.exit_app()
 
     def next(self):
         if self.pdf:
