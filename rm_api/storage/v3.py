@@ -34,12 +34,12 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
         return response.text
 
 @lru_cache
-def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False) -> Union[str, None, dict]:
+def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
     if api.sync_file_path:
         location = os.path.join(api.sync_file_path, file)
     else:
         location = None
-    if location and os.path.exists(location):
+    if use_cache and location and os.path.exists(location):
         if binary:
             with open(location, 'rb') as f:
                 return f.read()
@@ -78,8 +78,8 @@ def get_file(api: 'API', file) -> Tuple[int, List['File']]:
     return version, [models.File.from_line(line) for line in lines]
 
 
-def get_file_contents(api: 'API', file, binary: bool = False) -> Union[str, None, dict]:
-    return make_files_request(api, "GET", file, binary=binary)
+def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
+    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache)
 
 
 def get_documents_using_root(api: 'API', progress, root):

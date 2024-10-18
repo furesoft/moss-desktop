@@ -138,7 +138,7 @@ class DocumentDebugPopup(pe.ChildContext):
         os.makedirs(save_location, exist_ok=True)
         for file in self.document.files:
             # Fetch the file
-            data: bytes = get_file_contents(self.api, file.hash, binary=True)
+            data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
             file_path = os.path.join(save_location, file.uuid.replace(f'{self.document.uuid}/', ''))
 
             # Save the file
