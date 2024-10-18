@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Dict
 
 import pygameextra as pe
 
+from rm_api.notifications.models import SyncRefresh
+
 from .defaults import Defaults
 from .helpers import shorten_name, shorten_path, shorten_folder, shorten_document
 from .rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
@@ -116,6 +118,9 @@ class MainMenu(pe.ChildContext):
         if self.current_sorting_reverse:
             return reversed(documents)
         return documents
+    
+    def refresh(self):
+        self.api.spread_event(SyncRefresh())
 
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
@@ -159,6 +164,8 @@ class MainMenu(pe.ChildContext):
             if i % 4 == 3:
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
+        if self.config.debug:
+            pe.button.rect((0, 0, self.ratios.main_menu_top_height, self.ratios.main_menu_top_height), (0, 0, 0, 20), (255, 0, 0, 50), action=self.refresh)
 
     def post_loop(self):
         loader: 'Loader' = self.parent_context.screens.queue[0]

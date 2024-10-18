@@ -32,6 +32,7 @@ class ConfigDict(TypedDict):
     uri: str
     discovery_uri: str
     pdf_render_mode: PDF_RENDER_MODES
+    debug: bool
 
 
 DEFAULT_CONFIG: ConfigDict = {
@@ -40,7 +41,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
-    'pdf_render_mode': 'cef'
+    'pdf_render_mode': 'cef',
+    'debug': False
 }
 
 ConfigType = Box[ConfigDict]
