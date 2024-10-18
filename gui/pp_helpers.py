@@ -137,7 +137,7 @@ class DocumentDebugPopup(pe.ChildContext):
     @property
     @lru_cache
     def extract_location(self):
-        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent), self.document.uuid+'_extract')
+        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent), self.document.uuid)
 
     def clean_extract_location(self):
         if os.path.isdir(self.extract_location):
