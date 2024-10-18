@@ -4,7 +4,6 @@ from typing import List, TYPE_CHECKING
 
 from colorama import Fore
 
-from rm_api.storage import TEMP
 from rm_api.storage.v3 import get_file_contents
 
 if TYPE_CHECKING:
@@ -161,7 +160,9 @@ class Document:
             callback()
 
     def check_files_availability(self):
-        return {file.uuid: file for file in self.files if os.path.exists(os.path.join(TEMP, file.hash))}
+        if not self.api.sync_file_path:
+            return {}
+        return {file.uuid: file for file in self.files if os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
 
     @property
     def parent(self):

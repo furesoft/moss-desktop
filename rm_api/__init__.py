@@ -18,11 +18,15 @@ class API:
     document_collections: Dict[str, DocumentCollection]
     documents: Dict[str, Document]
 
-    def __init__(self, require_token: bool = True):
+    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync'):
         self.session = requests.Session()
+        self.token_file_path = token_file_path
         self.uri = os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
         self.discovery_uri = os.environ.get("DISCOVERY_URI",
                                             "https://service-manager-production-dot-remarkable-production.appspot.com/")
+        self.sync_file_path = sync_file_path
+        if self.sync_file_path is not None:
+            os.makedirs(self.sync_file_path, exist_ok=True)
         self.document_storage_uri = None
         self.document_notifications_uri = None
         self._hook_list = {}  # Used for event hooks
@@ -40,8 +44,8 @@ class API:
             self.discovery_uri += "/"
         token = os.environ.get("TOKEN")
         if token is None:
-            if os.path.exists("token"):
-                self.token = open("token").read()
+            if os.path.exists(self.token_file_path):
+                self.token = open(self.token_file_path).read()
             else:
                 self.get_token()
         else:

@@ -1,0 +1,48 @@
+on:
+  push:
+    branches:
+      - main
+      - action-testing
+
+env:
+  APP_NAME: "Moss Desktop"
+
+jobs:
+  cef-build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-latest ]#, ubuntu-latest, macos-latest ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: requirements-${{ runner.os }}.txt
+
+      - name: Build
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: factory
+          script-name: run_gui.py
+          standalone: true
+          onefile: true
+          disable-console: ${{ github.ref == 'refs/heads/main' }}
+          macos-create-app-bundle: true
+          deployment: ${{ github.ref == 'refs/heads/main' }}
+          include-data-dir: |
+            assets=assets
+          include-data-files: |
+            LICENSE=LICENSE
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }} ${{ runner.os }}
+          path: |
+            build/run_gui.exe
+            build/run_gui.bin
+            build/run_gui.app

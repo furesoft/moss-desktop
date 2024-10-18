@@ -9,6 +9,7 @@ from box import Box
 from colorama import Fore
 
 from .code_screen import CodeScreen
+from .defaults import Defaults
 
 try:
     from CEF4pygame import CEFpygame
@@ -82,7 +83,7 @@ class GUI(pe.GameContext):
     def __init__(self):
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
         super().__init__()
-        self.api = API(require_token=False)
+        self.api = API(require_token=False, token_file_path=Defaults.TOKEN_FILE_PATH, sync_file_path=Defaults.SYNC_FILE_PATH)
         self.screens = Queue()
         self.ratios = Ratios(self.SCALE)
         self.icons = {}

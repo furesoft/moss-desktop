@@ -40,7 +40,7 @@ def get_token(api: 'API', code: str = None):
         else:
             raise FailedToGetToken("Could not get token")
 
-    with open("token", "w") as f:
+    with open(api.token_file_path, "w") as f:
         f.write(response.text)
 
     return response.text

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-TEMP = "sync"
 DOCUMENT_STORAGE_URL = "{0}service/json/1/document-storage?environment=production&group=auth0%7C5a68dc51cb30df3877a1d7c4&apiVer=2"
 DOCUMENT_NOTIFICATIONS_URL = "{0}service/json/1/notifications?environment=production&group=auth0%7C5a68dc51cb30df3877a1d7c4&apiVer=1"
 
