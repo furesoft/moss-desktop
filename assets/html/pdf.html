@@ -79,6 +79,22 @@
 
     }
 
+    nextPage = function () {
+        pdfSinglePageViewer.currentPageNumber++;
+    }
+
+    previousPage = function () {
+        pdfSinglePageViewer.currentPageNumber--;
+    }
+
+    getNumberOfPages = function () {
+        return pdfSinglePageViewer.pagesCount;
+    }
+
+    getCurrentPage = function () {
+        return pdfSinglePageViewer.currentPageNumber;
+    }
+
     loadPdf = function (pdfData, width, height) {
         console.log('Loading PDF');
         window.pdf_width = width;

@@ -90,3 +90,9 @@ class Defaults:
 
     # Colors
     RED = (255, 50, 50)
+
+    # Key bindings
+    NAVIGATION_KEYS = {
+        "next": [pe.K_RIGHT],
+        "previous": [pe.K_LEFT],
+    }

@@ -39,6 +39,7 @@ class DocumentRenderer(pe.ChildContext):
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
         self.loading = True
+        self.began_loading = False
         self._error = None
 
         self.loading_rect = pe.Rect(
@@ -56,8 +57,8 @@ class DocumentRenderer(pe.ChildContext):
         self.loading_timer = time.time()
 
         self.mode = 'nocontent'
+        self.renderer = None
         super().__init__(parent)
-        self.load()
 
     @property
     def error(self):
@@ -74,8 +75,25 @@ class DocumentRenderer(pe.ChildContext):
         )
         self.loading = False
 
+    def handle_navigation(self, event):
+        next_page = any([
+            pe.event.key_DOWN(key)
+            for key in Defaults.NAVIGATION_KEYS['next']
+        ])
+        previous_page = any([
+            pe.event.key_DOWN(key)
+            for key in Defaults.NAVIGATION_KEYS['previous']
+        ])
+        if next_page and self.renderer.page < self.renderer.page_count:
+            self.renderer.next()
+        elif previous_page and self.renderer.page > 0:
+            self.renderer.previous()
+
     def handle_event(self, event):
+        if self.loading or not self.renderer:
+            return
         self.renderer.handle_event(event)
+        self.handle_navigation(event)
 
     def load(self):
         if self.document.content['fileType'] == 'pdf':
@@ -92,6 +110,9 @@ class DocumentRenderer(pe.ChildContext):
         self.loading = False
 
     def pre_loop(self):
+        if not self.began_loading:
+            self.load()
+            self.began_loading = True
         # Draw the loading icon
         if self.loading:
             pe.draw.rect(pe.colors.black, self.loading_rect)
@@ -109,12 +130,13 @@ class DocumentRenderer(pe.ChildContext):
                 self.loading_timer = time.time()
 
     def loop(self):
-        if self.loading:
+        if self.loading or not self.renderer:
             return
         self.renderer.render()
 
     def close(self):
-        self.renderer.close()
+        if self.renderer:
+            self.renderer.close()
 
     def post_loop(self):
         if self.error:

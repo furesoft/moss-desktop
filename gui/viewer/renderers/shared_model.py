@@ -47,3 +47,20 @@ class AbstractRenderer(ABC):
     @abstractmethod
     def close(self):
         ...
+
+    @abstractmethod
+    def next(self):
+        ...
+
+    @abstractmethod
+    def previous(self):
+        ...
+
+    @property
+    @abstractmethod
+    def page(self):
+        ...
+    @property
+    @abstractmethod
+    def page_count(self):
+        ...

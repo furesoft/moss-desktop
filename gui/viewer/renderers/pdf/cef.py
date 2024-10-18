@@ -1,6 +1,8 @@
 import base64
 from functools import lru_cache
 import os
+import threading
+import time
 import pygameextra as pe
 from CEF4pygame import CEFpygame
 
@@ -9,6 +11,8 @@ from ..shared_model import AbstractRenderer
 
 
 class PDF_CEF_Viewer(AbstractRenderer):
+    PDF_HTML = os.path.join(Defaults.HTML_DIR, 'pdf.html')
+
     def __init__(self, document_renderer):
         super().__init__(document_renderer)
         self.pdf = None
@@ -25,17 +29,20 @@ class PDF_CEF_Viewer(AbstractRenderer):
             return None
 
     def load(self):
-        pdf_html = os.path.join(Defaults.HTML_DIR, 'pdf.html')
-        pdf_raw = self.pdf_raw
-        if not pdf_raw:
+        if not self.pdf_raw:
             return
-        url = f'{os.path.abspath(pdf_html)}'
-        self.pdf = CEFpygame(
-            URL=url,
-            VIEWPORT_SIZE=self.size
-        )
+        url = f'{os.path.abspath(self.PDF_HTML)}'
+        try:
+            self.pdf = CEFpygame(
+                URL=url,
+                VIEWPORT_SIZE=self.size
+            )
+        except AssertionError:
+            self.error = 'CEF not available, try restarting the application'
+            return
+
         # Convert the PDF data to base64
-        base64_pdf = base64.b64encode(pdf_raw).decode('utf-8').replace('\n', '')
+        base64_pdf = base64.b64encode(self.pdf_raw).decode('utf-8').replace('\n', '')
 
         # Send the PDF data to JavaScript
         self.js_code = f"""
@@ -80,3 +87,19 @@ class PDF_CEF_Viewer(AbstractRenderer):
     def close(self):
         if self.pdf:
             self.pdf.browser.CloseBrowser()
+
+    def next(self):
+        if self.pdf:
+            self.pdf.browser.ExecuteJavascript('window.nextPage()')
+
+    def previous(self):
+        if self.pdf:
+            self.pdf.browser.ExecuteJavascript('window.previousPage()')
+
+    @property
+    def page(self):
+        return 1
+    
+    @property
+    def page_count(self):
+        return 10
