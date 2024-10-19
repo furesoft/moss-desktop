@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from gui import GUI
     from gui.viewer.viewer import DocumentRenderer
 
+
 class AbstractRenderer(ABC):
     def __init__(self, document_renderer: 'DocumentRenderer'):
         self.document_renderer = document_renderer
@@ -15,7 +16,7 @@ class AbstractRenderer(ABC):
     @property
     def error(self):
         return self.document_renderer.error
-    
+
     @error.setter
     def error(self, value):
         self.document_renderer.error = value
@@ -23,15 +24,15 @@ class AbstractRenderer(ABC):
     @property
     def size(self):
         return self.document_renderer.size
-    
+
     @property
     def width(self):
         return self.document_renderer.width
-    
+
     @property
     def height(self):
         return self.document_renderer.height
-    
+
     @abstractmethod
     def load(self):
         ...
@@ -41,26 +42,9 @@ class AbstractRenderer(ABC):
         ...
 
     @abstractmethod
-    def render(self):
+    def render(self, page_uuid: str):
         ...
 
     @abstractmethod
     def close(self):
-        ...
-
-    @abstractmethod
-    def next(self):
-        ...
-
-    @abstractmethod
-    def previous(self):
-        ...
-
-    @property
-    @abstractmethod
-    def page(self):
-        ...
-    @property
-    @abstractmethod
-    def page_count(self):
         ...

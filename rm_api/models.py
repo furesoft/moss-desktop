@@ -82,6 +82,18 @@ class CPages:
         self.last_opened = TimestampedValue(c_pages['lastOpened'])
         self.uuids = c_pages['uuids']
 
+    def get_index_from_uuid(self, uuid: str):
+        for i, page in enumerate(self.pages):
+            if page.id == uuid:
+                return i
+        return None
+
+    def get_page_from_uuid(self, uuid: str):
+        for page in self.pages:
+            if page.id == uuid:
+                return page
+        return None
+
 
 class Content:
     """

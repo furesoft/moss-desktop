@@ -64,7 +64,10 @@ class DocumentRenderer(pe.ChildContext):
         self.loading_timer = time.time()
 
         self.mode = 'nocontent'
+        self.last_opened_uuid = self.document.content.c_pages.last_opened.value
+        self.current_page_index = self.document.content.c_pages.get_index_from_uuid(self.last_opened_uuid) or 0
         self.renderer = None
+
         super().__init__(parent)
 
     @property
@@ -109,19 +112,22 @@ class DocumentRenderer(pe.ChildContext):
 
     @property
     def can_do_next(self):
-        return self.renderer.page < self.renderer.page_count
+        # Technically if there are no more pages
+        # we can make a new blank page
+        # TODO: Implement creating new blank pages on next
+        return True
 
     @property
     def can_do_previous(self):
-        return self.renderer.page > 0
+        return self.current_page_index > 0
 
     def do_next(self):
         if self.can_do_next:
-            self.renderer.next()
+            self.current_page_index += 1
 
     def do_previous(self):
         if self.can_do_previous:
-            self.renderer.previous()
+            self.current_page_index -= 1
 
     def handle_event(self, event):
         if self.loading or not self.renderer:
@@ -164,9 +170,11 @@ class DocumentRenderer(pe.ChildContext):
                 self.loading_timer = time.time()
 
     def loop(self):
+        page = self.document.content.c_pages.pages[self.current_page_index]
+
         if self.loading or not self.renderer:
             return
-        self.renderer.render()
+        self.renderer.render(page.id)
 
     def close(self):
         if self.renderer:
@@ -181,7 +189,6 @@ class DocumentRenderer(pe.ChildContext):
             elif self.hold_previous:
                 self.do_previous()
             self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
-
 
 
 class DocumentViewer(pe.ChildContext):
