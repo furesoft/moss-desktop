@@ -129,6 +129,9 @@ def toposort_items(items: Iterable[CrdtSequenceItem]) -> Iterable[CrdtId]:
 
     while True:
         next_items = {item for item, deps in data.items() if not deps}
+        if not next_items:
+            # Skips over the assert below, in most cases this is not a problem
+            return
         if next_items == {"__end"}:
             break
         assert next_items

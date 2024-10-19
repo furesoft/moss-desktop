@@ -25,6 +25,7 @@ from .main_menu import MainMenu
 pe.init()
 
 PDF_RENDER_MODES = Literal['cef']
+NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
 
 class ConfigDict(TypedDict):
@@ -33,6 +34,7 @@ class ConfigDict(TypedDict):
     uri: str
     discovery_uri: str
     pdf_render_mode: PDF_RENDER_MODES
+    notebook_render_mode: NOTEBOOK_RENDER_MODES
     debug: bool
 
 
@@ -43,6 +45,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'pdf_render_mode': 'cef',
+    'notebook_render_mode': 'rm_lines_svg_inker',
     'debug': False
 }
 

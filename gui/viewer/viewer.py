@@ -8,8 +8,10 @@ from logging import lastResort
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
+from colorama import Fore
+
 from gui.viewer.renderers.pdf.cef import PDF_CEF_Viewer
-from .renderers.notebook.rm_lines import NotebookRenderer
+from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
 
 try:
     import CEF4pygame
@@ -69,7 +71,11 @@ class DocumentRenderer(pe.ChildContext):
         self.current_page_index = self.document.content.c_pages.get_index_from_uuid(self.last_opened_uuid) or 0
         self.renderer = None
         super().__init__(parent)
-        self.notebook_renderer = NotebookRenderer(self)
+        if self.config.notebook_render_mode == 'rm_lines_svg_inker':
+            self.notebook_renderer = Notebook_rM_Lines_Renderer(self)
+        else:
+            self.close()
+            print(f"{Fore.RED}Notebook render mode `{self.config.notebook_render_mode}` unavailable{Fore.RESET}")
 
     @property
     def error(self):
@@ -132,6 +138,9 @@ class DocumentRenderer(pe.ChildContext):
 
     def handle_event(self, event):
         if self.loading:
+            self.hold_next = False
+            self.hold_previous = False
+            self.hold_timer = None
             return
         if self.renderer:
             self.renderer.handle_event(event)
