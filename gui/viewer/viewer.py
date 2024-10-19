@@ -58,9 +58,9 @@ class DocumentRenderer(pe.ChildContext):
         self.loading_rect.center = parent.center
 
         split = self.loading_rect.width // 3
-        self.first_dot = self.loading_rect.x + split * 0.5
+        self.first_dot = self.loading_rect.x + split * 0.95
         self.second_dot = self.loading_rect.x + split * 1.5
-        self.third_dot = self.loading_rect.x + split * 2.5
+        self.third_dot = self.loading_rect.x + split * 2.05
 
         self.loading_timer = time.time()
 
