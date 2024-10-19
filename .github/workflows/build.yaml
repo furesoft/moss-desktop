@@ -33,6 +33,7 @@ jobs:
           disable-console: ${{ github.ref == 'refs/heads/main' }}
           macos-create-app-bundle: true
           deployment: ${{ github.ref == 'refs/heads/main' }}
+          report: compilation-report.xml
           include-data-dir: |
             assets=assets
           include-data-files: |
@@ -46,3 +47,4 @@ jobs:
             build/run_gui.exe
             build/run_gui.bin
             build/run_gui.app
+            compilation-report.xml
