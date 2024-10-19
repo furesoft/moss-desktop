@@ -60,10 +60,14 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
         threading.Thread(target=self._load, args=(page_uuid,), daemon=True).start()
 
     @staticmethod
-    def generate_image_from_rm(content: bytes):
+    def generate_image_from_rm(content: bytes, use_lock: threading.Lock = None) -> pe.Image:
         try:
             svg: str = rm_bytes_to_svg(content)
-            image = pe.Image(BytesIO(svg.encode("utf-8")))
+            if use_lock:
+                with use_lock:
+                    image = pe.Image(BytesIO(svg.encode("utf-8")))
+            else:
+                image = pe.Image(BytesIO(svg.encode("utf-8")))
         except Exception as e:
             print_exc()
             return None

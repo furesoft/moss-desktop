@@ -4,6 +4,7 @@ import pygameextra as pe
 
 from gui.defaults import Defaults
 from gui.pp_helpers import FullTextPopup, DocumentDebugPopup
+from gui.preview_handler import PreviewHandler
 from gui.viewer import DocumentViewer
 
 if TYPE_CHECKING:
@@ -92,6 +93,16 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
         disabled=disabled
     )
 
+    # Render the notebook icon
+    preview = PreviewHandler.get_preview(document, rect.size)
+    if not preview:
+        notebook_large = gui.icons['notebook_large']
+        notebook_large_rect = pe.Rect(0, 0, *notebook_large.size)
+        notebook_large_rect.center = rect.center
+        notebook_large.display(notebook_large_rect.topleft)
+    else:
+        preview.display(rect.topleft)
+
     # Render the availability cloud icon
     if not document.available:
         if document.downloading:
@@ -111,12 +122,6 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
 
         pe.draw.rect(pe.colors.white, cloud_icon_padded_rect)  # Give the cloud icon a white background with padding
         cloud_icon.display(cloud_icon_rect.topleft)
-
-    # Render the notebook icon
-    notebook_large = gui.icons['notebook_large']
-    notebook_large_rect = pe.Rect(0, 0, *notebook_large.size)
-    notebook_large_rect.center = rect.center
-    notebook_large.display(notebook_large_rect.topleft)
 
     # Render the passive outline
     pe.draw.rect(
