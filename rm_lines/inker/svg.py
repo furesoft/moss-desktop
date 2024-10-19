@@ -25,7 +25,7 @@ SCREEN_WIDTH = 1404
 SCREEN_HEIGHT = 1872
 SCREEN_DPI = 226
 
-SCALE = 72.0 / SCREEN_DPI
+SCALE = 100 / SCREEN_DPI
 
 PAGE_WIDTH_PT = SCREEN_WIDTH * SCALE
 PAGE_HEIGHT_PT = SCREEN_HEIGHT * SCALE
@@ -45,10 +45,16 @@ LINE_HEIGHTS = {
     # Tuned this line height using template grid -- it definitely seems to be
     # 71, rather than 70 or 72. Note however that it does interact a bit with
     # the initial text y-coordinate below.
+    ParagraphStyle.BASIC: 100,
     ParagraphStyle.PLAIN: 71,
-    ParagraphStyle.BULLET: 35,
-    ParagraphStyle.BOLD: 70,
     ParagraphStyle.HEADING: 150,
+    ParagraphStyle.BOLD: 70,
+    ParagraphStyle.BULLET: 35,
+    ParagraphStyle.BULLET2: 35,
+    ParagraphStyle.CHECKBOX: 100,
+    ParagraphStyle.CHECKBOX_CHECKED: 100,
+
+
 
     # There appears to be another format code (value 0) which is used when the
     # text starts far down the page, which case it has a negative offset (line
@@ -213,18 +219,26 @@ def draw_text(text: Union[Text, TextDocument], output, anchor_pos):
     ''')
 
     y_offset = TEXT_TOP_Y
-    for fmt, line, ids in text.formatted_lines_with_ids():
+    pos_x = 0
+    pos_y = 0
+    for paragraph in text.contents:
+        fmt = paragraph.style.value
+        line = paragraph.contents[0].s if paragraph.contents else None
+        if line:
+            ids = paragraph.contents[0].i
+        else:
+            ids = []
         y_offset += LINE_HEIGHTS[fmt]
 
-        xpos = text.pos_x
-        ypos = text.pos_y + y_offset
+        pos_x
+        pos_y += y_offset
         cls = fmt.name.lower()
         if line:
             output.write(f'        <!-- Text line char_id: {ids[0]} -->\n')
-            output.write(f'        <text x="{xx(xpos)}" y="{yy(ypos)}" class="{cls}">{line.strip()}</text>\n')
+            output.write(f'        <text x="{xx(pos_x)}" y="{yy(pos_y)}" class="{cls}">{line.strip()}</text>\n')
 
         # Save y-coordinates of potential anchors
         for k in ids:
-            anchor_pos[k] = ypos
+            anchor_pos[k] = pos_y
 
     output.write('    </g>\n')

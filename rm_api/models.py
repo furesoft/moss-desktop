@@ -1,5 +1,6 @@
 import os.path
 import threading
+from functools import lru_cache
 from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict
 
 from colorama import Fore
@@ -88,6 +89,7 @@ class CPages:
                 return i
         return None
 
+    @lru_cache(maxsize=20)
     def get_page_from_uuid(self, uuid: str):
         for page in self.pages:
             if page.id == uuid:

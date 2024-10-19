@@ -7,12 +7,15 @@ import os
 import shutil
 import time
 from functools import lru_cache
+from traceback import print_exc
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
 
 from gui.defaults import Defaults
+
 from rm_api.storage.v3 import get_file_contents
+from rm_lines import rm_bytes_to_svg
 
 if TYPE_CHECKING:
     from gui.aspect_ratio import Ratios
@@ -70,6 +73,7 @@ class DocumentDebugPopup(pe.ChildContext):
     ratios: 'Ratios'
     TEXTS = [
         "Extract files",
+        "Render pages",
         "Close"
     ]
 
@@ -82,6 +86,7 @@ class DocumentDebugPopup(pe.ChildContext):
         self.popup_rect.clamp_ip(pe.Rect(0, 0, *parent.size))
         self.button_actions = {
             'extract': self.extract_files,
+            'render': self.render_pages,
             'close': self.close
         }
         self.texts = [
@@ -164,6 +169,24 @@ class DocumentDebugPopup(pe.ChildContext):
             # Save the file
             with open(file_path, 'wb') as f:
                 f.write(data)
+
+    def render_pages(self):
+        self.clean_extract_location()
+
+        for file in self.document.files:
+            if not file.uuid.endswith('.rm'):
+                continue
+            data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
+            file_path = os.path.join(self.extract_location, self.clean_file_uuid(file))+'.svg'
+
+            # Render and save
+            try:
+                svg: str = rm_bytes_to_svg(data)
+                with open(file_path, 'w') as f:
+                    f.write(svg)
+            except Exception as e:
+                print_exc()
+                pass
 
 
 class DraggablePuller(pe.ChildContext):

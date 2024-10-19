@@ -64,6 +64,7 @@ class PDF_CEF_Viewer(AbstractRenderer):
                 }}
             }})();
         """
+        self.document_renderer.loading -= 1
 
     def handle_event(self, event):
         browser = None

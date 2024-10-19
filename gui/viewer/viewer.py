@@ -9,6 +9,7 @@ import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
 from gui.viewer.renderers.pdf.cef import PDF_CEF_Viewer
+from .renderers.notebook.rm_lines import NotebookRenderer
 
 try:
     import CEF4pygame
@@ -42,7 +43,7 @@ class DocumentRenderer(pe.ChildContext):
 
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
-        self.loading = True
+        self.loading = 0
         self.began_loading = False
         self._error = None
         self.hold_next = False
@@ -67,8 +68,8 @@ class DocumentRenderer(pe.ChildContext):
         self.last_opened_uuid = self.document.content.c_pages.last_opened.value
         self.current_page_index = self.document.content.c_pages.get_index_from_uuid(self.last_opened_uuid) or 0
         self.renderer = None
-
         super().__init__(parent)
+        self.notebook_renderer = NotebookRenderer(self)
 
     @property
     def error(self):
@@ -83,7 +84,7 @@ class DocumentRenderer(pe.ChildContext):
             pe.Rect(0, 0, *self.size).center,
             Defaults.TEXT_COLOR
         )
-        self.loading = False
+        self.loading = 0
 
     def handle_navigation(self, event):
         if not self.hold_timer:
@@ -130,24 +131,29 @@ class DocumentRenderer(pe.ChildContext):
             self.current_page_index -= 1
 
     def handle_event(self, event):
-        if self.loading or not self.renderer:
+        if self.loading:
             return
-        self.renderer.handle_event(event)
+        if self.renderer:
+            self.renderer.handle_event(event)
         self.handle_navigation(event)
 
     def load(self):
         if self.document.content.file_type == 'pdf':
             if self.config.pdf_render_mode == 'cef' and CEFpygame:
+                self.loading += 1
                 self.renderer = PDF_CEF_Viewer(self)
             elif self.config.pdf_render_mode == 'none':
                 self.error = 'Could not render PDF'
             else:
                 self.error = 'Could not render PDF. Make sure you have a compatible PDF renderer'
+        elif self.document.content.file_type == 'notebook':
+            pass
         else:
             self.error = 'Unknown format. Could not render document'
         if self.renderer:
             self.renderer.load()
-        self.loading = False
+        self.loading += 1
+        self.notebook_renderer.load()
 
     def pre_loop(self):
         if not self.began_loading:
@@ -171,10 +177,14 @@ class DocumentRenderer(pe.ChildContext):
 
     def loop(self):
         page = self.document.content.c_pages.pages[self.current_page_index]
+        self.last_opened_uuid = page.id
 
-        if self.loading or not self.renderer:
+        if self.loading:
             return
-        self.renderer.render(page.id)
+
+        if self.renderer:
+            self.renderer.render(page.id)
+        self.notebook_renderer.render(page.id)
 
     def close(self):
         if self.renderer:
