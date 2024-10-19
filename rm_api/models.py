@@ -46,7 +46,7 @@ class Metadata:
 
         if self.type == 'DocumentType':
             self.last_opened = metadata['lastOpened']
-            self.last_opened_page = metadata['lastOpenedPage']
+            self.last_opened_page = metadata.get('lastOpenedPage', 0)
 
     def __setattr__(self, key, value):
         super().__setattr__(key, value)
