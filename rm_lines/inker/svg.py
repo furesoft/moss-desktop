@@ -18,8 +18,6 @@ from ..scene_tree import SceneTree
 from ..tagged_block_common import CrdtId
 from ..text import TextDocument
 
-_logger = logging.getLogger(__name__)
-
 
 SCREEN_WIDTH = 1404
 SCREEN_HEIGHT = 1872
@@ -69,17 +67,8 @@ LINE_HEIGHTS = {
 # <body>
 # <div style="border: 1px solid grey; margin: 2em; float: left;">
 # <svg xmlns="http://www.w3.org/2000/svg" height="$height" width="$width">
-SVG_HEADER = string.Template("""
-<svg xmlns="http://www.w3.org/2000/svg" height="$height" width="$width" viewbox="$viewbox">
-    <script type="application/ecmascript"> <![CDATA[
-        var visiblePage = 'p1';
-        function goToPage(page) {
-            document.getElementById(visiblePage).setAttribute('style', 'display: none');
-            document.getElementById(page).setAttribute('style', 'display: inline');
-            visiblePage = page;
-        }
-    ]]>
-    </script>
+SVG_HEADER = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" height="$height" width="$width" viewBox="$viewbox">
 """)
 
 
@@ -104,7 +93,7 @@ def tree_to_svg(tree: SceneTree, output, include_template=None):
         output.write('    </g>\n')
 
     output.write(f'    <g id="p1" style="display:inline" transform="translate({X_SHIFT},0)">\n')
-    output.write('        <filter id="blurMe"><feGaussianBlur in="SourceGraphic" stdDeviation="10" /></filter>\n')
+    # output.write('        <filter id="blurMe"><feGaussianBlur in="SourceGraphic" stdDeviation="10" /></filter>\n')
 
     # These special anchor IDs are for the top and bottom of the page.
     anchor_pos = {
@@ -113,7 +102,6 @@ def tree_to_svg(tree: SceneTree, output, include_template=None):
     }
     if tree.root_text is not None:
         draw_text(tree.root_text, output, anchor_pos)
-    _logger.debug("anchor_pos: %s", anchor_pos)
 
     draw_group(tree.root, output, anchor_pos)
 
@@ -135,13 +123,9 @@ def draw_group(item: Group, output, anchor_pos):
         anchor_x = item.anchor_origin_x.value
         if item.anchor_id.value in anchor_pos:
             anchor_y = anchor_pos[item.anchor_id.value]
-            _logger.debug("Group anchor: %s -> y=%.1f", item.anchor_id.value, anchor_y)
-        else:
-            _logger.warning("Group anchor: %s is unknown!", item.anchor_id.value)
     output.write(f'    <g id="{item.node_id}" transform="translate({xx(anchor_x)}, {yy(anchor_y)})">\n')
     for child_id in item.children:
         child = item.children[child_id]
-        _logger.debug("Group child: %s %s", child_id, type(child))
         output.write(f'    <!-- child {child_id} -->\n')
         if isinstance(child, Group):
             draw_group(child, output, anchor_pos)
@@ -151,7 +135,6 @@ def draw_group(item: Group, output, anchor_pos):
 
 
 def draw_stroke(item: Line, output):
-    _logger.debug("Writing line: %s", item)
 
     # initiate the pen
     pen = Pen.create(item.tool.value, item.color.value, item.thickness_scale/10)
@@ -185,7 +168,9 @@ def draw_stroke(item: Line, output):
             output.write('points="')
             if last_xpos != -1.:
                 # Join to previous segment
-                output.write(f'{xx(last_xpos):.3f},{yy(last_ypos):.3f} ')
+                output.write(a := f'{xx(last_xpos):.3f},{yy(last_ypos):.3f} ')
+                if a in '-209.240,195.540 -209.181,195.417 -209.153,195.556 -209.080,195.433':
+                    print(a)
         # store the last position
         last_xpos = xpos
         last_ypos = ypos

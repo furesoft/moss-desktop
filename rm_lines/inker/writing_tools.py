@@ -27,13 +27,13 @@ remarkable_palette = {
     # PINK = 5
     5: [255, 20, 147],
     # BLUE = 6
-    6: [0, 0, 255],
+    6: [0, 98, 204],
     # RED = 7
-    7: [255, 0, 0],
+    7: [217, 7, 7],
     # GRAY_OVERLAP = 8
     8: [125, 125, 125],
 }
-
+MAGIC_PENCIL_SIZE = 44.6
 
 class Pen:
     def __init__(self, base_width, base_color_id):
@@ -101,7 +101,7 @@ class Pen:
             return Pencil(width, color_id)
         # Mechanical Pencil
         elif pen_nr == 7 or pen_nr == 13:
-            return Mechanical_Pencil(width, color_id)
+            return MechanicalPencil(width, color_id)
         # Highlighter
         elif pen_nr == 5 or pen_nr == 18:
             width = 15
@@ -117,16 +117,11 @@ class Pen:
 
 
 class Fineliner(Pen):
+    last = 0
+
     def __init__(self, base_width, base_color_id):
         super().__init__(base_width, base_color_id)
-        if base_width == 1:
-            self.base_width = 1.5
-        elif base_width == 2:
-            self.base_width = 4.0
-        elif base_width == 3:
-            self.base_width = 6.0
-        else:
-            self.base_width = (base_width ** 2.1) * 1.3
+        self.base_width = base_width * MAGIC_PENCIL_SIZE
         self.name = "Fineliner"
 
 
@@ -135,18 +130,34 @@ class Ballpoint(Pen):
         super().__init__(base_width, base_color_id)
         self.segment_length = 5
         self.name = "Ballpoint"
+        self.alternate = 0  # 0 or 1
+        """
+        The pen is both solid but has different densities.
+        To make this work, we alternate between the a solid smaller size and a opaque larger size
+        """
+    #     TODO: Maybe implement a way for pens to have densities
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
-        segment_width = (0.5 + pressure / 255) + (1 * width / 4) - 0.5*((speed / 4)/50)
-        return segment_width
+        segment_width = (0.5 + pressure / 100) + (1 * width / 4) - 0.5*((speed / 4)/50)
+        segment_width *= 2
+        intensity = self.get_intensity(speed, pressure)
+        return segment_width * (1 if self.alternate == 0 else intensity)
 
-    def get_segment_color(self, speed, direction, width, pressure, last_width):
-        intensity = (0.1 * - ((speed / 4) / 35)) + (1.2 * pressure / 255) + 0.5
-        intensity = self.cutoff(intensity)
-        # using segment color not opacity because the dots interfere with each other.
-        # Color must be 255 rgb
-        segment_color = [int(abs(intensity - 1) * 255)] * 3
-        return "rgb"+str(tuple(segment_color))
+    def get_intensity(self, speed, pressure):
+        return self.cutoff((0.1 * - ((speed / 4) / 35)) + (1.2 * pressure / 255) + 0.5)
+
+    def get_segment_opacity(self, speed, direction, width, pressure, last_width):
+        intensity = self.get_intensity(speed, pressure)
+        if self.alternate == 0:
+            self.alternate = 1
+            return intensity
+        else:
+            self.alternate = 0
+            return 1
+
+    # def get_segment_color(self, speed, direction, width, pressure, last_width):
+    #     segment_color = tuple(int(v * alpha) for v in self.base_color)
+    #     return "rgb"+str(tuple(segment_color))
 
     # def get_segment_opacity(self, speed, direction, width, pressure, last_width):
     #     segment_opacity = (0.2 * - ((speed / 4) / 35)) + (0.8 * pressure / 255)
@@ -162,7 +173,7 @@ class Marker(Pen):
         self.name = "Marker"
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
-        segment_width = 0.9 * ((width / 4) - 0.4 * self.direction_to_tilt(direction)) + (0.1 * last_width)
+        segment_width = 1.4 * ((width / 4) - 0.4 * self.direction_to_tilt(direction)) + (0.1 * last_width)
         return segment_width
 
 
@@ -173,11 +184,11 @@ class Pencil(Pen):
         self.name = "Pencil"
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
-        segment_width = 0.7 * ((((0.8*self.base_width) + (0.5 * pressure / 255)) * (width / 4)) - (0.25 * self.direction_to_tilt(direction)**1.8) - (0.6 * (speed / 4) / 50))
+        segment_width = 10 * ((((0.8*self.base_width) + (0.5 * pressure / 255)) * (width / 3)) - (0.25 * self.direction_to_tilt(direction)**2.1) - (0.6 * (speed / 4) / 10))
         # segment_width = 1.3*(((self.base_width * 0.4) * pressure) - 0.5 * ((self.direction_to_tilt(direction) ** 0.5)) + (0.5 * last_width))
-        max_width = self.base_width * 10
+        max_width = self.base_width * MAGIC_PENCIL_SIZE
         segment_width = segment_width if segment_width < max_width else max_width
-        return segment_width
+        return max(3, segment_width)
 
     def get_segment_opacity(self, speed, direction, width, pressure, last_width):
         segment_opacity = (0.1 * - ((speed / 4) / 35)) + (1 * pressure / 255)
@@ -185,12 +196,23 @@ class Pencil(Pen):
         return segment_opacity
 
 
-class Mechanical_Pencil(Pen):
+class MechanicalPencil(Pen):
     def __init__(self, base_width, base_color_id):
         super().__init__(base_width, base_color_id)
-        self.base_width = self.base_width ** 2
-        self.base_opacity = 0.7
+        self.base_width = self.base_width * MAGIC_PENCIL_SIZE * 1.01
+        self.base_opacity = 0.85
+        self.segment_length = 2
         self.name = "Mechanical Pencil"
+
+    def get_segment_width(self, speed, direction, width, pressure, last_width):
+        width = super().get_segment_width(speed, direction, width, pressure, last_width)
+        return max(5, width)
+
+    def get_segment_opacity(self, speed, direction, width, pressure, last_width):
+        if direction / 255 < 0.5:
+            return max(0.3, self.cutoff(speed / 50 * pressure / 255))
+        else:
+            return 0.85
 
 
 class Brush(Pen):
@@ -224,7 +246,7 @@ class Highlighter(Pen):
         self.stroke_linecap = "square"
         self.base_opacity = 0.25
         self.stroke_opacity = 0.15
-        self.base_width = self.base_width * 1.5
+        self.base_width = self.base_width * 4.5
         self.name = "Highlighter"
 
 
