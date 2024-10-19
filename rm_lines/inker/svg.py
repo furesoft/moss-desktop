@@ -169,8 +169,6 @@ def draw_stroke(item: Line, output):
             if last_xpos != -1.:
                 # Join to previous segment
                 output.write(a := f'{xx(last_xpos):.3f},{yy(last_ypos):.3f} ')
-                if a in '-209.240,195.540 -209.181,195.417 -209.153,195.556 -209.080,195.433':
-                    print(a)
         # store the last position
         last_xpos = xpos
         last_ypos = ypos
