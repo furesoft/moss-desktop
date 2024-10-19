@@ -8,51 +8,15 @@ except Exception:
     cef = None
 import pygameextra as pe
 
-CEF_BASE_SETTINGS = {
-    "windowless_rendering_enabled": True,
-    'context_menu': {
-        "enabled": True,
-        "navigation": True,
-        "view_source": True,
-        "external_browser": False,
-        "inspect_element_at": True,
-        "print": True,
-        "devtools": True
-    }
-}
-
-CEF_SWITCHES = {
-    # GPU acceleration is not supported in OSR mode, so must disable
-    # it using these Chromium switches (Issue #240 and #463)
-    "disable-gpu": "",
-    "disable-gpu-compositing": "",
-    "disable-threaded-scrolling": "",
-    # Tweaking OSR performance by setting the same Chromium flags
-    # as in upstream cefclient (Issue #240).
-    "enable-begin-frame-scheduling": "",
-    "disable-surfaces": "",  # This is required for PDF ext to work
-}
 
 def get_asset_path():
-    # Check if we are running in a PyInstaller bundle
-    if hasattr(sys, '_MEIPASS'):
-        os.chdir(sys._MEIPASS)
-        resources_dir = os.path.join(sys._MEIPASS, 'cefpython3')
-        settings = {
-            **CEF_BASE_SETTINGS,
-            'locales_dir_path': os.path.join(resources_dir, 'locales'),
-            'resources_dir_path': resources_dir,
-            'browser_subprocess_path': os.path.join(resources_dir, 'subprocess.exe'),
-            'log_file': os.path.join(resources_dir, 'debug.log')
-        }
-        asset_dir = os.path.join(sys._MEIPASS, 'assets')
+    # Check if we are running in a Nuitka bundle
+    if compiled := globals().get('__compiled__'):
+        asset_dir = os.path.join(compiled.containing_dir, 'assets')
         script_dir = os.path.abspath(os.path.dirname(sys.executable))
     else:
-        settings = CEF_BASE_SETTINGS
         asset_dir = os.path.join(os.path.abspath("."), 'assets')
         script_dir = os.path.abspath(os.path.dirname(__main__.__file__))
-    # if cef:
-    #     cef.Initialize(settings=settings, switches=CEF_SWITCHES)
     return asset_dir, script_dir
 
 
