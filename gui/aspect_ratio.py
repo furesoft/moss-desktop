@@ -13,7 +13,14 @@ class Ratios:
         self.scale = scale
 
         # GENERAL
-        self.bottom_loading_bar_height = int(40 * scale)
+        self.bottom_bar_height = int(40 * scale)
+        self.bottom_loading_bar_height = int(10 * scale)
+        self.bottom_loading_bar_padding = (self.bottom_bar_height - self.bottom_loading_bar_height) / 2
+        self.bottom_loading_bar_width = int(100 * scale)
+
+        # DEBUG
+        self.small_debug_text_size = int(10 * scale)
+        self.debug_text_size = int(15 * scale)
 
         # LOADER
         self.loader_logo_text_size = int(50 * scale)

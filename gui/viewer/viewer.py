@@ -7,6 +7,12 @@ from logging import lastResort
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
+
+from colorama import Fore
+
+from gui.viewer.renderers.pdf.cef import PDF_CEF_Viewer
+from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+
 try:
     import CEF4pygame
 
@@ -19,14 +25,13 @@ except Exception:
 
 from PIL import Image
 
-from .defaults import Defaults
-from .pp_helpers import DraggablePuller
+from ..defaults import Defaults
+from ..pp_helpers import DraggablePuller
 
 if TYPE_CHECKING:
-    from .gui import GUI
+    from ..gui import GUI, ConfigType
     from queue import Queue
     from rm_api.models import Document
-    from .gui import ConfigType
 
 
 class DocumentRenderer(pe.ChildContext):
@@ -35,11 +40,17 @@ class DocumentRenderer(pe.ChildContext):
 
     config: 'ConfigType'
 
+    PAGE_NAVIGATION_DELAY = 0.2  # Initial button press delay
+    PAGE_NAVIGATION_SPEED = 0.1  # After initial button press delay
+
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
-        self.loading = True
-        self.pdf: CEFpygame = None
+        self.loading = 0
+        self.began_loading = False
         self._error = None
+        self.hold_next = False
+        self.hold_previous = False
+        self.hold_timer = 0
 
         self.loading_rect = pe.Rect(
             0, 0,
@@ -47,16 +58,24 @@ class DocumentRenderer(pe.ChildContext):
             parent.ratios.document_viewer_loading_square
         )
         self.loading_rect.center = parent.center
+
         split = self.loading_rect.width // 3
-        self.first_dot = self.loading_rect.x + split * 0.5
+        self.first_dot = self.loading_rect.x + split * 0.95
         self.second_dot = self.loading_rect.x + split * 1.5
-        self.third_dot = self.loading_rect.x + split * 2.5
+        self.third_dot = self.loading_rect.x + split * 2.05
+
         self.loading_timer = time.time()
+
         self.mode = 'nocontent'
-
+        self.last_opened_uuid = self.document.content.c_pages.last_opened.value
+        self.current_page_index = self.document.content.c_pages.get_index_from_uuid(self.last_opened_uuid) or 0
+        self.renderer = None
         super().__init__(parent)
-
-        self.load()
+        if self.config.notebook_render_mode == 'rm_lines_svg_inker':
+            self.notebook_renderer = Notebook_rM_Lines_Renderer(self)
+        else:
+            self.close()
+            print(f"{Fore.RED}Notebook render mode `{self.config.notebook_render_mode}` unavailable{Fore.RESET}")
 
     @property
     def error(self):
@@ -71,74 +90,84 @@ class DocumentRenderer(pe.ChildContext):
             pe.Rect(0, 0, *self.size).center,
             Defaults.TEXT_COLOR
         )
-        self.loading = False
+        self.loading = 0
 
-    def load_pdf_with_cef(self, pdf_raw: bytes):
-        pdf_html = os.path.join(Defaults.HTML_DIR, 'pdf.html')
-        url = f'{os.path.abspath(pdf_html)}'
-        self.pdf = CEFpygame(
-            URL=url,
-            VIEWPORT_SIZE=self.size
-        )
-        # Convert the PDF data to base64
-        base64_pdf = base64.b64encode(pdf_raw).decode('utf-8').replace('\n', '')
+    def handle_navigation(self, event):
+        if not self.hold_timer:
+            if any([
+                pe.event.key_DOWN(key)
+                for key in Defaults.NAVIGATION_KEYS['next']
+            ]):
+                self.hold_next = True
+                self.hold_timer = time.time() + self.PAGE_NAVIGATION_DELAY
+                self.do_next()
+            if any([
+                pe.event.key_DOWN(key)
+                for key in Defaults.NAVIGATION_KEYS['previous']
+            ]):
+                self.hold_previous = True
+                self.hold_timer = time.time() + self.PAGE_NAVIGATION_DELAY
+                self.do_previous()
+        else:
+            if any([
+                pe.event.key_UP(key)
+                for key in Defaults.NAVIGATION_KEYS['next'] + Defaults.NAVIGATION_KEYS['previous']
+            ]):
+                self.hold_next = False
+                self.hold_previous = False
+                self.hold_timer = None
 
-        # Send the PDF data to JavaScript
-        js_code = f"""
-            (function checkLoadPdf() {{
-                if (typeof window.loadPdf === 'function') {{
-                    window.loadPdf("{base64_pdf}", {self.width}, {self.height});
-                }} else {{
-                    setTimeout(checkLoadPdf, 100);
-                }}
-            }})();
-        """
+    @property
+    def can_do_next(self):
+        # Technically if there are no more pages
+        # we can make a new blank page
+        # TODO: Implement creating new blank pages on next
+        return self.current_page_index < len(self.document.content.c_pages.pages) - 1
 
-        self.pdf.__setattr__('inject_js', js_code)
-        self.pdf.__setattr__('injected_js', False)
+    @property
+    def can_do_previous(self):
+        return self.current_page_index > 0
 
-    def handle_events_with_cef(self, event):
-        browser = None
-        if self.pdf:
-            browser = self.pdf
-        if not browser:
-            return
+    def do_next(self):
+        if self.can_do_next:
+            self.current_page_index += 1
 
-        if event.type == pe.pygame.QUIT:
-            run = 0
-        if event.type == pe.pygame.MOUSEMOTION:
-            browser.motion_at(*event.pos)
-        if event.type == pe.pygame.MOUSEBUTTONDOWN:
-            browser.mousedown_at(*event.pos, event.button)
-        if event.type == pe.pygame.MOUSEBUTTONUP:
-            browser.mouseup_at(*event.pos, event.button)
-        if event.type == pe.pygame.KEYDOWN:
-            browser.keydown(event.key)
-        if event.type == pe.pygame.KEYUP:
-            browser.keyup(event.key)
+    def do_previous(self):
+        if self.can_do_previous:
+            self.current_page_index -= 1
 
     def handle_event(self, event):
-        if self.pdf and self.mode.endswith('cef'):
-            self.handle_events_with_cef(event)
+        if self.loading:
+            self.hold_next = False
+            self.hold_previous = False
+            self.hold_timer = None
+            return
+        if self.renderer:
+            self.renderer.handle_event(event)
+        self.handle_navigation(event)
 
     def load(self):
-        if self.document.content['fileType'] == 'pdf':
-            try:
-                pdf_raw = self.document.content_data[self.document.content_files[0]]
-            except IndexError:
-                self.error = 'PDF file missing'
-                return
+        if self.document.content.file_type == 'pdf':
             if self.config.pdf_render_mode == 'cef' and CEFpygame:
-                self.load_pdf_with_cef(pdf_raw)
+                self.loading += 1
+                self.renderer = PDF_CEF_Viewer(self)
             elif self.config.pdf_render_mode == 'none':
                 self.error = 'Could not render PDF'
             else:
                 self.error = 'Could not render PDF. Make sure you have a compatible PDF renderer'
+        elif self.document.content.file_type == 'notebook':
+            pass
         else:
             self.error = 'Unknown format. Could not render document'
-        self.loading = False
+        if self.renderer:
+            self.renderer.load()
+        self.loading += 1
+        self.notebook_renderer.load()
 
     def pre_loop(self):
+        if not self.began_loading:
+            self.load()
+            self.began_loading = True
         # Draw the loading icon
         if self.loading:
             pe.draw.rect(pe.colors.black, self.loading_rect)
@@ -155,26 +184,30 @@ class DocumentRenderer(pe.ChildContext):
             if section > 3.5:
                 self.loading_timer = time.time()
 
-    def render_pdf_with_cef(self):
-        if self.pdf.image.get_at((0, 0))[2] != 51:
-            if not self.pdf.injected_js:
-                self.pdf.browser.ExecuteJavascript(self.pdf.inject_js)
-                self.pdf.injected_js = True
-            pe.display.blit(self.pdf.image)
-
     def loop(self):
+        page = self.document.content.c_pages.pages[self.current_page_index]
+        self.last_opened_uuid = page.id
+
         if self.loading:
             return
-        if self.pdf and self.mode.endswith('cef'):
-            self.render_pdf_with_cef()
+
+        if self.renderer:
+            self.renderer.render(page.id)
+        self.notebook_renderer.render(page.id)
 
     def close(self):
-        if self.pdf and self.mode.endswith('cef'):
-            self.pdf.browser.CloseBrowser()
+        if self.renderer:
+            self.renderer.close()
 
     def post_loop(self):
         if self.error:
             self.error.display()
+        if self.hold_timer and time.time() > self.hold_timer:
+            if self.hold_next:
+                self.do_next()
+            elif self.hold_previous:
+                self.do_previous()
+            self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
 
 
 class DocumentViewer(pe.ChildContext):
@@ -230,5 +263,7 @@ class DocumentViewer(pe.ChildContext):
 
         # Draw the outline, the line and the arrow icon
         pe.draw.rect(pe.colors.white, outline_rect)
-        pe.draw.line(Defaults.LINE_GRAY, (x_pos := self.top_puller.rect.centerx-self.ratios.pixel(2), self.top_puller.rect.centery), (x_pos, icon_rect.centery), self.ratios.pixel(3))
+        pe.draw.line(Defaults.LINE_GRAY,
+                     (x_pos := self.top_puller.rect.centerx - self.ratios.pixel(2), self.top_puller.rect.centery),
+                     (x_pos, icon_rect.centery), self.ratios.pixel(3))
         icon.display(icon_rect.topleft)

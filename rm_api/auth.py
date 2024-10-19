@@ -47,6 +47,9 @@ def get_token(api: 'API', code: str = None):
 
 
 def refresh_token(api: 'API', token: str):
+    if not token:
+        if api.require_token:
+            return refresh_token(api, get_token(api))
     response = api.session.post(
         TOKEN_REFRESH_URL.format(api.uri),
         headers={"Authorization": f"Bearer {token}"},

@@ -18,11 +18,11 @@ class API:
     document_collections: Dict[str, DocumentCollection]
     documents: Dict[str, Document]
 
-    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync'):
+    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync', uri: str = None, discovery_uri: str = None):
         self.session = requests.Session()
         self.token_file_path = token_file_path
-        self.uri = os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
-        self.discovery_uri = os.environ.get("DISCOVERY_URI",
+        self.uri = uri or os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
+        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI", 
                                             "https://service-manager-production-dot-remarkable-production.appspot.com/")
         self.sync_file_path = sync_file_path
         if self.sync_file_path is not None:

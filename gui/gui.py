@@ -8,6 +8,7 @@ from queue import Queue
 from box import Box
 from colorama import Fore
 
+from rm_api.auth import FailedToRefreshToken
 from .code_screen import CodeScreen
 from .defaults import Defaults
 
@@ -24,13 +25,17 @@ from .main_menu import MainMenu
 pe.init()
 
 PDF_RENDER_MODES = Literal['cef']
+NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
 
 class ConfigDict(TypedDict):
     enable_fake_screen_refresh: bool
     wait_for_everything_to_load: bool
     uri: str
+    discovery_uri: str
     pdf_render_mode: PDF_RENDER_MODES
+    notebook_render_mode: NOTEBOOK_RENDER_MODES
+    debug: bool
 
 
 DEFAULT_CONFIG: ConfigDict = {
@@ -38,7 +43,10 @@ DEFAULT_CONFIG: ConfigDict = {
     # TODO: Fix the fact that disabling this, makes loading much slower
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
-    'pdf_render_mode': 'cef'
+    'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
+    'pdf_render_mode': 'cef',
+    'notebook_render_mode': 'rm_lines_svg_inker',
+    'debug': False
 }
 
 ConfigType = Box[ConfigDict]
@@ -83,12 +91,15 @@ class GUI(pe.GameContext):
     def __init__(self):
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
         super().__init__()
-        self.api = API(require_token=False, token_file_path=Defaults.TOKEN_FILE_PATH, sync_file_path=Defaults.SYNC_FILE_PATH)
+        self.config = load_config()
+        try:
+            self.api = API(**self.api_kwargs)
+        except FailedToRefreshToken:
+            os.remove(Defaults.TOKEN_FILE_PATH)
+            self.api = API(**self.api_kwargs)
         self.screens = Queue()
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
-        self.config = load_config()
-        self.api.uri = self.config.uri
         if self.api.token:
             self.screens.put(Loader(self))
         else:
@@ -100,6 +111,16 @@ class GUI(pe.GameContext):
         self.original_screen_refresh_surface: pe.Surface = None
         self.fake_screen_refresh_surface: pe.Surface = None
         self.last_screen_count = 1
+
+    @property
+    def api_kwargs(self):
+        return {
+            'require_token': False,
+            'token_file_path': Defaults.TOKEN_FILE_PATH,
+            'sync_file_path': Defaults.SYNC_FILE_PATH,
+            'uri': self.config.uri,
+            'discovery_uri': self.config.discovery_uri
+        }
 
     def pre_loop(self):
         if self.config.enable_fake_screen_refresh and (len(

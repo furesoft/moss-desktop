@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Dict
 
 import pygameextra as pe
 
+from rm_api.notifications.models import SyncRefresh
+
 from .defaults import Defaults
 from .helpers import shorten_name, shorten_path, shorten_folder, shorten_document
 from .rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
@@ -64,14 +66,17 @@ class MainMenu(pe.ChildContext):
 
         # Preparing the document collection texts
         for uuid, document_collection in document_collections.items():
-            if self.texts.get(uuid) is None:
+            if self.texts.get(uuid) is None or self.texts[uuid+'_full'].text != document_collection.metadata.visible_name:
                 self.texts[uuid] = pe.Text(shorten_folder(document_collection.metadata.visible_name),
+                                           Defaults.FOLDER_FONT,
+                                           self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
+                self.texts[uuid+'_full'] = pe.Text(document_collection.metadata.visible_name,
                                            Defaults.FOLDER_FONT,
                                            self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
         for uuid, document in documents.items():
-            if self.texts.get(uuid) is None:
+            if self.texts.get(uuid) is None or self.texts[uuid+'_full'].text != document.metadata.visible_name:
                 self.texts[uuid] = pe.Text(shorten_document(document.metadata.visible_name),
                                            Defaults.DOCUMENT_TITLE_FONT,
                                            self.ratios.main_menu_document_title_size, (0, 0), Defaults.DOCUMENT_TITLE_COLOR)
@@ -116,6 +121,9 @@ class MainMenu(pe.ChildContext):
         if self.current_sorting_reverse:
             return reversed(documents)
         return documents
+    
+    def refresh(self):
+        self.api.spread_event(SyncRefresh())
 
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
@@ -129,7 +137,7 @@ class MainMenu(pe.ChildContext):
         # Rendering the folders
         for i, document_collection in enumerate(self.get_sorted_document_collections()):
 
-            render_collection(self.parent_context, document_collection, self.texts[document_collection.uuid],
+            render_collection(self.parent_context, document_collection, self.texts,
                               self.set_parent, x, y)
 
             x += self.ratios.main_menu_folder_distance
@@ -159,11 +167,13 @@ class MainMenu(pe.ChildContext):
             if i % 4 == 3:
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
+        if self.config.debug:
+            pe.button.rect((0, 0, self.ratios.main_menu_top_height, self.ratios.main_menu_top_height), (0, 0, 0, 20), (255, 0, 0, 50), action=self.refresh)
 
     def post_loop(self):
         loader: 'Loader' = self.parent_context.screens.queue[0]
         if loader.files_to_load is not None:
-            draw_bottom_loading_bar(self.parent_context)
+            draw_bottom_loading_bar(self.parent_context, loader.files_loaded, loader.files_to_load)
             # Update the data if the loader has loaded more files
             if loader.loading_feedback + 3 < loader.files_loaded:
                 self.get_items()
