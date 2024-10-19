@@ -116,7 +116,7 @@ class DocumentRenderer(pe.ChildContext):
         # Technically if there are no more pages
         # we can make a new blank page
         # TODO: Implement creating new blank pages on next
-        return True
+        return self.current_page_index < len(self.document.content.c_pages.pages) - 1
 
     @property
     def can_do_previous(self):
