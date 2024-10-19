@@ -49,8 +49,6 @@ class NotebookRenderer(AbstractRenderer):
     def generate_image_from_rm(content: bytes):
         try:
             svg: str = rm_bytes_to_svg(content)
-            with open('test.svg', 'w') as f:
-                f.write(svg)
             image = pe.Image(BytesIO(svg.encode("utf-8")))
         except Exception as e:
             return None
