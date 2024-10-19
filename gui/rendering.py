@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import TYPE_CHECKING, Dict
 import pygameextra as pe
 
@@ -220,8 +221,29 @@ def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: '
             x += texts[text_key].rect.width
 
 
-def draw_bottom_loading_bar(gui: 'GUI'):
+@lru_cache
+def get_bottom_bar_rect(gui: 'GUI'):
+    return pe.Rect(0, gui.height - gui.ratios.bottom_bar_height, gui.width, gui.ratios.bottom_bar_height)
+
+
+def draw_bottom_bar(gui: 'GUI'):
+    # The entire lower bar
     pe.draw.rect(
         pe.colors.black,
-        (0, gui.height - gui.ratios.bottom_loading_bar_height, gui.width, gui.ratios.bottom_loading_bar_height)
+        get_bottom_bar_rect(gui)
     )
+
+
+def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int):
+    draw_bottom_bar(gui)
+    bottom_bar_rect = get_bottom_bar_rect(gui)
+    loading_bar_rect = pe.Rect(0, 0, gui.ratios.bottom_loading_bar_width, gui.ratios.bottom_loading_bar_height)
+    loading_bar_rect.midright = bottom_bar_rect.midright
+    loading_bar_rect.x -= gui.ratios.bottom_loading_bar_padding
+
+    # Draw the loading bar background
+    pe.draw.rect(Defaults.LINE_GRAY, loading_bar_rect, 0)
+
+    loading_bar_rect.width = int(loading_bar_rect.width * current / total)
+
+    pe.draw.rect(pe.colors.white, loading_bar_rect, 0)

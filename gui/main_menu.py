@@ -173,7 +173,7 @@ class MainMenu(pe.ChildContext):
     def post_loop(self):
         loader: 'Loader' = self.parent_context.screens.queue[0]
         if loader.files_to_load is not None:
-            draw_bottom_loading_bar(self.parent_context)
+            draw_bottom_loading_bar(self.parent_context, loader.files_loaded, loader.files_to_load)
             # Update the data if the loader has loaded more files
             if loader.loading_feedback + 3 < loader.files_loaded:
                 self.get_items()
