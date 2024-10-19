@@ -144,7 +144,7 @@ class DocumentDebugPopup(pe.ChildContext):
             shutil.rmtree(self.extract_location, ignore_errors=True)
         os.makedirs(self.extract_location, exist_ok=True)
         with open(os.path.join(self.extract_location, f'$ {self.clean_filename(self.document.metadata.visible_name)}'), 'w') as f:
-            f.write('')
+            f.write('\n'.join((file.uuid for file in self.document.files)))
 
     def clean_file_uuid(self, file):
         return file.uuid.replace(f'{self.document.uuid}/', '')
