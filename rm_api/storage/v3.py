@@ -115,7 +115,7 @@ def get_documents_using_root(api: 'API', progress, root):
                     if file.uuid in deleted_document_collections_list:
                         deleted_document_collections_list.remove(file.uuid)
                 elif metadata.type == 'DocumentType':
-                    api.documents[file.uuid] = models.Document(api, content, metadata, file_content, file.uuid)
+                    api.documents[file.uuid] = models.Document(api, models.Content(content, item.hash), metadata, file_content, file.uuid)
                     if file.uuid in deleted_documents_list:
                         deleted_documents_list.remove(file.uuid)
         progress(i + 1, total)

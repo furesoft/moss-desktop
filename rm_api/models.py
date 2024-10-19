@@ -1,10 +1,11 @@
 import os.path
 import threading
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict
 
 from colorama import Fore
 
 from rm_api.storage.v3 import get_file_contents
+from rm_api.templates import BLANK_TEMPLATE
 
 if TYPE_CHECKING:
     from rm_api import API
@@ -29,9 +30,109 @@ class File:
         return self.__repr__()
 
 
+class TimestampedValue(Generic[T]):
+    def __init__(self, value: dict):
+        self.value: T = value['value']
+        self.timestamp: str = value['timestamp']
+
+    def create(value: T):
+        return TimestampedValue({'value': value, 'timestamp': '0'})
+
+
+class Page:
+    id: str  # This is technically the UUID, a .rm file may or may not exist for this page
+    index: TimestampedValue[str]
+    template: TimestampedValue[str]
+    redirect: Union[TimestampedValue[int], None]
+
+    def __init__(self, page: dict):
+        self.__page = page
+        self.id = page['id']
+        self.index: TimestampedValue[str] = TimestampedValue(page['idx'])
+        if template := page.get('template'):
+            self.template: TimestampedValue[str] = TimestampedValue(page['template'])
+        else:
+            self.template = TimestampedValue[str].create(BLANK_TEMPLATE)
+
+        # Check for a redirect
+        # If the document is not a notebook this will be on every page
+        # Except any user created pages
+        if redirect := page.get('redir'):
+            self.redirect = TimestampedValue(redirect)
+        else:
+            self.redirect = None
+
+
+# TODO: Figure out what the CPagesUUID is refering to
+class CPagesUUID(TypedDict):
+    first: str
+    second: int
+
+
+class CPages:
+    pages: List[Page]
+    original: TimestampedValue[int]  # Seems to reference the original page count
+    last_opened: TimestampedValue[str]  # The id of the last opened page
+    uuids: List[CPagesUUID]
+
+    def __init__(self, c_pages: dict):
+        self.__c_pages = c_pages
+        self.pages = [Page(page) for page in c_pages['pages']]
+        self.original = TimestampedValue(c_pages['original'])
+        self.last_opened = TimestampedValue(c_pages['lastOpened'])
+        self.uuids = c_pages['uuids']
+
+
+class Content:
+    """
+    This class only represents the content data
+    of a document and not a document collection.
+
+    EXPLANATION:
+        The content of a document collection is much more simple,
+        it only contains tags: List[Tag]
+        This is handled by the parser and handed to the document collection,
+        So this class is only for the content of a document.
+    """
+
+    hash: str
+    c_pages: Union[CPages, None]
+    cover_page_number: int
+    file_type: str
+    version: int
+
+    def __init__(self, content: dict, content_hash: str):
+        self.hash = content_hash
+        self.__content = content
+        self.c_pages = None
+        self.cover_page_number: int = content['coverPageNumber']
+        self.dummy_document: bool = content.get('dummyDocument', False)
+        self.file_type: str = content['fileType']
+        self.version: int = content['formatVersion']
+
+        # Handle the different versions
+        if self.version == 2:
+            self.parse_version_2()
+        else:
+            print(f'{Fore.YELLOW}Content file version is unknown: {self.version}{Fore.RESET}')
+
+    def parse_version_2(self):
+        self.c_pages = CPages(self.__content['cPages'])
+
+    def parse_version_1(self):
+        """
+        Version 1 only has pages instead of cPages
+        containing a list of uuids
+        """
+        # TODO: Support content version 1
+        pass
+
+
+
+
 class Metadata:
-    def __init__(self, metadata: dict, hash: str):
-        self.hash = hash
+    def __init__(self, metadata: dict, metadata_hash: str):
+        self.hash = metadata_hash
         self.__metadata = metadata
         self.type = metadata['type']
         self.parent = metadata['parent'] or None
@@ -67,7 +168,6 @@ class Metadata:
             key = 'lastOpened'
         if key == 'last_opened_page':
             key = 'lastOpenedPage'
-
 
         self.__metadata[key] = value
 
@@ -110,7 +210,7 @@ class Document:
         'pdf'
     ]
 
-    def __init__(self, api: 'API', content: dict, metadata: Metadata, files: List[File], uuid: str):
+    def __init__(self, api: 'API', content: Content, metadata: Metadata, files: List[File], uuid: str):
         self.api = api
         self.content = content
         self.metadata = metadata
@@ -118,15 +218,12 @@ class Document:
         self.uuid = uuid
         self.files_available = self.check_files_availability()
         self.downloading = False
-        pdf_file_uuid = f'{self.uuid}.pdf'
-        if self.file_type not in self.KNOWN_FILE_TYPES and not self.file_type in self.unknown_file_types:
-            self.unknown_file_types.add(self.file_type)
-            print(f'{Fore.RED}Unknown file type: {self.file_type}{Fore.RESET}')
-        self.content_data = {}
 
-    @property
-    def file_type(self):
-        return self.content['fileType']
+        if self.content.file_type not in self.KNOWN_FILE_TYPES and \
+                not self.content.file_type in self.unknown_file_types:
+            self.unknown_file_types.add(self.content.file_type)
+            print(f'{Fore.RED}Unknown file type: {self.content.file_type}{Fore.RESET}')
+        self.content_data = {}
 
     @property
     def content_files(self):
@@ -163,7 +260,8 @@ class Document:
     def check_files_availability(self):
         if not self.api.sync_file_path:
             return {}
-        return {file.uuid: file for file in self.files if os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
+        return {file.uuid: file for file in self.files if
+                os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
 
     @property
     def parent(self):
