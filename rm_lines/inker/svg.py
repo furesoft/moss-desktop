@@ -78,7 +78,7 @@ def read_template_svg(template_path: Path) -> str:
 
 
 def tree_to_svg(tree: SceneTree, output, include_template=None):
-    """Convert Blocks to SVG."""
+    """Convert Tree to SVG."""
 
     # add svg header
     # output.write('<svg xmlns="http://www.w3.org/2000/svg">\n')
