@@ -60,8 +60,13 @@ def load_config() -> ConfigType:
     config = DEFAULT_CONFIG
     changes = False
 
-    if os.path.exists(user_install_config := os.path.join(USER_DATA_DIR, 'config.json')):
-        file = user_install_config
+    try:
+        i_am_an_install = os.path.join(__compiled__.containing_dir, 'installed')
+    except NameError:
+        i_am_an_install = os.path.join(os.path.dirname(__file__), 'installed')
+
+    if i_am_an_install:
+        file = os.path.join(USER_DATA_DIR, 'config.json')
     else:
         try:
             # noinspection PyUnresolvedReferences
