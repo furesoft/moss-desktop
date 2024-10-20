@@ -145,6 +145,7 @@ def draw_stroke(item: Line, output):
     output.write('        <polyline ')
     output.write(f'style="fill:none;stroke:{pen.stroke_color};stroke-width:{pen.stroke_width/K};opacity:{pen.stroke_opacity}" ')
     output.write(f'stroke-linecap="{pen.stroke_linecap}" ')
+    output.write(f'stroke-linejoin="{pen.stroke_linejoin}" ')
     output.write('points="')
 
     last_xpos = -1.
@@ -165,6 +166,7 @@ def draw_stroke(item: Line, output):
             output.write('        <polyline ')
             output.write(f'style="fill:none; stroke:{segment_color} ;stroke-width:{segment_width/K:.3f};opacity:{segment_opacity}" ')
             output.write(f'stroke-linecap="{pen.stroke_linecap}" ')
+            output.write(f'stroke-linejoin="{pen.stroke_linejoin}" ')
             output.write('points="')
             if last_xpos != -1.:
                 # Join to previous segment
