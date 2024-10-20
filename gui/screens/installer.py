@@ -98,6 +98,8 @@ class Installer(pe.ChildContext):
                 src_file = os.path.join(root, file)
                 dst_file = os.path.join(dest_path, file)
 
+                print(f"COPY FROM: {src_file}\nTO: {dst_file}\n")
+
                 shutil.copy2(src_file, dst_file)
                 self.progress += 1
         
