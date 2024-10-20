@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import threading
 from functools import lru_cache
 
@@ -48,6 +49,16 @@ class Installer(pe.ChildContext):
             Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
             colors=Defaults.TEXT_COLOR_T
         )
+        self.reinstall_text = pe.Text(
+            "Reinstall",
+            Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
+            colors=Defaults.TEXT_COLOR_T
+        )
+        self.launch_text = pe.Text(
+            "Launch",
+            Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
+            colors=Defaults.TEXT_COLOR_T
+        )
         self.line_rect = pe.Rect(0, 0, self.ratios.loader_loading_bar_width,
                                  self.ratios.loader_loading_bar_height)
         self.line_rect.midtop = self.logo.rect.midbottom
@@ -61,6 +72,7 @@ class Installer(pe.ChildContext):
         self.install_button_rect.right = buttons_rect.right
         self.total = 0
         self.progress = 0
+        self.just_installed = False
 
     def draw_button_outline(self, rect):
         pe.draw.rect(Defaults.LINE_GRAY, rect, self.ratios.pixel(3))
@@ -72,7 +84,7 @@ class Installer(pe.ChildContext):
             progress_rect = self.line_rect.copy()
             progress_rect.width *= self.progress / self.total
             pe.draw.rect(pe.colors.black, progress_rect, 0)
-        else:
+        elif not self.just_installed:
             pe.button.rect(
                 self.cancel_button_rect,
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
@@ -83,10 +95,17 @@ class Installer(pe.ChildContext):
                 self.install_button_rect,
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=self.install,
-                text=self.install_text
+                text=self.install_text if not Defaults.INSTALLED else self.reinstall_text
             )
             self.draw_button_outline(self.cancel_button_rect)
-            self.draw_button_outline(self.install_button_rect)
+        else:
+            pe.button.rect(
+                self.install_button_rect,
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=self.launch,
+                text=self.launch_text
+            )
+        self.draw_button_outline(self.install_button_rect)
 
     def cancel(self):
         del self.screens.queue[-1]
@@ -104,14 +123,23 @@ class Installer(pe.ChildContext):
                 dst_file = os.path.join(dest_path, file)
 
                 print(f"COPY FROM: {src_file}\nTO: {dst_file}\n")
-
-                shutil.copy2(src_file, dst_file)
+                try:
+                    shutil.copy2(src_file, dst_file)
+                except shutil.SameFileError:
+                    pass
                 self.progress += 1
         self.make_shortcut()
         self.add_to_path()
         self.add_to_start()
+        print()
         self.copy_config()
+
+        with open(os.path.join(self.to_directory, "installed"), 'w') as f:
+            f.write("Installed")
+            print("Installed!")
         self.installing = False
+
+        self.just_installed = True
         Defaults.INSTALLED = True
 
     def make_shortcut(self):
@@ -152,14 +180,33 @@ class Installer(pe.ChildContext):
             self.make_link(path)
 
     def copy_config(self):
+        os.makedirs(USER_DATA_DIR, exist_ok=True)
+
         if os.path.exists(Defaults.TOKEN_FILE_PATH):
-            shutil.copy2(Defaults.TOKEN_FILE_PATH, os.path.join(USER_DATA_DIR, "token"))
+            print(f"COPY FROM: {Defaults.TOKEN_FILE_PATH}\nTO: {(to := os.path.join(USER_DATA_DIR, 'token'))}\n")
+            try:
+                shutil.copy2(Defaults.TOKEN_FILE_PATH, to)
+            except shutil.SameFileError:
+                pass
         if os.path.exists(Defaults.CONFIG_FILE_PATH):
-            shutil.copy2(Defaults.CONFIG_FILE_PATH, os.path.join(USER_DATA_DIR, "config.json"))
+            print(f"COPY FROM: {Defaults.CONFIG_FILE_PATH}\nTO: {(to := os.path.join(USER_DATA_DIR, 'config.json'))}\n")
+            try:
+                shutil.copy2(Defaults.CONFIG_FILE_PATH, to)
+            except shutil.SameFileError:
+                pass
 
     def install(self):
         self.total = sum([len(files) for _, _, files in os.walk(self.from_directory)])
         threading.Thread(target=self.install_thread, daemon=False).start()
+
+    def launch(self):
+        # Launch and close the installer
+        self.parent_context.running = False
+        subprocess.Popen(
+            [os.path.join(INSTALL_DIR, "moss.exe")],
+            cwd=INSTALL_DIR,
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+        )
 
     @property
     def from_directory(self):

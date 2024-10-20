@@ -3,12 +3,14 @@ import os
 import time
 from typing import TypedDict, Literal
 
+import appdirs
 import pygameextra as pe
 from queue import Queue
 from box import Box
 from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
+
 Defaults = None
 
 try:
@@ -23,6 +25,8 @@ pe.init()
 
 AUTHOR = "RedTTG"
 APP_NAME = "Moss"
+INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
+USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 
 PDF_RENDER_MODES = Literal['cef']
 NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
@@ -55,9 +59,21 @@ ConfigType = Box[ConfigDict]
 def load_config() -> ConfigType:
     config = DEFAULT_CONFIG
     changes = False
-    if os.path.exists("config.json"):
+
+    if os.path.exists(user_install_config := os.path.join(USER_DATA_DIR, 'config.json')):
+        file = user_install_config
+    else:
+        try:
+            # noinspection PyUnresolvedReferences
+            file = os.path.join(__compiled__.containing_dir, 'config.json')
+        except NameError:
+            file = 'config.json'
+
+    setattr(pe.settings, 'config_file_path', file)
+
+    if os.path.exists(file):
         exists = True
-        with open("config.json") as f:
+        with open(file) as f:
             current_json = json.load(f)
             # Check if there are any new keys
             changes = len(config.keys() - current_json.keys()) != 0
@@ -66,7 +82,7 @@ def load_config() -> ConfigType:
         changes = True
         exists = False
     if changes:
-        with open("config.json", "w") as f:
+        with open(file, "w") as f:
             json.dump(config, f, indent=4)
         if not exists:
             print("Config file created. You can edit it manually if you want.")
@@ -111,7 +127,7 @@ class GUI(pe.GameContext):
         else:
             from gui.screens.code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
-        if not self.config.debug and not Defaults.INSTALLED:
+        if self.config.debug and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
         self.running = True
