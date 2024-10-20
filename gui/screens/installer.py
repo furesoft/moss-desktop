@@ -202,12 +202,19 @@ class Installer(pe.ChildContext):
         threading.Thread(target=self.install_thread, daemon=False).start()
 
     def launch(self):
-        # Launch and close the installer
-        subprocess.Popen(
-            [os.path.join(INSTALL_DIR, "moss.exe")],
-            cwd=INSTALL_DIR,
-            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-        )
+        # Launch and close the installer'
+        if os.name == 'nt':
+            subprocess.Popen(
+                [os.path.join(INSTALL_DIR, "moss.exe")],
+                cwd=INSTALL_DIR,
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+            )
+        elif os.name == 'posix':
+            subprocess.Popen(
+                [os.path.join(INSTALL_DIR, "moss")],
+                cwd=INSTALL_DIR,
+                start_new_session=True
+            )
         sys.exit()
 
     @property
