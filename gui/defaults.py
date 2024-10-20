@@ -2,6 +2,8 @@ import os.path
 import sys
 import __main__
 
+from gui import USER_DATA_DIR
+
 try:
     from cefpython3 import cefpython as cef
 except Exception:
@@ -31,11 +33,14 @@ def get_asset_path():
 class Defaults:
     BASE_ASSET_DIR, SCRIPT_DIR = get_asset_path()
     ASSET_DIR = os.path.join(BASE_ASSET_DIR, 'assets')
+    INSTALLED = os.path.exists(os.path.join(BASE_ASSET_DIR, 'installed'))
 
     HTML_DIR = os.path.join(ASSET_DIR, 'html')
     ICON_DIR = os.path.join(ASSET_DIR, 'icons')
     FONT_DIR = os.path.join(ASSET_DIR, 'fonts')
 
+    if INSTALLED:
+        SCRIPT_DIR = USER_DATA_DIR
     TOKEN_FILE_PATH = os.path.join(SCRIPT_DIR, 'token')
     CONFIG_FILE_PATH = pe.settings.config_file_path  # The GUI handles the path for this
     SYNC_FILE_PATH = os.path.join(SCRIPT_DIR, 'sync')
@@ -78,7 +83,7 @@ class Defaults:
         "previous": [pe.K_LEFT],
     }
 
-    INSTALLED = os.path.exists(os.path.join(BASE_ASSET_DIR, 'installed'))
+
     APP_ICON = os.path.join(ICON_DIR, 'moss.png')
 
 if pe.settings.config.debug:
