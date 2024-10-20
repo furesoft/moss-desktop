@@ -110,6 +110,9 @@ class GUI(pe.GameContext):
         else:
             from gui.screens.code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
+        if not self.config.debug and not Defaults.INSTALLED:
+            from gui.screens.installer import Installer
+            self.screens.put(Installer(self))
         self.running = True
         self.doing_fake_screen_refresh = False
         self.reset_fake_screen_refresh = True

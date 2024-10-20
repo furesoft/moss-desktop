@@ -31,6 +31,12 @@ class Ratios:
         self.code_screen_spacing = int(10 * scale)
         self.code_screen_info_size = int(30 * scale)
 
+        # INSTALLER
+        self.installer_buttons_width = int(280 * scale)  # FOR BOTH BUTTONS
+        self.installer_buttons_height = int(35 * scale)
+        self.installer_buttons_size = int(25 * scale)  # text size
+        self.installer_buttons_padding = int(30 * scale)  # IN BETWEEN THE BUTTONS
+
         # MAIN MENU
         self.main_menu_top_height = int(64 * scale)
         self.main_menu_top_padding = int(21 * scale)

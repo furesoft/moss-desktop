@@ -63,8 +63,7 @@ class Loader(pe.ChildContext):
         self.files_to_load: Union[int, None] = None
         self.last_progress = 0
         self.current_progress = 0
-        threading.Thread(target=self.load, daemon=True).start()
-        self.start_syncing()
+        self.initialized = False
 
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=False).start()
@@ -136,3 +135,9 @@ class Loader(pe.ChildContext):
     def loader_hook(self, event):
         if isinstance(event, SyncCompleted):
             self.start_syncing()
+
+    def pre_loop(self):
+        if not self.initialized:
+            threading.Thread(target=self.load, daemon=True).start()
+            self.start_syncing()
+            self.initialized = True

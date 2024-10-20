@@ -41,10 +41,15 @@ class Defaults:
     CUSTOM_FONT = os.path.join(FONT_DIR, 'Imperator.ttf')
     CUSTOM_FONT_BOLD = os.path.join(FONT_DIR, 'Imperator Bold.ttf')
     MONO_FONT = os.path.join(FONT_DIR, 'JetBrainsMono-Bold.ttf')
-    FOLDER_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
-    PATH_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
-    DOCUMENT_TITLE_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
-    DOCUMENT_ERROR_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
+    ROBOTO_REGULAR_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
+    ROBOTO_MEDIUM_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
+    
+    
+    FOLDER_FONT = ROBOTO_MEDIUM_FONT
+    PATH_FONT = ROBOTO_REGULAR_FONT
+    DOCUMENT_TITLE_FONT = ROBOTO_REGULAR_FONT
+    DOCUMENT_ERROR_FONT = ROBOTO_MEDIUM_FONT
+    INSTALLER_FONT = ROBOTO_REGULAR_FONT
 
     LOGO_FONT = CUSTOM_FONT_BOLD
     MAIN_MENU_FONT = CUSTOM_FONT_BOLD
@@ -70,3 +75,5 @@ class Defaults:
         "next": [pe.K_RIGHT],
         "previous": [pe.K_LEFT],
     }
+
+    INSTALLED = False
