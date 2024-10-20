@@ -101,6 +101,7 @@ class GUI(pe.GameContext):
         except FailedToRefreshToken:
             os.remove(Defaults.TOKEN_FILE_PATH)
             self.api = API(**self.api_kwargs)
+        self.api.debug = self.config.debug
         self.screens = Queue()
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
@@ -120,6 +121,7 @@ class GUI(pe.GameContext):
         self.original_screen_refresh_surface: pe.Surface = None
         self.fake_screen_refresh_surface: pe.Surface = None
         self.last_screen_count = 1
+        pe.display.set_icon(Defaults.APP_ICON)
 
     @property
     def api_kwargs(self):

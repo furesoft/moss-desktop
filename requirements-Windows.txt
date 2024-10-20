@@ -9,3 +9,5 @@ python-box==7.2.0
 requests==2.32.3
 websocket-client==1.8.0
 appdirs==1.4.4
+winshell==0.6
+pypiwin32==223

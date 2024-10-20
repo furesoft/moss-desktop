@@ -37,6 +37,7 @@ class Defaults:
     FONT_DIR = os.path.join(ASSET_DIR, 'fonts')
 
     TOKEN_FILE_PATH = os.path.join(SCRIPT_DIR, 'token')
+    CONFIG_FILE_PATH = os.path.join(SCRIPT_DIR, 'config.json')
     SYNC_FILE_PATH = os.path.join(SCRIPT_DIR, 'sync')
 
     CUSTOM_FONT = os.path.join(FONT_DIR, 'Imperator.ttf')
@@ -78,3 +79,4 @@ class Defaults:
     }
 
     INSTALLED = False
+    APP_ICON = os.path.join(ICON_DIR, 'moss.png')

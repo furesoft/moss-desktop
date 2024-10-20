@@ -115,9 +115,10 @@ class Content:
     file_type: str
     version: int
 
-    def __init__(self, content: dict, content_hash: str):
+    def __init__(self, content: dict, content_hash: str, show_debug: bool = False):
         self.hash = content_hash
         self.__content = content
+        self.usable = True
         self.c_pages = None
         self.cover_page_number: int = content['coverPageNumber']
         self.dummy_document: bool = content.get('dummyDocument', False)
@@ -128,7 +129,9 @@ class Content:
         if self.version == 2:
             self.parse_version_2()
         else:
-            print(f'{Fore.YELLOW}Content file version is unknown: {self.version}{Fore.RESET}')
+            self.usable = False
+            if show_debug:
+                print(f'{Fore.YELLOW}Content file version is unknown: {self.version}{Fore.RESET}')
 
     def parse_version_2(self):
         self.c_pages = CPages(self.__content['cPages'])
@@ -140,6 +143,9 @@ class Content:
         """
         # TODO: Support content version 1
         pass
+
+    def __str__(self):
+        return f'content version: {self.version} file type: {self.file_type}'
 
 
 

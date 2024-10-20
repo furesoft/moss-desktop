@@ -6,6 +6,7 @@ from gui.defaults import Defaults
 from gui.pp_helpers import FullTextPopup, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler
 from gui.screens.viewer import DocumentViewer
+from gui.screens.viewer.viewer import CannotRenderDocument
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -63,7 +64,12 @@ def render_full_document_title(gui: 'GUI', texts, document_uuid: str):
 
 
 def open_document(gui: 'GUI', document_uuid: str):
-    gui.screens.put(DocumentViewer(gui, document_uuid))
+    if document_uuid in DocumentViewer.PROBLEMATIC_DOCUMENTS:
+        return
+    try:
+        gui.screens.put(DocumentViewer(gui, document_uuid))
+    except CannotRenderDocument:
+        pass
 
 
 def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
@@ -104,9 +110,12 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
         preview.display(rect.topleft)
 
     # Render the availability cloud icon
-    if not document.available:
+    is_problematic = document.uuid in DocumentViewer.PROBLEMATIC_DOCUMENTS
+    if is_problematic or not document.available:
         if document.downloading:
             cloud_icon: pe.Image = gui.icons['cloud_download']
+        elif is_problematic:
+            cloud_icon: pe.Image = gui.icons['warning_circle']
         else:
             cloud_icon: pe.Image = gui.icons['cloud']
         cloud_icon_rect = pe.Rect(0, 0, *cloud_icon.size)

@@ -1,11 +1,15 @@
 import os
 import shutil
 import threading
+from functools import lru_cache
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
-from gui import APP_NAME, INSTALL_DIR
+if os.name == 'nt':
+    import winshell
+
+from gui import APP_NAME, INSTALL_DIR, USER_DATA_DIR
 from gui.defaults import Defaults
 
 if TYPE_CHECKING:
@@ -57,7 +61,7 @@ class Installer(pe.ChildContext):
         self.install_button_rect.right = buttons_rect.right
         self.total = 0
         self.progress = 0
-        
+
     def draw_button_outline(self, rect):
         pe.draw.rect(Defaults.LINE_GRAY, rect, self.ratios.pixel(3))
 
@@ -89,7 +93,8 @@ class Installer(pe.ChildContext):
 
     def install_thread(self):
         self.installing = True
-        for root, dirs, files in os.walk(self.from_directory):
+
+        for root, dirs, files in os.walk(self.from_directory) if not self.config.debug else ():
             rel_path = os.path.relpath(root, self.from_directory)
             dest_path = os.path.join(self.to_directory, rel_path)
             os.makedirs(dest_path, exist_ok=True)
@@ -102,7 +107,55 @@ class Installer(pe.ChildContext):
 
                 shutil.copy2(src_file, dst_file)
                 self.progress += 1
-        
+        self.make_shortcut()
+        self.add_to_path()
+        self.add_to_start()
+        self.copy_config()
+        self.installing = False
+        Defaults.INSTALLED = True
+
+    def make_shortcut(self):
+        if os.name == 'nt':
+            desktop = winshell.desktop()
+            path = os.path.join(desktop, f"{APP_NAME}.lnk")
+            self.make_link(path)
+
+    def add_to_path(self):
+        if os.name == 'nt':
+            import winreg
+            key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Environment")
+            path = winreg.QueryValueEx(key, "PATH")[0]
+            if not INSTALL_DIR in path:
+                if path.endswith(";"):
+                    path += INSTALL_DIR + ";"
+                else:
+                    path += f";{INSTALL_DIR}"
+                winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, path)
+            winreg.CloseKey(key)
+
+    def make_link(self, path):
+        print(f"Making a shortcut to moss: {path}")
+        with winshell.shortcut(path) as link:
+            link.path = os.path.join(INSTALL_DIR, "moss.exe")
+            link.icon_location = (os.path.join(INSTALL_DIR, "assets", "icons", "moss.ico"), 0)
+            link.description = APP_NAME
+            link.working_directory = INSTALL_DIR
+
+    def add_to_start(self):
+        if os.name == 'nt':
+            import winshell
+            start = winshell.start_menu()
+            # Also make a folder for it
+            path = os.path.join(start, APP_NAME)
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"{APP_NAME}.lnk")
+            self.make_link(path)
+
+    def copy_config(self):
+        if os.path.exists(Defaults.TOKEN_FILE_PATH):
+            shutil.copy2(Defaults.TOKEN_FILE_PATH, os.path.join(USER_DATA_DIR, "token"))
+        if os.path.exists(Defaults.CONFIG_FILE_PATH):
+            shutil.copy2(Defaults.CONFIG_FILE_PATH, os.path.join(USER_DATA_DIR, "config.json"))
 
     def install(self):
         self.total = sum([len(files) for _, _, files in os.walk(self.from_directory)])

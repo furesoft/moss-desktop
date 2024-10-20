@@ -36,6 +36,7 @@ class API:
         # noinspection PyTypeChecker
         self.documents = {}
         self._token = None
+        self.debug = False
         self.connected_to_notifications = False
         self.require_token = require_token
         if not self.uri.endswith("/"):

@@ -32,14 +32,18 @@ jobs:
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: factory
-          script-name: run_gui.py
+          nuitka-version: main
+          script-name: moss.py
           standalone: true
           onefile: true
           disable-console: ${{ github.ref == 'refs/heads/main' }}
           macos-create-app-bundle: true
           deployment: ${{ github.ref == 'refs/heads/main' }}
           report: compilation-report.xml
+          windows-icon-from-ico: assets/moss.ico
+          macos-app-icon: assets/moss.png
+          macos-app-name: ${{ env.APP_NAME }}
+          linux-icon: assets/moss.png
           include-data-dir: |
             assets=assets
           include-data-files: |
@@ -50,7 +54,7 @@ jobs:
         with:
           name: ${{ env.APP_NAME }} ${{ runner.os }}
           path: |
-            build/run_gui.exe
-            build/run_gui.bin
-            build/run_gui.app
+            build/moss.exe
+            build/moss.bin
+            build/moss.app
             compilation-report.xml

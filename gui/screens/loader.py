@@ -29,6 +29,7 @@ class Loader(pe.ChildContext):
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
         'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
+        'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
         'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
         # 'screenshot': 'screenshot_for_reference2.png',

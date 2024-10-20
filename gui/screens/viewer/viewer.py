@@ -24,7 +24,17 @@ from gui.pp_helpers import DraggablePuller
 if TYPE_CHECKING:
     from gui.gui import GUI, ConfigType
     from queue import Queue
-    from rm_api.models import Document
+    from rm_api.models import Document, Content
+
+class UnusableContent(Exception):
+    def __init__(self, content: 'Content'):
+        self.content = content
+        super().__init__(f"Unusable content: {content}")
+
+class CannotRenderDocument(Exception):
+    def __init__(self, document: 'Document'):
+        self.document = document
+        super().__init__(f"Cannot render document {document.metadata.visible_name}")
 
 
 class DocumentRenderer(pe.ChildContext):
@@ -44,6 +54,10 @@ class DocumentRenderer(pe.ChildContext):
         self.hold_next = False
         self.hold_previous = False
         self.hold_timer = 0
+        
+        # Check compatability
+        if not self.document.content.usable:
+            raise UnusableContent(self.document.content)
 
         self.loading_rect = pe.Rect(
             0, 0,
@@ -208,6 +222,7 @@ class DocumentViewer(pe.ChildContext):
 
     screens: 'Queue'
     icons: Dict[str, pe.Image]
+    PROBLEMATIC_DOCUMENTS = set()
 
     def __init__(self, parent: 'GUI', document_uuid: str):
         top_rect = pe.Rect(
@@ -216,12 +231,17 @@ class DocumentViewer(pe.ChildContext):
             parent.ratios.document_viewer_top_draggable_height
         )
         self.document = parent.api.documents[document_uuid]
+
         self.top_puller = DraggablePuller(
             parent, top_rect,
             detect_y=-top_rect.height, callback_y=self.close,
             draw_callback_y=self.draw_close_indicator
         )
-        self.document_renderer = DocumentRenderer(parent, self.document)
+        try:
+            self.document_renderer = DocumentRenderer(parent, self.document)
+        except UnusableContent:
+            self.PROBLEMATIC_DOCUMENTS.add(document_uuid)
+            raise CannotRenderDocument(self.document)
         super().__init__(parent)
 
     def loop(self):
