@@ -127,7 +127,7 @@ class GUI(pe.GameContext):
         else:
             from gui.screens.code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
-        if self.config.debug and not Defaults.INSTALLED:
+        if not self.config.debug and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
         self.running = True
