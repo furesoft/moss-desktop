@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import threading
 from functools import lru_cache
 
@@ -202,12 +203,12 @@ class Installer(pe.ChildContext):
 
     def launch(self):
         # Launch and close the installer
-        self.parent_context.running = False
         subprocess.Popen(
             [os.path.join(INSTALL_DIR, "moss.exe")],
             cwd=INSTALL_DIR,
             creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
         )
+        sys.exit()
 
     @property
     def from_directory(self):
