@@ -61,6 +61,7 @@ def load_config() -> ConfigType:
     changes = False
 
     try:
+        # noinspection PyUnresolvedReferences
         i_am_an_install = os.path.join(__compiled__.containing_dir, 'installed')
     except NameError:
         i_am_an_install = os.path.join(os.path.dirname(__file__), 'installed')
