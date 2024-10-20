@@ -7,11 +7,11 @@ from pyperclip import paste as pyperclip_paste
 from typing import TYPE_CHECKING
 
 from rm_api.auth import FailedToGetToken
-from .defaults import Defaults
-from .loader import Loader, APP_NAME
+from gui.defaults import Defaults
+from gui.screens.loader import Loader, APP_NAME
 
 if TYPE_CHECKING:
-    from .gui import GUI
+    from gui.gui import GUI
 
 
 class CodeScreen(pe.ChildContext):

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 if TYPE_CHECKING:
     from rm_api.models import Document
     from gui import GUI
-    from gui.viewer.viewer import DocumentRenderer
+    from gui.screens.viewer.viewer import DocumentRenderer
 
 
 class AbstractRenderer(ABC):

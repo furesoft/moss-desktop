@@ -1,11 +1,9 @@
 import threading
-from multiprocessing.spawn import prepare
 from typing import Dict, Tuple, List, Union
 
 import pygameextra as pe
-from functools import lru_cache
 
-from gui.viewer.renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+from gui.screens.viewer.renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
 from rm_api import Document
 from rm_api.storage.v3 import get_file_contents
 

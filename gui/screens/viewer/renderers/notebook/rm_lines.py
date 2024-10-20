@@ -1,11 +1,10 @@
-import re
 import threading
 from io import BytesIO
 from traceback import print_exc
 from typing import Dict
 
 import pygameextra as pe
-from gui.viewer.renderers.shared_model import AbstractRenderer
+from gui.screens.viewer.renderers.shared_model import AbstractRenderer
 from rm_lines import rm_bytes_to_svg
 
 

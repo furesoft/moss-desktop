@@ -105,10 +105,10 @@ class GUI(pe.GameContext):
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
         if self.api.token:
-            from .loader import Loader
+            from gui.screens.loader import Loader
             self.screens.put(Loader(self))
         else:
-            from .code_screen import CodeScreen
+            from gui.screens.code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
         self.running = True
         self.doing_fake_screen_refresh = False

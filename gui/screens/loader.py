@@ -1,19 +1,17 @@
 import os
 import threading
-import time
-from logging import lastResort
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
 from rm_api.notifications.models import SyncCompleted
-from .defaults import Defaults
-from .main_menu import MainMenu
+from gui.defaults import Defaults
+from gui.screens.main_menu import MainMenu
 
-from .gui import APP_NAME
+from gui.gui import APP_NAME
 
 if TYPE_CHECKING:
-    from .gui import GUI
+    from gui.gui import GUI
     from rm_api import API
 
 

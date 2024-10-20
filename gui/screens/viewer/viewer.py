@@ -1,16 +1,11 @@
-import base64
-import io
-import os
-import threading
 import time
-from logging import lastResort
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
 from colorama import Fore
 
-from gui.viewer.renderers.pdf.cef import PDF_CEF_Viewer
+from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
 from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
 
 try:
@@ -23,13 +18,11 @@ except Exception:
     CEFpygame = None
     cef = None
 
-from PIL import Image
-
-from ..defaults import Defaults
-from ..pp_helpers import DraggablePuller
+from gui.defaults import Defaults
+from gui.pp_helpers import DraggablePuller
 
 if TYPE_CHECKING:
-    from ..gui import GUI, ConfigType
+    from gui.gui import GUI, ConfigType
     from queue import Queue
     from rm_api.models import Document
 

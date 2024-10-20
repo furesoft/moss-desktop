@@ -1,4 +1,3 @@
-import time
 from queue import Queue
 from typing import TYPE_CHECKING, Dict
 
@@ -6,14 +5,14 @@ import pygameextra as pe
 
 from rm_api.notifications.models import SyncRefresh
 
-from .defaults import Defaults
-from .helpers import shorten_name, shorten_path, shorten_folder, shorten_document
-from .rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
+from gui.defaults import Defaults
+from gui.helpers import shorten_path, shorten_folder, shorten_document
+from gui.rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
 
 if TYPE_CHECKING:
     from gui import GUI
     from rm_api import API
-    from .loader import Loader
+    from gui.screens.loader import Loader
 
 
 class MainMenu(pe.ChildContext):

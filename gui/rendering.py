@@ -5,7 +5,7 @@ import pygameextra as pe
 from gui.defaults import Defaults
 from gui.pp_helpers import FullTextPopup, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler
-from gui.viewer import DocumentViewer
+from gui.screens.viewer import DocumentViewer
 
 if TYPE_CHECKING:
     from gui import GUI
