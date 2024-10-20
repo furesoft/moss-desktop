@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from rm_api.auth import FailedToGetToken
 from .defaults import Defaults
-from .loader import Loader
+from .loader import Loader, APP_NAME
 
 if TYPE_CHECKING:
     from .gui import GUI
@@ -36,7 +36,7 @@ class CodeScreen(pe.ChildContext):
             colors=(Defaults.RED, None)
         )
         self.logo = pe.Text(
-            "RedTTG",
+            APP_NAME,
             Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
             (
                 self.width // 2,

@@ -21,6 +21,9 @@ from .aspect_ratio import Ratios
 
 pe.init()
 
+AUTHOR = "RedTTG"
+APP_NAME = "Moss"
+
 PDF_RENDER_MODES = Literal['cef']
 NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
@@ -82,7 +85,7 @@ class GUI(pe.GameContext):
     SCALE = .9
     FPS = 60
     BACKGROUND = pe.colors.white
-    TITLE = "RedTTG rM GUI"
+    TITLE = f"{AUTHOR} {APP_NAME}"
     FAKE_SCREEN_REFRESH_TIME = .1
 
     def __init__(self):

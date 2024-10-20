@@ -10,6 +10,8 @@ from rm_api.notifications.models import SyncCompleted
 from .defaults import Defaults
 from .main_menu import MainMenu
 
+from .gui import APP_NAME
+
 if TYPE_CHECKING:
     from .gui import GUI
     from rm_api import API
@@ -41,7 +43,7 @@ class Loader(pe.ChildContext):
     def __init__(self, parent: 'GUI'):
         super().__init__(parent)
         self.logo = pe.Text(
-            "RedTTG",
+            APP_NAME,
             Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
             pe.math.center(
                 (
