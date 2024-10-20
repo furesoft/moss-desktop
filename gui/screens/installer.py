@@ -110,7 +110,7 @@ class Installer(pe.ChildContext):
 
     @property
     def from_directory(self):
-        return Defaults.SCRIPT_DIR
+        return Defaults.BASE_ASSET_DIR
 
     @property
     def to_directory(self):

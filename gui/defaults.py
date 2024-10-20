@@ -14,22 +14,23 @@ def get_asset_path():
     if '__compiled__' in globals():
         if pe.settings.config.debug:
             print("Running as a Nuitka bundle")
-        asset_dir = os.path.join(os.path.dirname(__main__.__file__), 'assets')
+        base_asset_dir = os.path.dirname(__main__.__file__)
         script_dir = __compiled__.containing_dir
     else:
         if pe.settings.config.debug:
             print("Running in development")
-        asset_dir = os.path.join(os.path.abspath("."), 'assets')
+        base_asset_dir = os.path.abspath(".")
         script_dir = os.path.abspath(os.path.dirname(__main__.__file__))
 
     if pe.settings.config.debug:
-        print(f"Asset dir: {asset_dir}")
+        print(f"Base asset dir: {base_asset_dir}")
         print(f"Script dir: {script_dir}")
-    return asset_dir, script_dir
+    return base_asset_dir, script_dir
 
 
 class Defaults:
-    ASSET_DIR, SCRIPT_DIR = get_asset_path()
+    BASE_ASSET_DIR, SCRIPT_DIR = get_asset_path()
+    ASSET_DIR = os.path.join(BASE_ASSET_DIR, 'assets')
 
     HTML_DIR = os.path.join(ASSET_DIR, 'html')
     ICON_DIR = os.path.join(ASSET_DIR, 'icons')
