@@ -98,6 +98,7 @@ class Installer(pe.ChildContext):
                 text=self.install_text if not Defaults.INSTALLED else self.reinstall_text
             )
             self.draw_button_outline(self.cancel_button_rect)
+            self.draw_button_outline(self.install_button_rect)
         else:
             pe.button.rect(
                 self.install_button_rect,
@@ -105,7 +106,7 @@ class Installer(pe.ChildContext):
                 action=self.launch,
                 text=self.launch_text
             )
-        self.draw_button_outline(self.install_button_rect)
+            self.draw_button_outline(self.install_button_rect)
 
     def cancel(self):
         del self.screens.queue[-1]
@@ -113,7 +114,7 @@ class Installer(pe.ChildContext):
     def install_thread(self):
         self.installing = True
 
-        for root, dirs, files in os.walk(self.from_directory) if not self.config.debug else ():
+        for root, dirs, files in (os.walk(self.from_directory) if not self.config.debug else ()):
             rel_path = os.path.relpath(root, self.from_directory)
             dest_path = os.path.join(self.to_directory, rel_path)
             os.makedirs(dest_path, exist_ok=True)
