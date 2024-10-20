@@ -184,14 +184,14 @@ class Installer(pe.ChildContext):
     def copy_config(self):
         os.makedirs(USER_DATA_DIR, exist_ok=True)
 
-        if os.path.exists(Defaults.TOKEN_FILE_PATH):
-            print(f"COPY FROM: {Defaults.TOKEN_FILE_PATH}\nTO: {(to := os.path.join(USER_DATA_DIR, 'token'))}\n")
+        if os.path.exists(Defaults.TOKEN_FILE_PATH) and not os.path.exists(to := os.path.join(USER_DATA_DIR, 'token')):
+            print(f"COPY FROM: {Defaults.TOKEN_FILE_PATH}\nTO: {to}\n")
             try:
                 shutil.copy2(Defaults.TOKEN_FILE_PATH, to)
             except shutil.SameFileError:
                 pass
-        if os.path.exists(Defaults.CONFIG_FILE_PATH):
-            print(f"COPY FROM: {Defaults.CONFIG_FILE_PATH}\nTO: {(to := os.path.join(USER_DATA_DIR, 'config.json'))}\n")
+        if os.path.exists(Defaults.CONFIG_FILE_PATH) and not os.path.exists(to := os.path.join(USER_DATA_DIR, 'config.json')):
+            print(f"COPY FROM: {Defaults.CONFIG_FILE_PATH}\nTO: {to}\n")
             try:
                 shutil.copy2(Defaults.CONFIG_FILE_PATH, to)
             except shutil.SameFileError:
@@ -207,7 +207,8 @@ class Installer(pe.ChildContext):
             subprocess.Popen(
                 [os.path.join(INSTALL_DIR, "moss.exe")],
                 cwd=INSTALL_DIR,
-                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                # creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+                start_new_session=True
             )
         elif os.name == 'posix':
             subprocess.Popen(
