@@ -9,8 +9,7 @@ from box import Box
 from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
-from .code_screen import CodeScreen
-from .defaults import Defaults
+Defaults = None
 
 try:
     from CEF4pygame import CEFpygame
@@ -19,8 +18,6 @@ except Exception:
 
 from rm_api import API
 from .aspect_ratio import Ratios
-from .loader import Loader
-from .main_menu import MainMenu
 
 pe.init()
 
@@ -89,9 +86,13 @@ class GUI(pe.GameContext):
     FAKE_SCREEN_REFRESH_TIME = .1
 
     def __init__(self):
+        global Defaults
+
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
         super().__init__()
         self.config = load_config()
+        setattr(pe.settings, 'config', self.config)
+        from .defaults import Defaults
         try:
             self.api = API(**self.api_kwargs)
         except FailedToRefreshToken:
@@ -101,8 +102,10 @@ class GUI(pe.GameContext):
         self.ratios = Ratios(self.SCALE)
         self.icons = {}
         if self.api.token:
+            from .loader import Loader
             self.screens.put(Loader(self))
         else:
+            from .code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
         self.running = True
         self.doing_fake_screen_refresh = False

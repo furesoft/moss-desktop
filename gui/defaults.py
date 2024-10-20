@@ -11,10 +11,14 @@ import pygameextra as pe
 
 def get_asset_path():
     # Check if we are running in a Nuitka bundle
-    if compiled := globals().get('__compiled__'):
-        asset_dir = os.path.join(compiled.containing_dir, 'assets')
+    if '__compiled__' in globals():
+        if pe.settings.config.debug:
+            print("Running as a Nuitka bundle")
+        asset_dir = os.path.join(__compiled__.containing_dir, 'assets')
         script_dir = os.path.abspath(os.path.dirname(sys.executable))
     else:
+        if pe.settings.config.debug:
+            print("Running in development")
         asset_dir = os.path.join(os.path.abspath("."), 'assets')
         script_dir = os.path.abspath(os.path.dirname(__main__.__file__))
     return asset_dir, script_dir
