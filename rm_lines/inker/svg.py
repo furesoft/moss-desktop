@@ -18,7 +18,6 @@ from ..scene_tree import SceneTree
 from ..tagged_block_common import CrdtId
 from ..text import TextDocument
 
-
 SCREEN_WIDTH = 1404
 SCREEN_HEIGHT = 1872
 SCREEN_DPI = 226
@@ -31,7 +30,7 @@ X_SHIFT = PAGE_WIDTH_PT // 2
 
 
 def xx(screen_x):
-    return screen_x * SCALE #+ X_SHIFT
+    return screen_x * SCALE  # + X_SHIFT
 
 
 def yy(screen_y):
@@ -52,8 +51,6 @@ LINE_HEIGHTS = {
     ParagraphStyle.CHECKBOX: 100,
     ParagraphStyle.CHECKBOX_CHECKED: 100,
 
-
-
     # There appears to be another format code (value 0) which is used when the
     # text starts far down the page, which case it has a negative offset (line
     # height) of about -20?
@@ -61,7 +58,6 @@ LINE_HEIGHTS = {
     # Probably, actually, the line height should be added *after* the first
     # line, but there is still something a bit odd going on here.
 }
-
 
 # <html>
 # <body>
@@ -135,15 +131,16 @@ def draw_group(item: Group, output, anchor_pos):
 
 
 def draw_stroke(item: Line, output):
-
     # initiate the pen
-    pen = Pen.create(item.tool.value, item.color.value, item.thickness_scale/10)
+    pen = Pen.create(item.tool.value, item.color.value, item.thickness_scale / 10)
     K = 5
 
     # BEGIN stroke
-    output.write(f'        <!-- Stroke tool: {item.tool.name} color: {item.color.name} thickness_scale: {item.thickness_scale} -->\n')
+    output.write(
+        f'        <!-- Stroke tool: {item.tool.name} color: {item.color.name} thickness_scale: {item.thickness_scale} -->\n')
     output.write('        <polyline ')
-    output.write(f'style="fill:none;stroke:{pen.stroke_color};stroke-width:{pen.stroke_width/K};opacity:{pen.stroke_opacity}" ')
+    output.write(
+        f'style="fill:none;stroke:{pen.stroke_color};stroke-width:{pen.stroke_width / K};opacity:{pen.stroke_opacity}" ')
     output.write(f'stroke-linecap="{pen.stroke_linecap}" ')
     output.write(f'stroke-linejoin="{pen.stroke_linejoin}" ')
     output.write('points="')
@@ -157,14 +154,18 @@ def draw_stroke(item: Line, output):
         xpos = point.x
         ypos = point.y
         if point_id % pen.segment_length == 0:
-            segment_color = pen.get_segment_color(point.speed, point.direction, point.width, point.pressure, last_segment_width)
-            segment_width = pen.get_segment_width(point.speed, point.direction, point.width, point.pressure, last_segment_width)
-            segment_opacity = pen.get_segment_opacity(point.speed, point.direction, point.width, point.pressure, last_segment_width)
+            segment_color = pen.get_segment_color(point.speed, point.direction, point.width, point.pressure,
+                                                  last_segment_width)
+            segment_width = pen.get_segment_width(point.speed, point.direction, point.width, point.pressure,
+                                                  last_segment_width)
+            segment_opacity = pen.get_segment_opacity(point.speed, point.direction, point.width, point.pressure,
+                                                      last_segment_width)
             # print(segment_color, segment_width, segment_opacity, pen.stroke_linecap)
             # UPDATE stroke
             output.write('"/>\n')
             output.write('        <polyline ')
-            output.write(f'style="fill:none; stroke:{segment_color} ;stroke-width:{segment_width/K:.3f};opacity:{segment_opacity}" ')
+            output.write(
+                f'style="fill:none; stroke:{segment_color} ;stroke-width:{segment_width / K:.3f};opacity:{segment_opacity}" ')
             output.write(f'stroke-linecap="{pen.stroke_linecap}" ')
             output.write(f'stroke-linejoin="{pen.stroke_linejoin}" ')
             output.write('points="')
