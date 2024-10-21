@@ -10,9 +10,6 @@ from .crdt_sequence import CrdtSequence
 from .text import expand_text_items
 
 
-_logger = logging.getLogger(__name__)
-
-
 ## Base class
 
 

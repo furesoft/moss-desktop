@@ -19,10 +19,6 @@ from ..tagged_block_common import (
 )
 
 
-_logger = logging.getLogger(__name__)
-
-
-
 class BlockInfo:
     offset: int
     size: int
@@ -57,7 +53,6 @@ class TaggedBlockReader:
         rm_data = DataStream(data)
         self.data = rm_data
         self.current_block: tp.Optional[MainBlockInfo] = None
-        self._warned_about_extra_data = False
 
     def read_header(self) -> None:
         """Read the file header.
@@ -177,9 +172,7 @@ class TaggedBlockReader:
         min_version = self.data.read_uint8()
         current_version = self.data.read_uint8()
         block_type = self.data.read_uint8()
-        _logger.debug(
-            "Block header: %d %d %d", min_version, current_version, block_type
-        )
+
         assert unknown == 0
         assert current_version >= 0
         assert min_version >= 0
@@ -243,23 +236,10 @@ class TaggedBlockReader:
                 % (type(block_info), i0, length, i1, i1 - (i0 + length))
             )
         if i1 < i0 + length:
-            if not self._warned_about_extra_data:
-                _logger.warning(
-                    "Some data has not been read. The data may have been written using "
-                    "a newer format than this reader supports."
-                )
-                self._warned_about_extra_data = True
-            _logger.info("In %s only read %d bytes", block_info, i1 - i0)
             # Discard the rest
             remaining = i0 + length - i1
             excess = self.data.read_bytes(remaining)
             block_info.extra_data = excess
-            _logger.debug(
-                "Excess bytes:\n %s",
-                "\n".join(excess[i : i + 32].hex() for i in range(0, len(excess), 32)),
-                stack_info=True,
-                stacklevel=4,
-            )
 
     ## Higher level constructs
 
@@ -309,14 +289,14 @@ class TaggedBlockReader:
             assert string_length + 2 <= block_info.size
             b = self.data.read_bytes(string_length)
             string = b.decode()
-            if len(b) != len(string):
-                _logger.debug(
-                    "read_string: decoded %r (%d) to %r (%d)",
-                    b,
-                    len(b),
-                    string,
-                    len(string),
-                )
+            # if len(b) != len(string):
+            #     _logger.debug(
+            #         "read_string: decoded %r (%d) to %r (%d)",
+            #         b,
+            #         len(b),
+            #         string,
+            #         len(string),
+            #     )
             return string
 
     def read_string_with_format(self, index: int) -> tuple[str, tp.Optional[int]]:
@@ -329,14 +309,14 @@ class TaggedBlockReader:
             assert string_length + 2 <= block_info.size
             b = self.data.read_bytes(string_length)
             string = b.decode()
-            if len(b) != len(string):
-                _logger.debug(
-                    "read_string: decoded %r (%d) to %r (%d)",
-                    b,
-                    len(b),
-                    string,
-                    len(string),
-                )
+            # if len(b) != len(string):
+            #     _logger.debug(
+            #         "read_string: decoded %r (%d) to %r (%d)",
+            #         b,
+            #         len(b),
+            #         string,
+            #         len(string),
+            #     )
 
             if self.data.check_tag(2, TagType.Byte4):
                 # We have a format code

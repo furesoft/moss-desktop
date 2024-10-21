@@ -7,8 +7,6 @@ https://github.com/chemag/maxio .
 import logging
 import math
 
-_logger = logging.getLogger(__name__)
-
 # color_id to RGB conversion
 # 1. we use "color_id" for a unique, proprietary ID for colors,
 #   (see scene_stream.py):
