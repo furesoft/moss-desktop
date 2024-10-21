@@ -39,6 +39,8 @@ class ConfigDict(TypedDict):
     discovery_uri: str
     pdf_render_mode: PDF_RENDER_MODES
     notebook_render_mode: NOTEBOOK_RENDER_MODES
+    download_everything: bool
+    download_last_opened_page_to_make_preview: bool
     debug: bool
 
 
@@ -50,6 +52,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'pdf_render_mode': 'cef',
     'notebook_render_mode': 'rm_lines_svg_inker',
+    'download_everything': False,
+    'download_last_opened_page_to_make_preview': False,
     'debug': False
 }
 

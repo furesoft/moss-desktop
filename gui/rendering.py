@@ -88,6 +88,12 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
     data = lambda: open_document(gui, document.uuid)
     disabled = document.downloading
 
+    # Start downloading the document if it's not available and not downloading
+    # If the config specifies to download everything, download everything
+    # In this case it will only download it when it shows up on the screen
+    if gui.config.download_everything and not document.available and not document.downloading:
+        document.ensure_download_and_callback(lambda: None)
+
     render_button_using_text(
         gui, title_text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,

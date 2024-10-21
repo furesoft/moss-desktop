@@ -1,4 +1,5 @@
 import threading
+from traceback import print_exc
 from typing import Dict, Tuple, List, Union
 
 import pygameextra as pe
@@ -70,10 +71,25 @@ class PreviewHandler:
 
     @classmethod
     def _handle_loading_task(cls, document: Document, page_id: str):
-        if not document.available:
+        if not document.available and not pe.settings.config.download_last_opened_page_to_make_preview:
             # Wait for the document to be available
             return
-        file_hash = document.files_available.get(f'{document.uuid}/{page_id}.rm').hash
+        
+        file = document.files_available.get(file_uuid := f'{document.uuid}/{page_id}.rm')
+
+        if not file:
+            if pe.settings.config.download_last_opened_page_to_make_preview:
+                for file in document.files:
+                    if file.uuid == file_uuid:
+                        file_hash = file.hash
+                        break
+                else:
+                    raise Exception('Could not get the file to construct preview')
+            else:
+                raise Exception('The file is not available to construct preview')
+        else:
+            file_hash = file.hash
+        
         rm_bytes = get_file_contents(document.api, file_hash, binary=True)
         if not rm_bytes:
             raise Exception('Page content unavailable to construct preview')

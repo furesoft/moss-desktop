@@ -67,7 +67,7 @@ class Loader(pe.ChildContext):
         self.initialized = False
 
     def start_syncing(self):
-        threading.Thread(target=self.get_documents, daemon=False).start()
+        threading.Thread(target=self.get_documents, daemon=True).start()
 
     def load(self):
         for key, item in self.TO_LOAD.items():
