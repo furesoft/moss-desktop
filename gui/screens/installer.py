@@ -212,7 +212,7 @@ class Installer(pe.ChildContext):
             )
         elif os.name == 'posix':
             subprocess.Popen(
-                [os.path.join(INSTALL_DIR, "moss")],
+                [os.path.join(INSTALL_DIR, "moss.bin")],
                 cwd=INSTALL_DIR,
                 start_new_session=True
             )
