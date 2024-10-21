@@ -227,7 +227,7 @@ class DocumentCollection:
 class Document:
     unknown_file_types = set()
     KNOWN_FILE_TYPES = [
-        'pdf'
+        'pdf', 'notebook'
     ]
 
     def __init__(self, api: 'API', content: Content, metadata: Metadata, files: List[File], uuid: str):
