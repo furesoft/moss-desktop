@@ -1,7 +1,7 @@
 import threading
 from io import BytesIO
 from traceback import print_exc
-from typing import Dict
+from typing import Dict, Tuple
 
 import pygameextra as pe
 from gui.screens.viewer.renderers.shared_model import AbstractRenderer
@@ -26,9 +26,7 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
 
     def _load(self, page_uuid: str):
         if content := self.document.content_data.get(file_uuid := f'{self.document.uuid}/{page_uuid}.rm'):
-            self.pages[file_uuid] = self.generate_image_from_rm(content)
-            if self.pages[file_uuid] is not None:
-                self.pages[file_uuid].resize(self.size)
+            self.pages[file_uuid] = self.generate_image_from_rm(content, size=self.size)
         self.document_renderer.loading -= 1
 
     def load(self):
@@ -59,14 +57,14 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
         threading.Thread(target=self._load, args=(page_uuid,), daemon=True).start()
 
     @staticmethod
-    def generate_image_from_rm(content: bytes, use_lock: threading.Lock = None) -> pe.Image:
+    def generate_image_from_rm(content: bytes, size: Tuple[int, int] = None, use_lock: threading.Lock = None) -> pe.Image:
         try:
             svg: str = rm_bytes_to_svg(content)
             if use_lock:
                 with use_lock:
-                    image = pe.Image(BytesIO(svg.encode("utf-8")))
+                    image = pe.Image(BytesIO(svg.encode("utf-8")), size=size)
             else:
-                image = pe.Image(BytesIO(svg.encode("utf-8")))
+                image = pe.Image(BytesIO(svg.encode("utf-8")), size=size)
         except Exception as e:
             print_exc()
             return None
