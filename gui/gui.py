@@ -127,6 +127,10 @@ class GUI(pe.GameContext):
         atexit.register(self.save_config_if_dirty)
         super().__init__()
         self.config = load_config()
+        if self.config.debug:
+            # Allow screen resize for debug (for now)
+            # TODO: fully test and allow the app to run in resizable mode
+            pe.display.make(self.size, self.TITLE, pe.display.DISPLAY_MODE_RESIZABLE)
         setattr(pe.settings, 'config', self.config)
         from .defaults import Defaults
         try:
