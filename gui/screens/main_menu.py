@@ -26,7 +26,7 @@ class MainMenu(pe.ChildContext):
     }
 
     def __init__(self, parent: 'GUI'):
-        self.navigation_parent = None
+        self.navigation_parent = parent.config.last_opened_folder
         self.document_collections = {}
         self.documents = {}
         self.texts: Dict[str, pe.Text] = {}
@@ -93,8 +93,14 @@ class MainMenu(pe.ChildContext):
 
                 # Render the path text
                 if self.texts.get(text_key) is None:
+                    try:
+                        text = shorten_path(document_collections[parent].metadata.visible_name)
+                    except:
+                        del self.path_queue.queue[-1]
+                        parent = None
+                        continue
                     self.texts[text_key] = pe.Text(
-                        shorten_path(document_collections[parent].metadata.visible_name),
+                        text,
                         Defaults.PATH_FONT,
                         self.ratios.main_menu_path_size,
                         (0, 0), Defaults.TEXT_COLOR
@@ -109,6 +115,9 @@ class MainMenu(pe.ChildContext):
 
     def set_parent(self, uuid=None):
         self.navigation_parent = uuid
+        if self.config.save_last_opened_folder and self.config.last_opened_folder != uuid:
+            self.config.last_opened_folder = uuid
+            self.parent_context.dirty_config = True
         self.get_items()
         self.quick_refresh()
 
