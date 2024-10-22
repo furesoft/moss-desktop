@@ -1,7 +1,8 @@
+import atexit
 import json
 import os
 import time
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, Union
 
 import appdirs
 import pygameextra as pe
@@ -41,6 +42,8 @@ class ConfigDict(TypedDict):
     notebook_render_mode: NOTEBOOK_RENDER_MODES
     download_everything: bool
     download_last_opened_page_to_make_preview: bool
+    save_last_opened_folder: bool
+    last_opened_folder: Union[None, str]
     debug: bool
 
 
@@ -54,6 +57,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'notebook_render_mode': 'rm_lines_svg_inker',
     'download_everything': False,
     'download_last_opened_page_to_make_preview': False,
+    'save_last_opened_folder': False,
+    'last_opened_folder': None,
     'debug': False
 }
 
@@ -118,6 +123,8 @@ class GUI(pe.GameContext):
         global Defaults
 
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
+        self.dirty_config = False
+        atexit.register(self.save_config_if_dirty)
         super().__init__()
         self.config = load_config()
         setattr(pe.settings, 'config', self.config)
@@ -200,6 +207,11 @@ class GUI(pe.GameContext):
     def save_config(self):
         with open("config.json", "w") as f:
             json.dump(self.config, f, indent=4)
+
+    def save_config_if_dirty(self):
+        if not self.dirty_config:
+            return
+        self.save_config()
 
     def post_loop(self):
         if len(self.screens.queue) == 0:
