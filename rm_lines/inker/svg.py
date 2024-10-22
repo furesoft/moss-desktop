@@ -10,6 +10,8 @@ from pathlib import Path
 
 from typing import Iterable, Union
 
+from rm_lines.inker.document_size_tracker import DocumentSizeTracker, NotebookSizeTracker
+
 from .writing_tools import (
     Pen,
 )
@@ -17,25 +19,6 @@ from ..scene_items import ParagraphStyle, Group, Line, Text
 from ..scene_tree import SceneTree
 from ..tagged_block_common import CrdtId
 from ..text import TextDocument
-
-SCREEN_WIDTH = 1404
-SCREEN_HEIGHT = 1872
-SCREEN_DPI = 226
-
-SCALE = 100 / SCREEN_DPI
-
-PAGE_WIDTH_PT = SCREEN_WIDTH * SCALE
-PAGE_HEIGHT_PT = SCREEN_HEIGHT * SCALE
-X_SHIFT = PAGE_WIDTH_PT // 2
-
-
-def xx(screen_x):
-    return screen_x * SCALE  # + X_SHIFT
-
-
-def yy(screen_y):
-    return screen_y * SCALE
-
 
 TEXT_TOP_Y = -88
 LINE_HEIGHTS = {
@@ -63,9 +46,19 @@ LINE_HEIGHTS = {
 # <body>
 # <div style="border: 1px solid grey; margin: 2em; float: left;">
 # <svg xmlns="http://www.w3.org/2000/svg" height="$height" width="$width">
-SVG_HEADER = string.Template("""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" height="$height" width="$width" viewBox="$viewbox">
-""")
+SVG_HEADER = """<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" height="{height}" width="{width}" viewBox="{viewbox}">\n
+"""
+
+class SvgWriter:
+    def __init__(self):
+        self._output = []
+
+    def write(self, text):
+        self._output.append(text)
+
+    def format(self, **kwargs):
+        return "".join(self._output).format(**kwargs)
 
 
 def read_template_svg(template_path: Path) -> str:
@@ -73,22 +66,23 @@ def read_template_svg(template_path: Path) -> str:
     return "\n".join(lines[2:-1])
 
 
-def tree_to_svg(tree: SceneTree, output, include_template=None):
+def tree_to_svg(tree: SceneTree, output_file, include_template=None, track_xy=None):
     """Convert Tree to SVG."""
+
+    track_xy = NotebookSizeTracker()
+    output = SvgWriter()
 
     # add svg header
     # output.write('<svg xmlns="http://www.w3.org/2000/svg">\n')
-    output.write(SVG_HEADER.substitute(width=PAGE_WIDTH_PT,
-                                       height=PAGE_HEIGHT_PT,
-                                       viewbox=f"0 0 {PAGE_WIDTH_PT} {PAGE_HEIGHT_PT}") + "\n")
+    output.write(SVG_HEADER)
 
     if include_template is not None:
         template = read_template_svg(include_template)
-        output.write(f'    <g id="template" style="display:inline" transform="scale({SCALE})">\n')
+        output.write('    <g id="template" style="display:inline" transform="scale({scale})">\n')
         output.write(template)
         output.write('    </g>\n')
 
-    output.write(f'    <g id="p1" style="display:inline" transform="translate({X_SHIFT},0)">\n')
+    output.write('    <g id="p1" style="display:inline" transform="translate({x_shift},0)">\n')
     # output.write('        <filter id="blurMe"><feGaussianBlur in="SourceGraphic" stdDeviation="10" /></filter>\n')
 
     # These special anchor IDs are for the top and bottom of the page.
@@ -97,9 +91,9 @@ def tree_to_svg(tree: SceneTree, output, include_template=None):
         CrdtId(0, 281474976710655): 700,
     }
     if tree.root_text is not None:
-        draw_text(tree.root_text, output, anchor_pos)
+        draw_text(tree.root_text, output, anchor_pos, track_xy)
 
-    draw_group(tree.root, output, anchor_pos)
+    draw_group(tree.root, output, anchor_pos, track_xy)
 
     # # Overlay the page with a clickable rect to flip pages
     # output.write('\n')
@@ -109,9 +103,10 @@ def tree_to_svg(tree: SceneTree, output, include_template=None):
     output.write('    </g>\n')
     # END notebook
     output.write('</svg>\n')
+    output_file.write(output.format(**track_xy.format_kwargs))
 
 
-def draw_group(item: Group, output, anchor_pos):
+def draw_group(item: Group, output, anchor_pos, track_xy: DocumentSizeTracker):
     anchor_x = 0.0
     anchor_y = 0.0
     if item.anchor_id is not None:
@@ -119,18 +114,18 @@ def draw_group(item: Group, output, anchor_pos):
         anchor_x = item.anchor_origin_x.value
         if item.anchor_id.value in anchor_pos:
             anchor_y = anchor_pos[item.anchor_id.value]
-    output.write(f'    <g id="{item.node_id}" transform="translate({xx(anchor_x)}, {yy(anchor_y)})">\n')
+    output.write(f'    <g id="{item.node_id}" transform="translate({track_xy.x(anchor_x)}, {track_xy.y(anchor_y)})">\n')
     for child_id in item.children:
         child = item.children[child_id]
         output.write(f'    <!-- child {child_id} -->\n')
         if isinstance(child, Group):
-            draw_group(child, output, anchor_pos)
+            draw_group(child, output, anchor_pos, track_xy=track_xy)
         elif isinstance(child, Line):
-            draw_stroke(child, output)
+            draw_stroke(child, output, track_xy)
     output.write(f'    </g>\n')
 
 
-def draw_stroke(item: Line, output):
+def draw_stroke(item: Line, output, track_xy: DocumentSizeTracker):
     # initiate the pen
     pen = Pen.create(item.tool.value, item.color.value, item.thickness_scale / 10)
     K = 5
@@ -171,20 +166,20 @@ def draw_stroke(item: Line, output):
             output.write('points="')
             if last_xpos != -1.:
                 # Join to previous segment
-                output.write(a := f'{xx(last_xpos):.3f},{yy(last_ypos):.3f} ')
+                output.write(a := f'{track_xy.x(last_xpos):.3f},{track_xy.y(last_ypos,):.3f} ')
         # store the last position
         last_xpos = xpos
         last_ypos = ypos
         last_segment_width = segment_width
 
         # BEGIN and END polyline segment
-        output.write(f'{xx(xpos):.3f},{yy(ypos):.3f} ')
+        output.write(f'{track_xy.x(xpos):.3f},{track_xy.y(ypos):.3f} ')
 
     # END stroke
     output.write('" />\n')
 
 
-def draw_text(text: Union[Text, TextDocument], output, anchor_pos):
+def draw_text(text: Union[Text, TextDocument], output, anchor_pos, track_xy: DocumentSizeTracker):
     if isinstance(text, Text):
         text = TextDocument.from_scene_item(text)
     output.write('    <g class="root-text" style="display:inline">\n')
@@ -192,15 +187,15 @@ def draw_text(text: Union[Text, TextDocument], output, anchor_pos):
     # add some style to get readable text
     output.write('''
     <style>
-        text.heading {
+        text.heading {{
             font: 14pt serif;
-        }
-        text.bold {
+        }}
+        text.bold {{
             font: 8pt sans-serif bold;
-        }
-        text, text.plain {
+        }}
+        text, text.plain {{
             font: 7pt sans-serif;
-        }
+        }}
     </style>
     ''')
 
@@ -221,7 +216,7 @@ def draw_text(text: Union[Text, TextDocument], output, anchor_pos):
         cls = fmt.name.lower()
         if line:
             output.write(f'        <!-- Text line char_id: {ids[0]} -->\n')
-            output.write(f'        <text x="{xx(pos_x)}" y="{yy(pos_y)}" class="{cls}">{line.strip()}</text>\n')
+            output.write(f'        <text x="{track_xy.x(pos_x)}" y="{track_xy.y(pos_y)}" class="{cls}">{line.strip()}</text>\n')
 
         # Save y-coordinates of potential anchors
         for k in ids:
