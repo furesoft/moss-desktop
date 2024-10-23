@@ -32,7 +32,7 @@ class Loader(pe.ChildContext):
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
         'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
-        # 'screenshot': 'screenshot_for_reference2.png',
+        # 'screenshot': 'Screenshot_20241023_162027.png',
     }
 
     LAYER = pe.AFTER_LOOP_LAYER
