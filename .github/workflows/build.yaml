@@ -3,6 +3,8 @@ on:
     branches:
       - main
       - action-testing
+    paths:
+      - '**/*.py'
 
 env:
   APP_NAME: "Moss Desktop"
