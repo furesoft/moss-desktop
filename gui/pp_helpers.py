@@ -18,6 +18,7 @@ from rm_api.storage.v3 import get_file_contents
 from rm_lines import rm_bytes_to_svg
 
 if TYPE_CHECKING:
+    from rm_api.models import Document
     from gui.aspect_ratio import Ratios
     from gui import GUI
 
@@ -177,9 +178,14 @@ class DocumentDebugPopup(pe.ChildContext):
             location = self.extract_location
         self.clean_extract_location(location)
         i = 0
-        for file in self.document.files:
-            if not file.uuid.endswith('.rm'):
-                continue
+        files = [file for file in self.document.files if file.uuid.endswith('.rm')]
+        try:
+            files.sort(key=lambda file: self.document.content.c_pages.get_index_from_uuid(file.uuid.split('/')[-1].split('.')[0]))
+        except Exception as e:
+            print_exc()
+            pass
+
+        for file in files:
             data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
             file_path = os.path.join(location, f'{i:>03} {self.clean_file_uuid(file)}.svg')
 
