@@ -43,7 +43,7 @@ class DocumentSizeTracker(ABC):
     def track_left(self, value):
         diff = value - self._track_left
         self._track_left = value
-        self.track_right += diff
+        self.track_right += diff * 2
 
     def x(self, x):
         aligned_x = x + SCREEN_WIDTH / 2
@@ -66,7 +66,7 @@ class DocumentSizeTracker(ABC):
         return {
             'height': self.track_height,
             'width': self.track_width,
-            'x_shift': self.track_width / 2,
+            'x_shift': SCREEN_WIDTH / 2,
             'viewbox': f'{self.track_left} {self.track_top} {self.track_width} {self.track_height}',
         }
 
