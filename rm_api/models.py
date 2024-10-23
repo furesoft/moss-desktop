@@ -1,7 +1,9 @@
 import os.path
+import string
 import threading
 from functools import lru_cache
-from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict
+from sqlite3.dbapi2 import Timestamp
+from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple
 
 from colorama import Fore
 
@@ -36,8 +38,12 @@ class TimestampedValue(Generic[T]):
         self.value: T = value['value']
         self.timestamp: str = value['timestamp']
 
-    def create(value: T):
-        return TimestampedValue({'value': value, 'timestamp': '0'})
+    @classmethod
+    def create(cls, value: T, bare: bool = False) -> Union[dict, 'TimestampedValue']:
+        dictionary = {'value': value, 'timestamp': '0'}
+        if bare:
+            return dictionary
+        return cls(dictionary)
 
 
 class Page:
@@ -120,34 +126,72 @@ class Content:
         self.__content = content
         self.usable = True
         self.c_pages = None
-        self.cover_page_number: int = content['coverPageNumber']
+        self.cover_page_number: int = content.get('coverPageNumber', 0)
         self.dummy_document: bool = content.get('dummyDocument', False)
         self.file_type: str = content['fileType']
-        self.version: int = content['formatVersion']
+        self.version: int = content.get('formatVersion')
+        self.sizeInBytes: int = content.get('sizeInBytes', -1)
+        self.tags: List[Tag] = [Tag(tag) for tag in content.get('tags', ())]
 
         # Handle the different versions
         if self.version == 2:
             self.parse_version_2()
+        elif self.version == 1:
+            self.parse_version_1()
         else:
             self.usable = False
             if show_debug:
-                print(f'{Fore.YELLOW}Content file version is unknown: {self.version}{Fore.RESET}')
+                if not self.version:
+                    print(f'{Fore.RED}Content file version is missing{Fore.RESET}')
+                else:
+                    print(f'{Fore.YELLOW}Content file version is unknown: {self.version}{Fore.RESET}')
 
     def parse_version_2(self):
         self.c_pages = CPages(self.__content['cPages'])
 
     def parse_version_1(self):
-        """
-        Version 1 only has pages instead of cPages
-        containing a list of uuids
-        """
-        # TODO: Support content version 1
-        pass
+        self.version = 2  # promote to version 2
+        original_page_count = self.__content.pop('originalPageCount')
+        pages = self.__content.pop('pages')
+        redirection_page_map = self.__content.pop('redirectionPageMap')
+        index = self.page_index_generator()
+        c_page_pages = []
+        last_opened_page = None
+        for i, (page, redirection_page) in enumerate(zip(pages, redirection_page_map)):
+            c_page_pages.append({
+                "id": page,
+                "idx": {
+                    "timestamp": "1:2",
+                    "value": next(index)
+                },
+                "redir": {
+                    "timestamp": "1:2",
+                    "value": redirection_page
+                }
+            })
+            if i == self.__content.get('lastOpenedPage'):
+                last_opened_page = page
+
+        self.c_pages = CPages(
+            {
+                'pages': c_page_pages,
+                'original': TimestampedValue.create(original_page_count, bare=True),
+                'lastOpened': TimestampedValue.create(last_opened_page, bare=True),
+                'uuids': {
+                    'first': pages[0],  # TODO: Figure out what the first uuid is meant to be in c_pages
+                    'second': 1
+                }
+            }
+        )
 
     def __str__(self):
         return f'content version: {self.version} file type: {self.file_type}'
 
-
+    @staticmethod
+    def page_index_generator():
+        # TODO: Figure out the index pattern and make a generator
+        while True:
+            yield 'ba'
 
 
 class Metadata:
