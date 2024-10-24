@@ -148,8 +148,8 @@ class MainMenu(pe.ChildContext):
             render_collection(self.parent_context, document_collection, self.texts,
                               self.set_parent, x, y)
 
-            x += self.ratios.main_menu_folder_distance
-            if i % 4 == 3 and i != len(self.document_collections) - 1:
+            x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
+            if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.document_collections):
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_folder_height_distance
 
@@ -172,7 +172,7 @@ class MainMenu(pe.ChildContext):
             render_document(self.parent_context, rect, self.texts, document)
 
             x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
-            if i % 4 == 3:
+            if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.documents):
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
         if self.config.debug:
