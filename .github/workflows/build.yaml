@@ -31,7 +31,7 @@ jobs:
 
       - name: Switch from pygame-ce to pygame
         run: |
-          pip uninstall pygame_ce
+          pip uninstall --yes pygame_ce
           pip install pygame
 
       - name: Build
