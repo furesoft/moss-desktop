@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class ExpandedNotebook(ABC):
     def __init__(self, frame_width: int, frame_height: int):
         self.frame_width = frame_width
@@ -21,16 +22,17 @@ class ExpandedNotebook(ABC):
                 frame_bottom = frame_top + self.frame_height
 
                 if (frame_right > area_x and frame_left < area_x + area_width and
-                    frame_bottom > area_y and frame_top < area_y + area_height):
+                        frame_bottom > area_y and frame_top < area_y + area_height):
                     visible_frames.append((frame_x, -frame_y))
 
         return [
             self.get_frame_from_initial(
-                frame[0]*self.frame_width,
-                frame[1]*self.frame_height
+                frame[0] * self.frame_width,
+                frame[1] * self.frame_height
             )
             for frame in visible_frames
         ]
 
     @abstractmethod
-    def get_frame_from_initial(self, x, y): ...
+    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None):
+        ...
