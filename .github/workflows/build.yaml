@@ -29,11 +29,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-${{ runner.os }}.txt
 
-      - name: Switch from pygame-ce to pygame
-        run: |
-          pip uninstall --yes pygame_ce
-          pip install pygame==2.5.1
-
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
