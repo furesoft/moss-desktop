@@ -25,6 +25,7 @@ class Loader(pe.ChildContext):
     TO_LOAD = {
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
+        'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),

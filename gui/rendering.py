@@ -31,6 +31,12 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Te
     text.rect.x += icon.width + gui.ratios.main_menu_folder_padding
     text.rect.y += icon.height // 1.5
     text.display()
+
+    extra_x = text.rect.right + gui.ratios.main_menu_folder_padding
+    if collection.metadata.pinned:
+        gui.icons['star_inverted'].display((extra_x, text.rect.centery-gui.icons['star_inverted'].width//2))
+        extra_x += gui.icons['star_inverted'].width + gui.ratios.main_menu_folder_padding
+
     rect = pe.rect.Rect(
         x, y,
         gui.ratios.main_menu_document_width -
