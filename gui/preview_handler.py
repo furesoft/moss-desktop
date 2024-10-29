@@ -93,7 +93,7 @@ class PreviewHandler:
         rm_bytes = get_file_contents(document.api, file_hash, binary=True)
         if not rm_bytes:
             raise Exception('Page content unavailable to construct preview')
-        image = Notebook_rM_Lines_Renderer.generate_image_from_rm(rm_bytes, use_lock=cls.PYGAME_THREAD_LOCK)
+        image = Notebook_rM_Lines_Renderer.generate_expanded_notebook_from_rm(document.metadata, rm_bytes, use_lock=cls.PYGAME_THREAD_LOCK).get_frame_from_initial(0, 0)
 
         cls.CACHED_PREVIEW[document.uuid] = (page_id, image)
         if cls.CACHED_RESIZES.get(document.uuid):

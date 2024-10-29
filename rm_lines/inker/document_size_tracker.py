@@ -5,7 +5,7 @@ SCREEN_WIDTH = 1404
 SCREEN_HEIGHT = 1872
 
 class DocumentSizeTracker(ABC):
-    def __init__(self, document_center_x, document_center_y, document_cap_top, document_cap_bottom, document_cap_left, document_cap_right):
+    def __init__(self, document_center_x, document_center_y, document_cap_top, document_cap_bottom, document_cap_left, document_cap_right, frame_width, frame_height):
         self.document_center_x = document_center_x
         self.document_center_y = document_center_y
         self.document_cap_top = document_cap_top
@@ -16,6 +16,8 @@ class DocumentSizeTracker(ABC):
         self.track_bottom = 0
         self._track_left = 0
         self.track_right = 0
+        self.frame_width = frame_width
+        self.frame_height = frame_height
 
     @property
     def track_top(self):
@@ -72,6 +74,6 @@ class DocumentSizeTracker(ABC):
 
 class NotebookSizeTracker(DocumentSizeTracker):
     def __init__(self):
-        super().__init__(0, 0, 0, 0, 0, 0)
+        super().__init__(0, 0, 0, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
         self.track_right = SCREEN_WIDTH
         self.track_bottom = SCREEN_HEIGHT

@@ -66,21 +66,16 @@ def read_template_svg(template_path: Path) -> str:
     return "\n".join(lines[2:-1])
 
 
-def tree_to_svg(tree: SceneTree, output_file, include_template=None, track_xy=None):
+def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker = None):
     """Convert Tree to SVG."""
 
-    track_xy = NotebookSizeTracker()
+    if track_xy is None:
+        track_xy = NotebookSizeTracker()
     output = SvgWriter()
 
     # add svg header
     # output.write('<svg xmlns="http://www.w3.org/2000/svg">\n')
     output.write(SVG_HEADER)
-
-    if include_template is not None:
-        template = read_template_svg(include_template)
-        output.write('    <g id="template" style="display:inline" transform="scale({scale})">\n')
-        output.write(template)
-        output.write('    </g>\n')
 
     output.write('    <g id="p1" style="display:inline" transform="translate({x_shift},0)">\n')
     # output.write('        <filter id="blurMe"><feGaussianBlur in="SourceGraphic" stdDeviation="10" /></filter>\n')
