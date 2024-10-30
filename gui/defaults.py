@@ -73,6 +73,7 @@ class Defaults:
     DOCUMENT_GRAY = (184, 184, 184)
     TRANSPARENT_COLOR = (0, 0, 0, 0)
     BUTTON_ACTIVE_COLOR = (0, 0, 0, 25)
+    BUTTON_DISABLED_COLOR = (0, 0, 0, 100)
 
     # Colors
     RED = (255, 50, 50)

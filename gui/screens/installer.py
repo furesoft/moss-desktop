@@ -106,11 +106,14 @@ class Installer(pe.ChildContext):
                 action=self.cancel,
                 text=self.cancel_text
             )
+            can_install = self.check_can_install()
             pe.button.rect(
                 self.install_button_rect,
-                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                Defaults.TRANSPARENT_COLOR if can_install else Defaults.BUTTON_DISABLED_COLOR,
+                Defaults.BUTTON_ACTIVE_COLOR,
                 action=self.install,
-                text=self.install_text if not Defaults.INSTALLED else self.reinstall_text
+                text=self.install_text if not Defaults.INSTALLED else self.reinstall_text,
+                disabled=not can_install,
             )
             self.draw_button_outline(self.cancel_button_rect)
             self.draw_button_outline(self.install_button_rect)
@@ -164,6 +167,19 @@ class Installer(pe.ChildContext):
             desktop = winshell.desktop()
             path = os.path.join(desktop, f"{APP_NAME}.lnk")
             self.make_link(path)
+        elif os.name == 'posix':
+            path = os.path.expanduser("~/.local/share/applications")
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"{APP_NAME}.desktop")
+            with open(path, 'w') as f:
+                f.write(
+                    "[Desktop Entry]"
+                    f"Name={APP_NAME}"
+                    f"Exec={os.path.join(INSTALL_DIR, 'moss.bin')}"
+                    f"Path={INSTALL_DIR}"
+                    f"Icon={os.path.join(INSTALL_DIR, 'assets', 'icons', 'moss.png')}"
+                    "Type=Application"
+                    "Categories=Utility;")
 
     def add_to_path(self):
         if os.name == 'nt':
@@ -177,6 +193,8 @@ class Installer(pe.ChildContext):
                     path += f";{INSTALL_DIR}"
                 winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, path)
             winreg.CloseKey(key)
+        elif os.name == 'posix':
+            os.symlink(os.path.join(INSTALL_DIR, "moss.bin"), "/usr/local/bin/moss")
 
     def make_link(self, path):
         print(f"Making a shortcut to moss: {path}")
@@ -233,6 +251,13 @@ class Installer(pe.ChildContext):
                 start_new_session=True
             )
         sys.exit()
+
+    @staticmethod
+    def check_can_install():
+        if os.name == 'posix':
+            # Check for sudo
+            return os.getuid() != 0
+        return True
 
     @property
     def from_directory(self):
