@@ -1,5 +1,7 @@
+import os.path
 import threading
 import time
+import webbrowser
 from queue import Queue
 
 import pygameextra as pe
@@ -48,6 +50,12 @@ class CodeScreen(pe.ChildContext):
             Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
             colors=Defaults.TEXT_COLOR_T
         )
+        self.website_info = pe.Text(
+            self.config.uri.replace('https://', '').replace('http://', ''),
+            Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
+            colors=Defaults.TEXT_COLOR_LINK if self.connecting_to_real_remarkable() else Defaults.TEXT_COLOR_T
+        )
+        self.share_icon = pe.Image(os.path.join(Defaults.ICON_DIR, 'share.svg'))
         self.update_code_text_positions()
         self.api.add_hook(self.EVENT_HOOK_NAME, self.resize_check_hook)
         self.code = []
@@ -67,9 +75,11 @@ class CodeScreen(pe.ChildContext):
 
     def update_code_text_positions(self):
         self.code_info.rect.midtop = self.logo.rect.midbottom
-        self.code_info.rect.y += self.ratios.code_screen_header_padding // 2
+        self.code_info.rect.top += self.ratios.code_screen_header_padding // 2
+        self.website_info.rect.centerx = self.code_info.rect.centerx
         self.underscore.rect.top = self.logo.rect.bottom + self.ratios.code_screen_header_padding
         self.underscore_red.rect.top = self.underscore.rect.top
+        self.website_info.rect.bottom = self.underscore.rect.bottom + self.ratios.code_screen_header_padding
 
     def resize_check_hook(self, event):
         if isinstance(event, ResizeEvent):
@@ -83,7 +93,7 @@ class CodeScreen(pe.ChildContext):
         self.code_text.append(pe.Text(
             char,
             Defaults.CODE_FONT, self.ratios.loader_logo_text_size,
-            colors=Defaults.TEXT_COLOR_T
+            colors=Defaults.TEXT_COLOR_CODE
         ))
         if len(self.code) == self.CODE_LENGTH:
             self.check_code()
@@ -138,9 +148,32 @@ class CodeScreen(pe.ChildContext):
             del self.code[-1]
             del self.code_text[-1]
 
+    def connecting_to_real_remarkable(self):
+        return 'remarkable.com' in self.config.uri
+
     def loop(self):
         self.logo.display()
         self.code_info.display()
+        self.website_info.display()
+        if self.connecting_to_real_remarkable():
+            self.share_icon.display((
+                self.website_info.rect.right + self.ratios.code_screen_spacing,
+                self.website_info.rect.top + self.share_icon.height // 5
+            ))
+            pe.button.rect(
+                self.ratios.pad_button_rect(self.website_info.rect),
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=webbrowser.open,
+                data=("https://my.remarkable.com/#desktop", 0, True)
+            )
+        else:
+            pe.button.rect(
+                self.ratios.pad_button_rect(self.website_info.rect),
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=webbrowser.open,
+                data=(self.config.uri, 0, True)
+            )
+
         x = self.width // 2 - self.underscore.rect.width * (self.CODE_LENGTH / 2)
         x -= self.ratios.code_screen_spacing * (self.CODE_LENGTH - 1) / 2
 
