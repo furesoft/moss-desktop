@@ -168,7 +168,7 @@ class Installer(pe.ChildContext):
             path = os.path.join(desktop, f"{APP_NAME}.lnk")
             self.make_link(path)
         elif os.name == 'posix':
-            path = os.path.expanduser("~/.local/share/applications")
+            path = os.path.expanduser("/usr/share/applications")
             os.makedirs(path, exist_ok=True)
             path = os.path.join(path, f"{APP_NAME}.desktop")
             with open(path, 'w') as f:
