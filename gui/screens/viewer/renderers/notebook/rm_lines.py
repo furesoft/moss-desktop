@@ -118,7 +118,7 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
     def generate_expanded_notebook_from_rm(metadata: Metadata, content: bytes, size: Tuple[int, int] = None,
                                            use_lock: threading.Lock = None) -> rM_Lines_ExpandedNotebook:
         try:
-            if metadata.type == 'notebook':
+            if metadata.type == 'DocumentType':
                 track_xy = NotebookSizeTracker()
             else:
                 track_xy = PDFSizeTracker()
