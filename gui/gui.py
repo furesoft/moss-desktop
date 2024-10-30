@@ -265,5 +265,5 @@ class GUI(pe.GameContext):
             self.screens.queue[-1].handle_event(e)
         if pe.event.quit_check():
             self.running = False
-        if new_size := pe.event.resize_check():
-            self.api.spread_event(ResizeEvent(new_size))
+        if pe.event.resize_check():
+            self.api.spread_event(ResizeEvent(pe.display.get_size()))
