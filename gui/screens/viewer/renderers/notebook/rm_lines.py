@@ -10,7 +10,7 @@ from gui.screens.viewer.renderers.notebook.expanded_notebook import ExpandedNote
 from gui.screens.viewer.renderers.shared_model import AbstractRenderer
 from rm_api.models import Metadata
 from rm_lines import rm_bytes_to_svg
-from rm_lines.inker.document_size_tracker import NotebookSizeTracker
+from rm_lines.inker.document_size_tracker import NotebookSizeTracker, PDFSizeTracker
 
 
 class rM_Lines_ExpandedNotebook(ExpandedNotebook):
@@ -18,8 +18,9 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
     HEIGHT_PATTERN = r'height="([\d.]+)"'
     VIEWPORT_PATTERN = r'viewBox="([\d.-]+) ([\d.-]+) ([\d.]+) ([\d.]+)"'
 
-    def __init__(self, svg: str, frame_width: int, frame_height: int, use_lock: threading.Lock = None):
-        super().__init__(frame_width, frame_height)
+    def __init__(self, svg: str, frame_width: int, frame_height: int, track_xy: NotebookSizeTracker,
+                 use_lock: threading.Lock = None):
+        super().__init__(frame_width, frame_height, track_xy)
         self.svg = svg
         self.use_lock = use_lock
 
@@ -49,8 +50,8 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         svg_content = re.sub(self.HEIGHT_PATTERN, f'height="{final_height}"', svg_content)
         svg_content = re.sub(self.VIEWPORT_PATTERN,
                              f'viewBox="'
-                             f'{frame_x * self.frame_width} '
-                             f'{frame_y * self.frame_height} '
+                             f'{frame_x * self.frame_width - self.track_xy.offset_x} '
+                             f'{frame_y * self.frame_height - self.track_xy.offset_y} '
                              f'{self.frame_width} '
                              f'{self.frame_height}"',
                              svg_content)
@@ -120,9 +121,9 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
             if metadata.type == 'notebook':
                 track_xy = NotebookSizeTracker()
             else:
-                track_xy = NotebookSizeTracker()
+                track_xy = PDFSizeTracker()
             svg: str = rm_bytes_to_svg(content, track_xy)
-            expanded = rM_Lines_ExpandedNotebook(svg, track_xy.frame_width, track_xy.frame_height, use_lock)
+            expanded = rM_Lines_ExpandedNotebook(svg, track_xy.frame_width, track_xy.frame_height, track_xy, use_lock)
             expanded.get_frame_from_initial(0, 0, *(size if size else ()))
         except Exception as e:
             print_exc()

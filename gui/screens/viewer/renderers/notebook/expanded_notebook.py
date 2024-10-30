@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 
+from rm_lines.inker.document_size_tracker import NotebookSizeTracker
+
 
 class ExpandedNotebook(ABC):
-    def __init__(self, frame_width: int, frame_height: int):
+    def __init__(self, frame_width: int, frame_height: int, track_xy: NotebookSizeTracker):
         self.frame_width = frame_width
         self.frame_height = frame_height
+        self.track_xy = track_xy
 
     def get_frames(self, area_x: int, area_y: int, area_width: int, area_height: int):
         visible_frames = []
