@@ -11,8 +11,6 @@ from .tagged_block_common import CrdtId
 from .crdt_sequence import CrdtSequenceItem
 from . import scene_items as si
 
-_logger = logging.getLogger(__name__)
-
 
 ROOT_ID = CrdtId(0, 1)
 

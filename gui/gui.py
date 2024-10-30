@@ -1,7 +1,8 @@
+import atexit
 import json
 import os
 import time
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, Union
 
 import appdirs
 import pygameextra as pe
@@ -10,6 +11,7 @@ from box import Box
 from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
+from .events import ResizeEvent
 
 Defaults = None
 
@@ -28,6 +30,7 @@ APP_NAME = "Moss"
 INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 
+MAIN_MENU_MODES = Literal['grid', 'list', 'compressed']
 PDF_RENDER_MODES = Literal['cef']
 NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
@@ -39,6 +42,11 @@ class ConfigDict(TypedDict):
     discovery_uri: str
     pdf_render_mode: PDF_RENDER_MODES
     notebook_render_mode: NOTEBOOK_RENDER_MODES
+    download_everything: bool
+    download_last_opened_page_to_make_preview: bool
+    save_last_opened_folder: bool
+    last_opened_folder: Union[None, str]
+    main_menu_view_mode: MAIN_MENU_MODES
     debug: bool
 
 
@@ -50,6 +58,11 @@ DEFAULT_CONFIG: ConfigDict = {
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'pdf_render_mode': 'cef',
     'notebook_render_mode': 'rm_lines_svg_inker',
+    'download_everything': False,
+    'download_last_opened_page_to_make_preview': False,
+    'save_last_opened_folder': False,
+    'last_opened_folder': None,
+    'main_menu_view_mode': 'grid',
     'debug': False
 }
 
@@ -76,6 +89,10 @@ def load_config() -> ConfigType:
             file = 'config.json'
 
     setattr(pe.settings, 'config_file_path', file)
+
+    # Ensure config directory path exists
+    if base_dir := os.path.dirname(file):
+        os.makedirs(base_dir, exist_ok=True)
 
     if os.path.exists(file):
         exists = True
@@ -108,12 +125,15 @@ class GUI(pe.GameContext):
     FPS = 60
     BACKGROUND = pe.colors.white
     TITLE = f"{AUTHOR} {APP_NAME}"
+    MODE = pe.display.DISPLAY_MODE_RESIZABLE
     FAKE_SCREEN_REFRESH_TIME = .1
 
     def __init__(self):
         global Defaults
 
         self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
+        self.dirty_config = False
+        atexit.register(self.save_config_if_dirty)
         super().__init__()
         self.config = load_config()
         setattr(pe.settings, 'config', self.config)
@@ -197,14 +217,12 @@ class GUI(pe.GameContext):
         with open("config.json", "w") as f:
             json.dump(self.config, f, indent=4)
 
-    def post_loop(self):
-        if len(self.screens.queue) == 0:
-            self.running = False
+    def save_config_if_dirty(self):
+        if not self.dirty_config:
             return
-        if not self.doing_fake_screen_refresh:
-            return
+        self.save_config()
 
-        # Fake screen refresh
+    def fake_screen_refresh(self):
         section = (time.time() - self.fake_screen_refresh_timer) / self.FAKE_SCREEN_REFRESH_TIME
         if section < 1:
             pe.fill.full(pe.colors.black)
@@ -226,6 +244,18 @@ class GUI(pe.GameContext):
             del self.original_screen_refresh_surface
             self.doing_fake_screen_refresh = False
 
+    def post_loop(self):
+        if len(self.screens.queue) == 0:
+            self.running = False
+            return
+
+        if self.config.debug:
+            for button in self.buttons:
+                pe.draw.rect((*pe.colors.red, 50), button.area, 2)
+
+        if self.doing_fake_screen_refresh:
+            self.fake_screen_refresh()
+
     @property
     def center(self):
         return self.width // 2, self.height // 2
@@ -235,3 +265,5 @@ class GUI(pe.GameContext):
             self.screens.queue[-1].handle_event(e)
         if pe.event.quit_check():
             self.running = False
+        if pe.event.resize_check():
+            self.api.spread_event(ResizeEvent(pe.display.get_size()))

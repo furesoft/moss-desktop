@@ -14,9 +14,6 @@ import struct
 import typing as tp
 
 
-_logger = logging.getLogger(__name__)
-
-
 HEADER_V6 = b"reMarkable .lines file, version=6          "
 
 

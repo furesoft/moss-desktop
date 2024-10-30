@@ -4,6 +4,7 @@ import threading
 import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
+from gui.events import ResizeEvent
 from rm_api.notifications.models import SyncCompleted
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
@@ -25,6 +26,8 @@ class Loader(pe.ChildContext):
     TO_LOAD = {
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
+        'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
+        'tag_inverted': os.path.join(Defaults.ICON_DIR, 'tag_inverted.svg'),
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
@@ -32,15 +35,32 @@ class Loader(pe.ChildContext):
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
         'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
-        # 'screenshot': 'screenshot_for_reference2.png',
+        # 'screenshot': 'Screenshot_20241023_162027.png',
     }
 
     LAYER = pe.AFTER_LOOP_LAYER
     icons: Dict[str, pe.Image]
     api: 'API'
+    logo: pe.Text
+    line_rect: pe.Rect
 
     def __init__(self, parent: 'GUI'):
         super().__init__(parent)
+        self.initialize_logo_and_line()
+        self.api.add_hook('loader_resize_check', self.resize_check_hook)
+        self.items_loaded = 0
+        self.files_loaded = 0
+        self.loading_feedback = 0  # Used by main menu to know if enough changes have been made since last checked
+        self.files_to_load: Union[int, None] = None
+        self.last_progress = 0
+        self.current_progress = 0
+        self.initialized = False
+
+    def resize_check_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.initialize_logo_and_line()
+
+    def initialize_logo_and_line(self):
         self.logo = pe.Text(
             APP_NAME,
             Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
@@ -58,16 +78,9 @@ class Loader(pe.ChildContext):
                                  self.ratios.loader_loading_bar_height)
         self.line_rect.midtop = self.logo.rect.midbottom
         self.line_rect.top += self.ratios.loader_loading_bar_padding
-        self.items_loaded = 0
-        self.files_loaded = 0
-        self.loading_feedback = 0  # Used by main menu to know if enough changes have been made since last checked
-        self.files_to_load: Union[int, None] = None
-        self.last_progress = 0
-        self.current_progress = 0
-        self.initialized = False
 
     def start_syncing(self):
-        threading.Thread(target=self.get_documents, daemon=False).start()
+        threading.Thread(target=self.get_documents, daemon=True).start()
 
     def load(self):
         for key, item in self.TO_LOAD.items():

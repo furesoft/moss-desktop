@@ -105,8 +105,8 @@ class PDF_CEF_Viewer(AbstractRenderer):
             if self.current_page != page_index:
                 self.current_page = page_index
                 self.pdf.browser.ExecuteJavascript(f'window.loadPage({self.current_page})')
-
-            pe.display.blit(self.pdf.image)
+            image = self.pdf.image
+            pe.display.blit(image)
         elif (url := self.pdf.browser.GetUrl()) and self.pdf.image.get_at((0, 0))[2] != 51:
             self.url_should_be = url
         else:
