@@ -200,7 +200,7 @@ class Metadata:
         self.__metadata = metadata
         self.type = metadata['type']
         self.parent = metadata['parent'] or None
-        self.pinned = metadata['pinned']
+        self.pinned = metadata['pinned']  # Pinned is equivalent to starred
         self.created_time = metadata.get('createdTime')
         self.last_modified = metadata['lastModified']
         self.visible_name = metadata['visibleName']
@@ -259,6 +259,7 @@ class DocumentCollection:
         self.tags = tags
         self.metadata = metadata
         self.uuid = uuid
+        self.has_items = False
 
     @property
     def parent(self):

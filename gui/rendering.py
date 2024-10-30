@@ -23,17 +23,30 @@ def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
         FullTextPopup.create(gui, text_full, text)()
 
 
-def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y):
-    icon = gui.icons['folder_inverted']
+def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y, width):
+    icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
     icon.display((x, y))
     text = texts[collection.uuid]
     text.rect.midleft = (x, y)
     text.rect.x += icon.width + gui.ratios.main_menu_folder_padding
     text.rect.y += icon.height // 1.5
     text.display()
+
+    extra_x = text.rect.right + gui.ratios.main_menu_folder_padding
+    star_icon = gui.icons['star_inverted']
+    tag_icon = gui.icons['tag_inverted']
+
+    # Draw the star icon
+    if collection.metadata.pinned:
+        star_icon.display((extra_x, text.rect.centery-star_icon.width//2))
+        extra_x += star_icon.width + gui.ratios.main_menu_folder_padding
+    if collection.tags:
+        tag_icon.display((extra_x, text.rect.centery - tag_icon.width // 2))
+        extra_x += tag_icon.width + gui.ratios.main_menu_folder_padding
+
     rect = pe.rect.Rect(
         x, y,
-        gui.ratios.main_menu_document_width -
+        width -
         gui.ratios.main_menu_folder_padding,
         icon.height
     )
@@ -220,6 +233,9 @@ def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: '
     # Calculate the number of items to skip in the path, this results in the > > you see in the beginning
     while width > gui.width - (x + 200):
         skips += 1
+        if len(path_queue.queue) - skips == 0:
+            # window is too small to render the path
+            return
         width -= texts[f'path_{path_queue.queue[-skips]}'].rect.width
 
     # Draw the path

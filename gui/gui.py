@@ -11,6 +11,7 @@ from box import Box
 from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
+from .events import ResizeEvent
 
 Defaults = None
 
@@ -29,6 +30,7 @@ APP_NAME = "Moss"
 INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 
+MAIN_MENU_MODES = Literal['grid', 'list', 'compressed']
 PDF_RENDER_MODES = Literal['cef']
 NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
@@ -44,6 +46,7 @@ class ConfigDict(TypedDict):
     download_last_opened_page_to_make_preview: bool
     save_last_opened_folder: bool
     last_opened_folder: Union[None, str]
+    main_menu_view_mode: MAIN_MENU_MODES
     debug: bool
 
 
@@ -59,6 +62,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'download_last_opened_page_to_make_preview': False,
     'save_last_opened_folder': False,
     'last_opened_folder': None,
+    'main_menu_view_mode': 'grid',
     'debug': False
 }
 
@@ -117,6 +121,7 @@ class GUI(pe.GameContext):
     FPS = 60
     BACKGROUND = pe.colors.white
     TITLE = f"{AUTHOR} {APP_NAME}"
+    MODE = pe.display.DISPLAY_MODE_RESIZABLE
     FAKE_SCREEN_REFRESH_TIME = .1
 
     def __init__(self):
@@ -127,10 +132,6 @@ class GUI(pe.GameContext):
         atexit.register(self.save_config_if_dirty)
         super().__init__()
         self.config = load_config()
-        if self.config.debug:
-            # Allow screen resize for debug (for now)
-            # TODO: fully test and allow the app to run in resizable mode
-            pe.display.make(self.size, self.TITLE, pe.display.DISPLAY_MODE_RESIZABLE)
         setattr(pe.settings, 'config', self.config)
         from .defaults import Defaults
         try:
@@ -255,3 +256,5 @@ class GUI(pe.GameContext):
             self.screens.queue[-1].handle_event(e)
         if pe.event.quit_check():
             self.running = False
+        if new_size := pe.event.resize_check():
+            self.api.spread_event(ResizeEvent(new_size))
