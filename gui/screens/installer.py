@@ -194,7 +194,10 @@ class Installer(pe.ChildContext):
                 winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, path)
             winreg.CloseKey(key)
         elif os.name == 'posix':
-            os.symlink(os.path.join(INSTALL_DIR, "moss.bin"), "/usr/local/bin/moss")
+            try:
+                os.symlink(os.path.join(INSTALL_DIR, "moss.bin"), "/usr/local/bin/moss")
+            except FileExistsError:
+                pass
 
     def make_link(self, path):
         print(f"Making a shortcut to moss: {path}")
