@@ -90,10 +90,6 @@ def load_config() -> ConfigType:
 
     setattr(pe.settings, 'config_file_path', file)
 
-    # Ensure config directory path exists
-    if base_dir := os.path.dirname(file):
-        os.makedirs(base_dir, exist_ok=True)
-
     if os.path.exists(file):
         exists = True
         with open(file) as f:
