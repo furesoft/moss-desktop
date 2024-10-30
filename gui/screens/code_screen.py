@@ -6,6 +6,7 @@ import pygameextra as pe
 from pyperclip import paste as pyperclip_paste
 from typing import TYPE_CHECKING
 
+from gui.events import ResizeEvent
 from rm_api.auth import FailedToGetToken
 from gui.defaults import Defaults
 from gui.screens.loader import Loader, APP_NAME
@@ -19,6 +20,7 @@ class CodeScreen(pe.ChildContext):
     CODE_LENGTH = 8
     BACKSPACE_DELETE_DELAY = 0.3  # Initial backspace delay
     BACKSPACE_DELETE_SPEED = 0.05  # After initial backspace delay
+    EVENT_HOOK_NAME = 'code_screen_resize_check'
 
     parent_context: 'GUI'
     screens: Queue[pe.ChildContext]
@@ -38,10 +40,7 @@ class CodeScreen(pe.ChildContext):
         self.logo = pe.Text(
             APP_NAME,
             Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
-            (
-                self.width // 2,
-                self.height // 2 - (self.underscore.rect.height + self.ratios.code_screen_header_padding // 2)
-            ),
+            self.logo_position,
             Defaults.TEXT_COLOR_T
         )
         self.code_info = pe.Text(
@@ -49,10 +48,8 @@ class CodeScreen(pe.ChildContext):
             Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
             colors=Defaults.TEXT_COLOR_T
         )
-        self.code_info.rect.midtop = self.logo.rect.midbottom
-        self.code_info.rect.y += self.ratios.code_screen_header_padding // 2
-        self.underscore.rect.top = self.logo.rect.bottom + self.ratios.code_screen_header_padding
-        self.underscore_red.rect.top = self.underscore.rect.top
+        self.update_code_text_positions()
+        self.api.add_hook(self.EVENT_HOOK_NAME, self.resize_check_hook)
         self.code = []
         self.code_text = []
         self.code_failed = False
@@ -60,6 +57,24 @@ class CodeScreen(pe.ChildContext):
         self.hold_backspace = False
         self.hold_backspace_timer = None
         self.ctrl_hold = False
+
+    @property
+    def logo_position(self):
+        return (
+            self.width // 2,
+            self.height // 2 - (self.underscore.rect.height + self.ratios.code_screen_header_padding // 2)
+        )
+
+    def update_code_text_positions(self):
+        self.code_info.rect.midtop = self.logo.rect.midbottom
+        self.code_info.rect.y += self.ratios.code_screen_header_padding // 2
+        self.underscore.rect.top = self.logo.rect.bottom + self.ratios.code_screen_header_padding
+        self.underscore_red.rect.top = self.underscore.rect.top
+
+    def resize_check_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.logo.rect.center = self.logo_position
+            self.update_code_text_positions()
 
     def add_character(self, char: str):
         if len(self.code) == self.CODE_LENGTH:
@@ -98,7 +113,6 @@ class CodeScreen(pe.ChildContext):
             elif event.key == pe.pygame.K_LCTRL or event.key == pe.pygame.K_RCTRL:
                 self.ctrl_hold = False
 
-
     def check_code(self):
         self.checking_code = True
         threading.Thread(target=self.check_code_thread, daemon=True).start()
@@ -107,6 +121,7 @@ class CodeScreen(pe.ChildContext):
         try:
             self.api.get_token("".join(self.code))
             self.screens.put(Loader(self.parent_context))
+            self.api.remove_hook(self.EVENT_HOOK_NAME)
             del self.screens.queue[0]
         except FailedToGetToken:
             self.code_failed = True
