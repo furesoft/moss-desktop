@@ -33,7 +33,7 @@ jobs:
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: main
+          nuitka-version: factory
           script-name: moss.py
           standalone: true
           onefile: true
