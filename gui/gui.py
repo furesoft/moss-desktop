@@ -29,6 +29,7 @@ APP_NAME = "Moss"
 INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 
+MAIN_MENU_MODES = Literal['grid', 'list', 'compressed']
 PDF_RENDER_MODES = Literal['cef']
 NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
@@ -44,6 +45,7 @@ class ConfigDict(TypedDict):
     download_last_opened_page_to_make_preview: bool
     save_last_opened_folder: bool
     last_opened_folder: Union[None, str]
+    main_menu_view_mode: MAIN_MENU_MODES
     debug: bool
 
 
@@ -59,6 +61,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'download_last_opened_page_to_make_preview': False,
     'save_last_opened_folder': False,
     'last_opened_folder': None,
+    'main_menu_view_mode': 'grid',
     'debug': False
 }
 

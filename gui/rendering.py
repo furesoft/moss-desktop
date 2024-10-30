@@ -23,7 +23,7 @@ def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
         FullTextPopup.create(gui, text_full, text)()
 
 
-def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y):
+def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y, width):
     icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
     icon.display((x, y))
     text = texts[collection.uuid]
@@ -33,13 +33,20 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Te
     text.display()
 
     extra_x = text.rect.right + gui.ratios.main_menu_folder_padding
+    star_icon = gui.icons['star_inverted']
+    tag_icon = gui.icons['tag_inverted']
+
+    # Draw the star icon
     if collection.metadata.pinned:
-        gui.icons['star_inverted'].display((extra_x, text.rect.centery-gui.icons['star_inverted'].width//2))
-        extra_x += gui.icons['star_inverted'].width + gui.ratios.main_menu_folder_padding
+        star_icon.display((extra_x, text.rect.centery-star_icon.width//2))
+        extra_x += star_icon.width + gui.ratios.main_menu_folder_padding
+    if collection.tags:
+        tag_icon.display((extra_x, text.rect.centery - tag_icon.width // 2))
+        extra_x += tag_icon.width + gui.ratios.main_menu_folder_padding
 
     rect = pe.rect.Rect(
         x, y,
-        gui.ratios.main_menu_document_width -
+        width -
         gui.ratios.main_menu_folder_padding,
         icon.height
     )

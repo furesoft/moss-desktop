@@ -11,6 +11,7 @@ from gui.rendering import render_document, render_collection, render_header, dra
 
 if TYPE_CHECKING:
     from gui import GUI
+    from gui.aspect_ratio import Ratios
     from rm_api import API
     from gui.screens.loader import Loader
 
@@ -21,6 +22,7 @@ class MainMenu(pe.ChildContext):
     api: 'API'
     parent_context: 'GUI'
     icons: Dict[str, pe.Image]
+    ratios: 'Ratios'
     SORTING_FUNCTIONS = {
         'last_modified': lambda item: item.metadata.last_modified,
     }
@@ -46,6 +48,10 @@ class MainMenu(pe.ChildContext):
         self.texts['my_files'].rect.topleft = (
             self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
 
+    @property
+    def view_mode(self):
+        return self.config.main_menu_view_mode
+
     def get_items(self):
         # Copy the document collections and documents incase they change
         document_collections = dict(self.api.document_collections)
@@ -65,23 +71,26 @@ class MainMenu(pe.ChildContext):
 
         # Preparing the document collection texts
         for uuid, document_collection in document_collections.items():
-            if self.texts.get(uuid) is None or self.texts[uuid+'_full'].text != document_collection.metadata.visible_name:
+            if self.texts.get(uuid) is None or self.texts[
+                uuid + '_full'].text != document_collection.metadata.visible_name:
                 self.texts[uuid] = pe.Text(shorten_folder(document_collection.metadata.visible_name),
                                            Defaults.FOLDER_FONT,
                                            self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
-                self.texts[uuid+'_full'] = pe.Text(document_collection.metadata.visible_name,
-                                           Defaults.FOLDER_FONT,
-                                           self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
+                self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
+                                                     Defaults.FOLDER_FONT,
+                                                     self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
         for uuid, document in documents.items():
-            if self.texts.get(uuid) is None or self.texts[uuid+'_full'].text != document.metadata.visible_name:
+            if self.texts.get(uuid) is None or self.texts[uuid + '_full'].text != document.metadata.visible_name:
                 self.texts[uuid] = pe.Text(shorten_document(document.metadata.visible_name),
                                            Defaults.DOCUMENT_TITLE_FONT,
-                                           self.ratios.main_menu_document_title_size, (0, 0), Defaults.DOCUMENT_TITLE_COLOR)
-                self.texts[uuid+'_full'] = pe.Text(document.metadata.visible_name,
-                                           Defaults.DOCUMENT_TITLE_FONT,
-                                           self.ratios.main_menu_document_title_size, (0, 0), Defaults.DOCUMENT_TITLE_COLOR)
+                                           self.ratios.main_menu_document_title_size, (0, 0),
+                                           Defaults.DOCUMENT_TITLE_COLOR)
+                self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name,
+                                                     Defaults.DOCUMENT_TITLE_FONT,
+                                                     self.ratios.main_menu_document_title_size, (0, 0),
+                                                     Defaults.DOCUMENT_TITLE_COLOR)
 
         # Preparing the path queue and the path texts
         self.path_queue.queue.clear()
@@ -129,7 +138,7 @@ class MainMenu(pe.ChildContext):
         if self.current_sorting_reverse:
             return reversed(documents)
         return documents
-    
+
     def refresh(self):
         self.api.spread_event(SyncRefresh())
 
@@ -143,14 +152,18 @@ class MainMenu(pe.ChildContext):
         y = self.texts['my_files'].rect.bottom + self.ratios.main_menu_my_files_folder_padding
 
         # Rendering the folders
+        document_collection_width = \
+            self.ratios.main_menu_document_width if self.view_mode == 'grid' else self.width - x * 2
         for i, document_collection in enumerate(self.get_sorted_document_collections()):
-
             render_collection(self.parent_context, document_collection, self.texts,
-                              self.set_parent, x, y)
+                              self.set_parent, x, y, document_collection_width)
 
-            x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
-            if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.document_collections):
-                x = self.ratios.main_menu_x_padding
+            if self.view_mode == 'grid':
+                x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
+                if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.document_collections):
+                    x = self.ratios.main_menu_x_padding
+                    y += self.ratios.main_menu_folder_height_distance
+            else:
                 y += self.ratios.main_menu_folder_height_distance
 
         # Resetting the x and y for the documents
@@ -176,7 +189,8 @@ class MainMenu(pe.ChildContext):
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
         if self.config.debug:
-            pe.button.rect((0, 0, self.ratios.main_menu_top_height, self.ratios.main_menu_top_height), (0, 0, 0, 20), (255, 0, 0, 50), action=self.refresh)
+            pe.button.rect((0, 0, self.ratios.main_menu_top_height, self.ratios.main_menu_top_height), (0, 0, 0, 20),
+                           (255, 0, 0, 50), action=self.refresh)
 
     def post_loop(self):
         loader: 'Loader' = self.parent_context.screens.queue[0]
