@@ -222,14 +222,7 @@ class GUI(pe.GameContext):
             return
         self.save_config()
 
-    def post_loop(self):
-        if len(self.screens.queue) == 0:
-            self.running = False
-            return
-        if not self.doing_fake_screen_refresh:
-            return
-
-        # Fake screen refresh
+    def fake_screen_refresh(self):
         section = (time.time() - self.fake_screen_refresh_timer) / self.FAKE_SCREEN_REFRESH_TIME
         if section < 1:
             pe.fill.full(pe.colors.black)
@@ -250,6 +243,18 @@ class GUI(pe.GameContext):
             del self.fake_screen_refresh_surface
             del self.original_screen_refresh_surface
             self.doing_fake_screen_refresh = False
+
+    def post_loop(self):
+        if len(self.screens.queue) == 0:
+            self.running = False
+            return
+
+        if self.config.debug:
+            for button in self.buttons:
+                pe.draw.rect((*pe.colors.red, 50), button.area, 2)
+
+        if self.doing_fake_screen_refresh:
+            self.fake_screen_refresh()
 
     @property
     def center(self):
