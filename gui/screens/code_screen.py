@@ -98,7 +98,6 @@ class CodeScreen(pe.ChildContext):
             elif event.key == pe.pygame.K_LCTRL or event.key == pe.pygame.K_RCTRL:
                 self.ctrl_hold = False
 
-
     def check_code(self):
         self.checking_code = True
         threading.Thread(target=self.check_code_thread, daemon=True).start()

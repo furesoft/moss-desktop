@@ -190,7 +190,8 @@ class Installer(pe.ChildContext):
                 shutil.copy2(Defaults.TOKEN_FILE_PATH, to)
             except shutil.SameFileError:
                 pass
-        if os.path.exists(Defaults.CONFIG_FILE_PATH) and not os.path.exists(to := os.path.join(USER_DATA_DIR, 'config.json')):
+        if os.path.exists(Defaults.CONFIG_FILE_PATH) and not os.path.exists(
+                to := os.path.join(USER_DATA_DIR, 'config.json')):
             print(f"COPY FROM: {Defaults.CONFIG_FILE_PATH}\nTO: {to}\n")
             try:
                 shutil.copy2(Defaults.CONFIG_FILE_PATH, to)
