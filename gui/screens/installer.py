@@ -8,6 +8,8 @@ from functools import lru_cache
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
+from gui.events import ResizeEvent
+
 if os.name == 'nt':
     import winshell
 
@@ -24,9 +26,44 @@ class Installer(pe.ChildContext):
     icons: Dict[str, pe.Image]
     api: 'API'
 
+    logo: pe.Text
+    line_rect: pe.Rect
+    cancel_button_rect: pe.Rect
+    install_button_rect: pe.Rect
+    EVENT_HOOK_NAME = 'installer_resize_check'
+
     def __init__(self, parent: 'GUI'):
         self.installing = False
         super().__init__(parent)
+        # Initialize the texts
+        (
+            self.cancel_text,
+            self.install_text,
+            self.reinstall_text,
+            self.launch_text
+        ) = tuple(
+            pe.Text(
+                text,
+                Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
+                colors=Defaults.TEXT_COLOR_T
+            ) for text in (
+                "Cancel",
+                "Install",
+                "Reinstall",
+                "Launch"
+            )
+        )
+        self.calculate_texts()
+        self.api.add_hook(self.EVENT_HOOK_NAME, self.resize_check_hook)
+        self.total = 0
+        self.progress = 0
+        self.just_installed = False
+
+    def resize_check_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.calculate_texts()
+
+    def calculate_texts(self):
         self.logo = pe.Text(
             APP_NAME,
             Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
@@ -40,26 +77,6 @@ class Installer(pe.ChildContext):
             ),
             Defaults.TEXT_COLOR
         )
-        self.cancel_text = pe.Text(
-            "Cancel",
-            Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
-            colors=Defaults.TEXT_COLOR_T
-        )
-        self.install_text = pe.Text(
-            "Install",
-            Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
-            colors=Defaults.TEXT_COLOR_T
-        )
-        self.reinstall_text = pe.Text(
-            "Reinstall",
-            Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
-            colors=Defaults.TEXT_COLOR_T
-        )
-        self.launch_text = pe.Text(
-            "Launch",
-            Defaults.INSTALLER_FONT, self.ratios.installer_buttons_size,
-            colors=Defaults.TEXT_COLOR_T
-        )
         self.line_rect = pe.Rect(0, 0, self.ratios.loader_loading_bar_width,
                                  self.ratios.loader_loading_bar_height)
         self.line_rect.midtop = self.logo.rect.midbottom
@@ -71,9 +88,6 @@ class Installer(pe.ChildContext):
         self.cancel_button_rect.left = buttons_rect.left
         self.install_button_rect = self.cancel_button_rect.copy()
         self.install_button_rect.right = buttons_rect.right
-        self.total = 0
-        self.progress = 0
-        self.just_installed = False
 
     def draw_button_outline(self, rect):
         pe.draw.rect(Defaults.LINE_GRAY, rect, self.ratios.pixel(3))
@@ -110,6 +124,7 @@ class Installer(pe.ChildContext):
             self.draw_button_outline(self.install_button_rect)
 
     def cancel(self):
+        self.api.remove_hook(self.EVENT_HOOK_NAME)
         del self.screens.queue[-1]
 
     def install_thread(self):
