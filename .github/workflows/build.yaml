@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
 #        os: [ windows-latest, ubuntu-latest, macos-latest ]
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest, macos-latest ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: main
+          nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
           script-name: moss.py
           standalone: true
           onefile: true
