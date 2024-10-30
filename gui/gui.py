@@ -11,6 +11,7 @@ from box import Box
 from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
+from .events import ResizeEvent
 
 Defaults = None
 
@@ -260,3 +261,5 @@ class GUI(pe.GameContext):
             self.screens.queue[-1].handle_event(e)
         if pe.event.quit_check():
             self.running = False
+        if new_size := pe.event.resize_check():
+            self.api.spread_event(ResizeEvent(new_size))

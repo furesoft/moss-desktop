@@ -26,7 +26,13 @@ def shorten_name(name, letters=16, max_length=20):
 
 
 def shorten_folder(name, letters=16, max_length=20):
-    return shorten_name(name, letters)
+    return shorten_name(name, letters, max_length)
+
+
+def shorten_folder_by_size(name, width):
+    max_length = width // 10
+    letters = max_length - 4
+    return shorten_name(name, letters, max_length)
 
 
 def shorten_document(name, letters=20, max_length=24):

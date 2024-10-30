@@ -3,10 +3,11 @@ from typing import TYPE_CHECKING, Dict
 
 import pygameextra as pe
 
+from gui.events import ResizeEvent
 from rm_api.notifications.models import SyncRefresh
 
 from gui.defaults import Defaults
-from gui.helpers import shorten_path, shorten_folder, shorten_document
+from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
 from gui.rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
 
 if TYPE_CHECKING:
@@ -33,6 +34,7 @@ class MainMenu(pe.ChildContext):
         self.documents = {}
         self.texts: Dict[str, pe.Text] = {}
         self.path_queue = Queue()
+        parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
         # reversed is equivalent to descending
@@ -72,8 +74,13 @@ class MainMenu(pe.ChildContext):
         # Preparing the document collection texts
         for uuid, document_collection in document_collections.items():
             if self.texts.get(uuid) is None or self.texts[
-                uuid + '_full'].text != document_collection.metadata.visible_name:
-                self.texts[uuid] = pe.Text(shorten_folder(document_collection.metadata.visible_name),
+                uuid + '_full'
+            ].text != document_collection.metadata.visible_name:
+                if self.view_mode == 'list':
+                    shortened_text = shorten_folder_by_size(document_collection.metadata.visible_name, self.width)
+                else:
+                    shortened_text = shorten_folder(document_collection.metadata.visible_name)
+                self.texts[uuid] = pe.Text(shortened_text,
                                            Defaults.FOLDER_FONT,
                                            self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
                 self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
@@ -203,3 +210,13 @@ class MainMenu(pe.ChildContext):
         elif loader.loading_feedback:
             self.get_items()
             loader.loading_feedback = 0
+
+    def api_event_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.invalidate_cache()
+
+    def invalidate_cache(self):
+        my_files_text = self.texts['my_files']
+        self.texts.clear()
+        self.texts['my_files'] = my_files_text
+        self.get_items()
