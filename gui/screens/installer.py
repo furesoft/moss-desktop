@@ -256,7 +256,7 @@ class Installer(pe.ChildContext):
     def check_can_install():
         if os.name == 'posix':
             # Check for sudo
-            return os.getuid() != 0
+            return os.getuid() == 0
         return True
 
     @property
