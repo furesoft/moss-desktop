@@ -196,8 +196,8 @@ class Content:
 
 class Metadata:
     def __init__(self, metadata: dict, metadata_hash: str):
-        self.hash = metadata_hash
         self.__metadata = metadata
+        self.hash = metadata_hash
         self.type = metadata['type']
         self.parent = metadata['parent'] or None
         self.pinned = metadata['pinned']  # Pinned is equivalent to starred
@@ -216,9 +216,6 @@ class Metadata:
     def __setattr__(self, key, value):
         super().__setattr__(key, value)
 
-        if key == 'hash':
-            return
-
         # A dirty translation of the keys to metadata keys
         if key == 'created_time':
             key = 'createdTime'
@@ -232,6 +229,9 @@ class Metadata:
             key = 'lastOpened'
         if key == 'last_opened_page':
             key = 'lastOpenedPage'
+
+        if key not in self.__metadata:
+            return
 
         self.__metadata[key] = value
 

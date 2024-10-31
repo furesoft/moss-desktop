@@ -121,7 +121,10 @@ def get_documents_using_root(api: 'API', progress, root):
                             parent_document_collection.has_items = True
                         document_collections_with_items.add(old_document.parent)
                         continue
-                metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
+                try:
+                    metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
+                except:
+                    continue
                 if metadata.type == 'CollectionType':
                     api.document_collections[file.uuid] = models.DocumentCollection(
                         [models.Tag(tag) for tag in content['tags']],
