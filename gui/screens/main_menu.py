@@ -1,9 +1,10 @@
 from queue import Queue
+from threading import Lock
 from typing import TYPE_CHECKING, Dict
 
 import pygameextra as pe
 
-from gui.events import ResizeEvent
+from gui.events import ResizeEvent, InternalSyncCompleted
 from rm_api.notifications.models import SyncRefresh
 
 from gui.defaults import Defaults
@@ -34,6 +35,7 @@ class MainMenu(pe.ChildContext):
         self.documents = {}
         self.texts: Dict[str, pe.Text] = {}
         self.path_queue = Queue()
+        self.call_lock = Lock()
         parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
@@ -53,6 +55,10 @@ class MainMenu(pe.ChildContext):
     @property
     def view_mode(self):
         return self.config.main_menu_view_mode
+
+    def __call__(self, *args, **kwargs):
+        with self.call_lock:
+            super().__call__(*args, **kwargs)
 
     def get_items(self):
         # Copy the document collections and documents incase they change
@@ -211,9 +217,15 @@ class MainMenu(pe.ChildContext):
             self.get_items()
             loader.loading_feedback = 0
 
-    def api_event_hook(self, event):
+    def _critical_event_hook(self, event):
         if isinstance(event, ResizeEvent):
             self.invalidate_cache()
+        elif isinstance(event, InternalSyncCompleted):
+            self.get_items()
+
+    def api_event_hook(self, event):
+        with self.call_lock:
+            self._critical_event_hook(event)
 
     def invalidate_cache(self):
         my_files_text = self.texts['my_files']

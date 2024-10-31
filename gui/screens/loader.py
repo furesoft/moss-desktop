@@ -5,7 +5,7 @@ from traceback import print_exc
 import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
-from gui.events import ResizeEvent
+from gui.events import ResizeEvent, InternalSyncCompleted
 from rm_api.notifications.models import SyncCompleted
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
@@ -115,6 +115,7 @@ class Loader(pe.ChildContext):
         self.files_to_load = None
         if not self.current_progress:
             self.current_progress = 1
+        self.api.spread_event(InternalSyncCompleted())
 
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)

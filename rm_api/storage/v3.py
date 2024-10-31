@@ -114,7 +114,6 @@ def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = 
 
 def get_documents_using_root(api: 'API', progress, root):
     _, files = get_file(api, root)
-    print(*[(file.hash, file.size) for file in files], sep='\n')
     deleted_document_collections_list = set(api.document_collections.keys())
     deleted_documents_list = set(api.documents.keys())
     document_collections_with_items = set()
