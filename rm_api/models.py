@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 def now_time():
-    return str(int(time.time()))
+    return str(int(time.time() * 1000))
 
 
 def make_uuid():
