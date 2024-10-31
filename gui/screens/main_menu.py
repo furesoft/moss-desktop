@@ -125,7 +125,6 @@ class MainMenu(pe.ChildContext):
                 parent = document_collections[parent].parent
 
     def pre_loop(self):
-        pe.fill.interlace((240, 240, 240), 5)
         if 'screenshot' in self.icons:
             self.icons['screenshot'].display()
 

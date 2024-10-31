@@ -139,7 +139,6 @@ class CodeScreen(pe.ChildContext):
 
     def pre_loop(self):
         # The background
-        pe.fill.interlace(Defaults.LINE_GRAY, 5)
 
         # Handling backspace
         if self.hold_backspace and time.time() - self.hold_backspace_timer > self.BACKSPACE_DELETE_SPEED and len(
