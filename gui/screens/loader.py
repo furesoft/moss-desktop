@@ -1,5 +1,6 @@
 import os
 import threading
+from traceback import print_exc
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
@@ -82,7 +83,7 @@ class Loader(pe.ChildContext):
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()
 
-    def load(self):
+    def _load(self):
         for key, item in self.TO_LOAD.items():
             if isinstance(item, ReusedIcon):
                 self.icons[key] = self.icons[item.key].copy()
@@ -98,6 +99,12 @@ class Loader(pe.ChildContext):
                 self.load_image(key, item)
             self.items_loaded += 1
 
+    def load(self):
+        try:
+            self._load()
+        except:
+            print_exc()
+
     def get_documents(self):
         def progress(loaded, to_load):
             self.files_loaded = loaded
@@ -106,6 +113,8 @@ class Loader(pe.ChildContext):
         self.loading_feedback = 0
         self.api.get_documents(progress)
         self.files_to_load = None
+        if not self.current_progress:
+            self.current_progress = 1
 
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)
@@ -135,10 +144,12 @@ class Loader(pe.ChildContext):
 
     def loop(self):
         self.logo.display()
-        pe.draw.rect(pe.colors.black, self.line_rect, 1)
-        progress_rect = self.line_rect.copy()
-        progress_rect.width *= self.progress()
-        pe.draw.rect(pe.colors.black, progress_rect, 0)
+        progress = self.progress()
+        if progress:
+            pe.draw.rect(pe.colors.black, self.line_rect, 1)
+            progress_rect = self.line_rect.copy()
+            progress_rect.width *= progress
+            pe.draw.rect(pe.colors.black, progress_rect, 0)
 
     def post_loop(self):
         if self.current_progress == 1 and self.last_progress == 1:
