@@ -13,9 +13,10 @@ from typing import TYPE_CHECKING
 import pygameextra as pe
 
 from gui.defaults import Defaults
-
-from rm_api.storage.v3 import get_file_contents
+import rm_api.models as models
+from rm_api.storage.v3 import get_file_contents, get_file, make_files_request
 from rm_lines import rm_bytes_to_svg
+
 
 if TYPE_CHECKING:
     from rm_api.models import Document
@@ -150,7 +151,14 @@ class DocumentDebugPopup(pe.ChildContext):
         os.makedirs(location, exist_ok=True)
         with open(os.path.join(location, f'$ {self.clean_filename(self.document.metadata.visible_name)}'),
                   'w') as f:
-            f.write('\n'.join((file.uuid for file in self.document.files)))
+            _, lines = get_file(self.api, self.api.get_root()['hash'], use_cache=False, raw=True)
+            for line in lines:
+                file = models.File.from_line(line)
+                if file.uuid == self.document.uuid:
+                    f.write(line)
+                    f.write(
+                        make_files_request(self.api, "GET", file.hash, use_cache=False, binary=True).decode()
+                    )
 
     def clean_file_uuid(self, file):
         return file.uuid.replace(f'{self.document.uuid}/', '')

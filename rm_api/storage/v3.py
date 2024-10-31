@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+from crc32c import crc32c
 from functools import lru_cache
 from json import JSONDecodeError
 
@@ -12,6 +14,7 @@ FILES_URL = "{0}sync/v3/files/{1}"
 
 if TYPE_CHECKING:
     from rm_api import API
+    from rm_api.models import File
 
 DEFAULT_ENCODING = 'utf-8'
 
@@ -37,7 +40,7 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
 
 @lru_cache
 def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True) -> \
-Union[str, None, dict]:
+        Union[str, None, dict]:
     if api.sync_file_path:
         location = os.path.join(api.sync_file_path, file)
     else:
@@ -58,9 +61,10 @@ Union[str, None, dict]:
         FILES_URL.format(api.document_storage_uri, file),
         json=data or None,
     )
-    if response.status_code != 200:
-        print(response.text, response.status_code)
+    if response.content == b'{"message":"invalid hash"}\n':
         return None
+    elif not response.ok:
+        raise Exception("Failed to make files request")
     if binary:
         if location:
             with open(location, "wb") as f:
@@ -76,8 +80,31 @@ Union[str, None, dict]:
             return response.text
 
 
-def get_file(api: 'API', file) -> Tuple[int, List['File']]:
-    version, *lines = make_files_request(api, "GET", file).splitlines()
+def put_file(api: 'API', file: 'File', data: bytes):
+    checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
+    response = api.session.put(
+        FILES_URL.format(api.document_storage_uri, file.hash),
+        data=data,
+        headers={
+            **api.session.headers,
+            'rm-filename': file.rm_filename,
+            'x-goog-hash': f'crc32c={checksum_bs4}'
+        }
+    )
+    if not response.ok:
+        raise Exception("Failed to put file")
+    else:
+        print(file.uuid, "uploaded")
+    return True
+
+
+def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
+    res = make_files_request(api, "GET", file, use_cache=use_cache)
+    if isinstance(res, int):
+        return res, []
+    version, *lines = res.splitlines()
+    if raw:
+        return version, lines
     return version, [models.File.from_line(line) for line in lines]
 
 
@@ -121,7 +148,10 @@ def get_documents_using_root(api: 'API', progress, root):
                             parent_document_collection.has_items = True
                         document_collections_with_items.add(old_document.parent)
                         continue
-                metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
+                try:
+                    metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
+                except:
+                    continue
                 if metadata.type == 'CollectionType':
                     api.document_collections[file.uuid] = models.DocumentCollection(
                         [models.Tag(tag) for tag in content['tags']],

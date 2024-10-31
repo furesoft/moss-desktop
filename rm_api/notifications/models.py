@@ -10,7 +10,7 @@ class Notification:  # A class to be used as a base class for all notifications
 
 class SyncCompleted(Notification):
     def __init__(self, message: dict):
-        self.source_device_id = message['attributes']['sourceDeviceID']
+        self.source_device_id = message['attributes'].get('sourceDeviceID')
 
 class SyncRefresh(SyncCompleted):
     def __init__(self):

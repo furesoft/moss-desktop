@@ -1,7 +1,12 @@
+import json
 import os.path
 import string
 import threading
+import time
+import uuid
 from functools import lru_cache
+import random
+from hashlib import sha256
 from sqlite3.dbapi2 import Timestamp
 from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple
 
@@ -14,17 +19,38 @@ if TYPE_CHECKING:
     from rm_api import API
 
 
+def now_time():
+    return str(int(time.time() * 1000))
+
+
+def make_uuid():
+    return str(uuid.uuid4())
+
+
+def make_hash(data: Union[str, bytes]):
+    if isinstance(data, str):
+        return sha256(data.encode()).hexdigest()
+    return sha256(data).hexdigest()
+
+
 class File:
-    def __init__(self, file_hash, file_uuid, content_count, file_size):
+    def __init__(self, file_hash, file_uuid, content_count, file_size, rm_filename=None):
         self.hash = file_hash
         self.uuid = file_uuid
         self.content_count = content_count
         self.size = file_size
+        self.rm_filename = rm_filename or file_uuid
 
     @classmethod
     def from_line(cls, line):
         file_hash, _, file_uuid, content_count, file_size = line.split(':')
         return cls(file_hash, file_uuid, content_count, file_size)
+
+    def to_root_line(self):
+        return f'{self.hash}:80000000:{self.uuid}:{self.content_count}:{self.size}\n'
+
+    def to_line(self):
+        return f'{self.hash}:0:{self.uuid}:{self.content_count}:{self.size}\n'
 
     def __repr__(self):
         return f'{self.uuid} ({self.size})[{self.content_count}]'
@@ -38,9 +64,15 @@ class TimestampedValue(Generic[T]):
         self.value: T = value['value']
         self.timestamp: str = value['timestamp']
 
+    def to_dict(self):
+        return {
+            'timestamp': self.timestamp,
+            'value': self.value
+        }
+
     @classmethod
-    def create(cls, value: T, bare: bool = False) -> Union[dict, 'TimestampedValue']:
-        dictionary = {'value': value, 'timestamp': '0'}
+    def create(cls, value: T, t1: int = 1, t2: int = 1, bare: bool = False) -> Union[dict, 'TimestampedValue']:
+        dictionary = {'timestamp': f'{t1}:{t2}', 'value': value}
         if bare:
             return dictionary
         return cls(dictionary)
@@ -70,7 +102,7 @@ class Page:
             self.redirect = None
 
 
-# TODO: Figure out what the CPagesUUID is refering to
+# TODO: Figure out what the CPagesUUID is referring to
 class CPagesUUID(TypedDict):
     first: str
     second: int
@@ -184,6 +216,55 @@ class Content:
             }
         )
 
+    @classmethod
+    def new_notebook(cls, author_id: str = None):
+        first_page_uuid = make_uuid()
+        if not author_id:
+            author_id = make_uuid()
+        content = {
+            'cPages': {
+                'lastOpened': TimestampedValue[str].create(first_page_uuid, bare=True),
+                'original': TimestampedValue[int].create(-1, 0, 0, bare=True),
+                'pages': [{
+                    'id': first_page_uuid,
+                    'idx': TimestampedValue[str].create('ba', t2=2, bare=True),
+                    'template': TimestampedValue[str].create(BLANK_TEMPLATE, bare=True),
+                }],
+                'uuids': [{
+                    'first': author_id,  # This is the author id
+                    'second': 1
+                }]
+            },
+            "coverPageNumber": 0,
+            "customZoomCenterX": 0,
+            "customZoomCenterY": 936,
+            "customZoomOrientation": "portrait",
+            # rM2 page size
+            # TODO: Check values on RPP and if zoom changes
+            "customZoomPageHeight": 1872,
+            "customZoomPageWidth": 1404,
+            "customZoomScale": 1,
+            "documentMetadata": {},
+            "extraMetadata": {},
+            "fileType": "notebook",
+            "fontName": "",
+            "formatVersion": 2,
+            "lineHeight": -1,
+            "margins": 125,
+            "orientation": "portrait",
+            "pageCount": 1,
+            "pageTags": [],
+            "sizeInBytes": "3289",
+            "tags": [],
+            "textAlignment": "justify",
+            "textScale": 1,
+            "zoomMode": "bestFit"
+        }
+        return cls(content, make_hash(json.dumps(content, indent=4)))
+
+    def to_dict(self) -> dict:
+        return self.__content
+
     def __str__(self):
         return f'content version: {self.version} file type: {self.file_type}'
 
@@ -196,8 +277,8 @@ class Content:
 
 class Metadata:
     def __init__(self, metadata: dict, metadata_hash: str):
-        self.hash = metadata_hash
         self.__metadata = metadata
+        self.hash = metadata_hash
         self.type = metadata['type']
         self.parent = metadata['parent'] or None
         self.pinned = metadata['pinned']  # Pinned is equivalent to starred
@@ -213,11 +294,28 @@ class Metadata:
             self.last_opened = metadata['lastOpened']
             self.last_opened_page = metadata.get('lastOpenedPage', 0)
 
+    @classmethod
+    def new(cls, name: str, parent: str, document_type: str = 'DocumentType'):
+        now = now_time()
+        metadata = {
+            "deleted": False,
+            "lastModified": now,
+            "createdTime": now,
+            "lastOpened": now,
+            "lastOpenedPage": 0,
+            "metadatamodified": False,
+            "modified": False,
+            "parent": parent or '',
+            "pinned": False,
+            "synced": False,
+            "type": document_type,
+            "version": 0,
+            "visibleName": name
+        }
+        return cls(metadata, make_hash(json.dumps(metadata, indent=4)))
+
     def __setattr__(self, key, value):
         super().__setattr__(key, value)
-
-        if key == 'hash':
-            return
 
         # A dirty translation of the keys to metadata keys
         if key == 'created_time':
@@ -233,7 +331,16 @@ class Metadata:
         if key == 'last_opened_page':
             key = 'lastOpenedPage'
 
+        if key not in self.__metadata:
+            return
+
         self.__metadata[key] = value
+
+    def to_dict(self) -> dict:
+        return {
+            **self.__metadata,
+            'parent': self.__metadata['parent'] or ''
+        }
 
 
 class Tag:
@@ -325,9 +432,18 @@ class Document:
     def check_files_availability(self):
         if not self.api.sync_file_path:
             return {}
+        # TODO: Fix this implementation
         return {file.uuid: file for file in self.files if
                 os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
+
+    def export(self):
+        self.content_data[f'{self.uuid}.metadata'] = json.dumps(self.metadata.to_dict(), indent=4).encode()
+        self.content_data[f'{self.uuid}.content'] = json.dumps(self.content.to_dict(), indent=4).encode()
 
     @property
     def parent(self):
         return self.metadata.parent
+
+    @parent.setter
+    def parent(self, value):
+        self.metadata.parent = value

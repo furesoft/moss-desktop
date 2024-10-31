@@ -1,15 +1,23 @@
+import json
 import os
-from typing import Dict
+import uuid
+from io import BytesIO
+from traceback import print_exc
+from typing import Dict, List
 
 import requests
 import colorama
 
 from rm_api.auth import get_token, refresh_token
-from rm_api.models import DocumentCollection, Document
+from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
-from rm_api.storage.old_sync import get_documents_old_sync
+from rm_api.storage.old_sync import get_documents_old_sync, update_root
+from rm_api.storage.new_sync import get_root as get_root_new
+from rm_api.storage.old_sync import get_root as get_root_old
+from rm_api.storage.v3 import get_documents_using_root, get_file, get_file_contents, make_files_request, put_file
+from rm_lines.blocks import write_blocks, blank_document
 
 colorama.init()
 
@@ -18,12 +26,17 @@ class API:
     document_collections: Dict[str, DocumentCollection]
     documents: Dict[str, Document]
 
-    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync', uri: str = None, discovery_uri: str = None):
+    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync',
+                 uri: str = None, discovery_uri: str = None, author_id: str = None):
         self.session = requests.Session()
         self.token_file_path = token_file_path
+        if not author_id:
+            self.author_id = make_uuid()
+        else:
+            self.author_id = author_id
         self.uri = uri or os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
-        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI", 
-                                            "https://service-manager-production-dot-remarkable-production.appspot.com/")
+        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI",
+                                                             "https://service-manager-production-dot-remarkable-production.appspot.com/")
         self.sync_file_path = sync_file_path
         if self.sync_file_path is not None:
             os.makedirs(self.sync_file_path, exist_ok=True)
@@ -91,6 +104,13 @@ class API:
         else:
             get_documents_old_sync(self, progress)
 
+    def get_root(self):
+        self.check_for_document_storage()
+        if self.use_new_sync:
+            return get_root_new(self)
+        else:
+            return get_root_old(self)
+
     def spread_event(self, event: object):
         for hook in self._hook_list.values():
             hook(event)
@@ -114,6 +134,119 @@ class API:
                 uri = f'https://{uri}'
             self.document_storage_uri = uri
 
+    def new_notebook(self, name: str, parent: str = None) -> Document:
+        metadata = Metadata.new(name, parent)
+        content = Content.new_notebook(self.author_id)
+        first_page_uuid = content.c_pages.pages[0].id
+
+        buffer = BytesIO()
+        write_blocks(buffer, blank_document(self.author_id))
+
+        document_uuid = make_uuid()
+
+        content_data: List[bytes] = [
+            json.dumps(content.to_dict(), indent=4).encode(),
+            json.dumps(metadata.to_dict(), indent=4).encode(),
+            buffer.getvalue()
+        ]
+
+        files = [
+            File(make_hash(content_data[0]), f"{document_uuid}.content", 0, len(content_data[0])),
+            File(make_hash(content_data[1]), f"{document_uuid}.metadata", 0, len(content_data[1])),
+            File(make_hash(content_data[2]), f"{document_uuid}/{first_page_uuid}.rm", 0, len(content_data[2])),
+        ]
+
+        document = Document(self, content, metadata, files, document_uuid)
+        document.content_data = {file.uuid: data for file, data in zip(files, content_data)}
+        document.files_available = {file.uuid: file for file in files}
+
+        return document
+
+    def upload(self, document: Document):
+        document.ensure_download_and_callback(lambda: self._upload_document_contents(document))
+
+    def _upload_document_contents(self, document: Document):
+        # We need to upload the content, metadata, rm file, file list and update root
+        # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
+        # API tampering, so we wanna follow their upload cycle
+        root = self.get_root()
+        _, files = get_file(self, root['hash'])
+        new_root = {
+            "broadcast": True,
+            "generation": root['generation']
+        }
+
+        document_file = File(
+            None,
+            document.uuid,
+            len(document.files), 0,
+            f"{document.uuid}.docSchema"
+        )
+
+        new_root_files = [document_file] + [
+            file
+            for file in files
+            if file.uuid != document.uuid
+        ]
+
+        old_files = []
+        files_with_changes = []
+
+        document.export()
+
+        # Figure out what files have changed
+        for file in document.files:
+            try:
+                old_content = get_file_contents(self, file.hash, binary=True)
+                if old_content != document.content_data[file.uuid]:
+                    files_with_changes.append(file)
+                else:
+                    old_files.append(file)
+            except:
+                files_with_changes.append(file)
+
+        # Copy the content data so we can add more files to it
+        content_data = document.content_data.copy()
+
+        # Update the hash for files that have changed
+        for file in files_with_changes:
+            file.hash = make_hash(content_data[file.uuid])
+            file.size = len(content_data[file.uuid])
+
+        # Make a new document file with the updated files for this document
+        document_file_content = ['3\n']
+        for file in document.files:
+            file.hash = make_hash(content_data[file.uuid])
+            file.size = len(content_data[file.uuid])
+            document_file_content.append(file.to_line())
+        document_file_content = ''.join(document_file_content).encode()
+        document_file.hash = make_hash(document_file_content)
+        document_file.size = len(document_file_content)
+
+        # Add the document file to the content_data
+        content_data[document_file.uuid] = document_file_content
+        files_with_changes.append(document_file)
+
+        # Prepare the root file
+        root_file_content = ['3\n']
+        for file in new_root_files:
+            root_file_content.append(file.to_root_line())
+
+        root_file_content = ''.join(root_file_content).encode()
+        root_file = File(make_hash(root_file_content), f"root.docSchema", len(new_root_files), len(root_file_content))
+        new_root['hash'] = root_file.hash
+
+        files_with_changes.append(root_file)
+        content_data[root_file.uuid] = root_file_content
+
+        # Upload all the files that have changed
+        for file in files_with_changes:
+            put_file(self, file, content_data[file.uuid])
+
+        # Update the root
+        update_root(self, new_root)
+
+        pass
 
     def check_for_document_notifications(self):
         if not self.document_notifications_uri:
