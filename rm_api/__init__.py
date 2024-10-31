@@ -192,6 +192,8 @@ class API:
         old_files = []
         files_with_changes = []
 
+        document.export()
+
         # Figure out what files have changed
         for file in document.files:
             try:

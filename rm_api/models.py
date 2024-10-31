@@ -231,7 +231,7 @@ class Content:
                     'template': TimestampedValue[str].create(BLANK_TEMPLATE, bare=True),
                 }],
                 'uuids': [{
-                    'first': first_page_uuid,  # This is the author id
+                    'first': author_id,  # This is the author id
                     'second': 1
                 }]
             },
@@ -298,13 +298,18 @@ class Metadata:
     def new(cls, name: str, parent: str, document_type: str = 'DocumentType'):
         now = now_time()
         metadata = {
-            "createdTime": now,
+            "deleted": False,
             "lastModified": now,
+            "createdTime": now,
             "lastOpened": now,
             "lastOpenedPage": 0,
+            "metadatamodified": False,
+            "modified": False,
             "parent": parent or '',
             "pinned": False,
+            "synced": False,
             "type": document_type,
+            "version": 0,
             "visibleName": name
         }
         return cls(metadata, make_hash(json.dumps(metadata, indent=4)))
@@ -431,6 +436,14 @@ class Document:
         return {file.uuid: file for file in self.files if
                 os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
 
+    def export(self):
+        self.content_data[f'{self.uuid}.metadata'] = json.dumps(self.metadata.to_dict(), indent=4).encode()
+        self.content_data[f'{self.uuid}.content'] = json.dumps(self.content.to_dict(), indent=4).encode()
+
     @property
     def parent(self):
         return self.metadata.parent
+
+    @parent.setter
+    def parent(self, value):
+        self.metadata.parent = value

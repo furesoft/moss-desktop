@@ -2,6 +2,7 @@ from io import BytesIO
 
 from slashr import SlashR
 from rm_api import API, get_file
+from rm_api.models import now_time
 from rm_lines import tree_to_svg, rm_bytes_to_svg
 from rm_lines.blocks import read_blocks
 
@@ -25,13 +26,21 @@ with SlashR(False) as sr:
         sr.print(f"Downloading documents... {done}/{items}")
     sr.print(f"Downloaded {items} documents")
 
-# document = api.new_notebook("test FINALLY 2")
-
+meows = set()
 for document in api.documents.values():
-    if document.metadata.visible_name == "test FINALLY 2":
-        print(document.metadata.parent)
-        # document.metadata.parent = ''
-        # api.upload(document)
+    if 'meow' in document.metadata.visible_name:
+        document.metadata.last_opened = now_time()
+        document.metadata.created_time = now_time()
+        document.metadata.last_modified = now_time()
+        document.parent = None
+        api.upload(document)
+    meows.add(document.metadata.visible_name)
 
-document = api.new_notebook(f"meow")
-api.upload(document)
+for i in range(3):
+    name = f"meow {i}"
+    if name in meows:
+        continue
+    document = api.new_notebook(name)
+    document.parent = 'trash'
+    api.upload(document)
+

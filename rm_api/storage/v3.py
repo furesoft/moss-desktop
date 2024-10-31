@@ -98,11 +98,13 @@ def put_file(api: 'API', file: 'File', data: bytes):
     return True
 
 
-def get_file(api: 'API', file, use_cache: bool = True) -> Tuple[int, List['File']]:
+def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
     res = make_files_request(api, "GET", file, use_cache=use_cache)
     if isinstance(res, int):
         return res, []
     version, *lines = res.splitlines()
+    if raw:
+        return version, lines
     return version, [models.File.from_line(line) for line in lines]
 
 
