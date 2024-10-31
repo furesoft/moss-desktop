@@ -1,15 +1,22 @@
+import json
 import os
-from typing import Dict
+import uuid
+from io import BytesIO
+from typing import Dict, List
 
 import requests
 import colorama
 
 from rm_api.auth import get_token, refresh_token
-from rm_api.models import DocumentCollection, Document
+from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync
+from rm_api.storage.new_sync import get_root as get_root_new
+from rm_api.storage.old_sync import get_root as get_root_old
+from rm_api.storage.v3 import get_documents_using_root, get_file
+from rm_lines.blocks import write_blocks, blank_document
 
 colorama.init()
 
@@ -18,12 +25,17 @@ class API:
     document_collections: Dict[str, DocumentCollection]
     documents: Dict[str, Document]
 
-    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync', uri: str = None, discovery_uri: str = None):
+    def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync',
+                 uri: str = None, discovery_uri: str = None, author_id: str = None):
         self.session = requests.Session()
         self.token_file_path = token_file_path
+        if not author_id:
+            self.author_id = make_uuid()
+        else:
+            self.author_id = author_id
         self.uri = uri or os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
-        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI", 
-                                            "https://service-manager-production-dot-remarkable-production.appspot.com/")
+        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI",
+                                                             "https://service-manager-production-dot-remarkable-production.appspot.com/")
         self.sync_file_path = sync_file_path
         if self.sync_file_path is not None:
             os.makedirs(self.sync_file_path, exist_ok=True)
@@ -91,6 +103,13 @@ class API:
         else:
             get_documents_old_sync(self, progress)
 
+    def get_root(self):
+        if self.use_new_sync:
+            return get_root_new(self)
+        else:
+            return get_root_old(self)
+
+
     def spread_event(self, event: object):
         for hook in self._hook_list.values():
             hook(event)
@@ -113,6 +132,46 @@ class API:
                     uri += "/"
                 uri = f'https://{uri}'
             self.document_storage_uri = uri
+
+    def new_notebook(self, name: str, parent: str = None) -> Document:
+        metadata = Metadata.new(name, parent)
+        content = Content.new_notebook(self.author_id)
+        first_page_uuid = content.c_pages.pages[0].id
+        
+        buffer = BytesIO()
+        write_blocks(buffer, blank_document(self.author_id))
+        
+        document_uuid = make_uuid()
+
+        content_data: List[bytes] = [
+            json.dumps(content.to_dict()).encode(),
+            json.dumps(metadata.to_dict()).encode(),
+            buffer.getvalue()
+        ]
+
+        files = [
+            File(make_hash(), f"{document_uuid}.content", 0, len(content_data[0])),
+            File(make_hash(), f"{document_uuid}.metadata", 0, len(content_data[1])),
+            File(make_hash(), f"{document_uuid}/{first_page_uuid}.rm", 0, len(content_data[2])),
+        ]
+
+        document = Document(self, content, metadata, files, document_uuid)
+        document.content_data = content_data
+        document.files_available = {file.uuid: file for file in files}
+
+        return document
+
+    def upload(self, document: Document):
+        document.ensure_download_and_callback(lambda: self._upload_document_contents(document))
+
+    def _upload_document_contents(self, document: Document):
+        # We need to upload the content, metadata, rm file, file list and update root
+        # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
+        # API tampering, so we wanna follow their upload cycle
+        root = self.get_root()
+        _, files = get_file(self, root['hash'])
+        new_root_hash = make_hash()
+        pass
 
 
     def check_for_document_notifications(self):

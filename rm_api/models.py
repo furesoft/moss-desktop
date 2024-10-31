@@ -1,7 +1,10 @@
 import os.path
 import string
 import threading
+import time
+import uuid
 from functools import lru_cache
+import random
 from sqlite3.dbapi2 import Timestamp
 from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple
 
@@ -12,6 +15,19 @@ from rm_api.templates import BLANK_TEMPLATE
 
 if TYPE_CHECKING:
     from rm_api import API
+
+
+def now_time():
+    return str(int(time.time()))
+
+
+def make_hash():
+    characters = string.ascii_lowercase + string.digits
+    return ''.join(random.choices(characters, k=64))
+
+
+def make_uuid():
+    return str(uuid.uuid4())
 
 
 class File:
@@ -38,9 +54,15 @@ class TimestampedValue(Generic[T]):
         self.value: T = value['value']
         self.timestamp: str = value['timestamp']
 
+    def to_dict(self):
+        return {
+            'value': self.value,
+            'timestamp': self.timestamp
+        }
+
     @classmethod
     def create(cls, value: T, bare: bool = False) -> Union[dict, 'TimestampedValue']:
-        dictionary = {'value': value, 'timestamp': '0'}
+        dictionary = {'value': value, 'timestamp': '1:1'}
         if bare:
             return dictionary
         return cls(dictionary)
@@ -184,6 +206,43 @@ class Content:
             }
         )
 
+    @classmethod
+    def new_notebook(cls, author_id: str = None):
+        first_page_uuid = make_uuid()
+        if not author_id:
+            author_id = make_uuid()
+        return cls({
+            'cPages': {
+                'lastOpened': TimestampedValue[str].create(first_page_uuid).to_dict(),
+                'original': TimestampedValue[int].create(-1).to_dict(),
+                'pages': [{
+                    'id': first_page_uuid,
+                    'idx': TimestampedValue[str].create('ba').to_dict(),
+                    'template': TimestampedValue[str].create(BLANK_TEMPLATE).to_dict(),
+                }],
+                'uuids': [{
+                    'first': first_page_uuid,  # This is the author id
+                    'second': 1
+                }]
+            },
+            # rM2 page size
+            # TODO: Check values on RPP and if zoom changes
+            "customZoomOrientation": "portrait",
+            "customZoomPageHeight": 1872,
+            "customZoomPageWidth": 1404,
+            "customZoomScale": 1,
+            'fileType': 'notebook',
+            'tags': [],
+            'formatVersion': 2,
+            "textAlignment": "justify",
+            "textScale": 1,
+            "zoomMode": "bestFit"
+        }, make_hash())
+
+    def to_dict(self) -> dict:
+        return self.__content
+
+
     def __str__(self):
         return f'content version: {self.version} file type: {self.file_type}'
 
@@ -213,6 +272,20 @@ class Metadata:
             self.last_opened = metadata['lastOpened']
             self.last_opened_page = metadata.get('lastOpenedPage', 0)
 
+    @classmethod
+    def new(cls, name: str, parent: str, document_type: str = 'DocumentType'):
+        now = now_time()
+        return cls({
+            "createdTime": now,
+            "lastModified": now,
+            "lastOpened": now,
+            "lastOpenedPage": 0,
+            "parent": parent,
+            "pinned": False,
+            "type": document_type,
+            "visibleName": name
+        }, make_hash())
+
     def __setattr__(self, key, value):
         super().__setattr__(key, value)
 
@@ -234,6 +307,9 @@ class Metadata:
             return
 
         self.__metadata[key] = value
+
+    def to_dict(self) -> dict:
+        return self.__metadata
 
 
 class Tag:
@@ -325,6 +401,7 @@ class Document:
     def check_files_availability(self):
         if not self.api.sync_file_path:
             return {}
+        # TODO: Fix this implementation
         return {file.uuid: file for file in self.files if
                 os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
 
