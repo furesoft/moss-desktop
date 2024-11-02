@@ -12,8 +12,17 @@ FILES_URL = "{0}sync/v3/files/{1}"
 
 if TYPE_CHECKING:
     from rm_api import API
+    from rm_api.models import File
 
 DEFAULT_ENCODING = 'utf-8'
+EXTENSION_ORDER = ['content', 'metadata', 'rm']
+
+
+def get_file_item_order(item: 'File'):
+    try:
+        return EXTENSION_ORDER.index(item.uuid.rsplit('.', 1)[-1])
+    except ValueError:
+        return -1
 
 
 def make_storage_request(api: 'API', method, request, data: dict = None) -> Union[str, None, dict]:
@@ -96,6 +105,7 @@ def get_documents_using_root(api: 'API', progress, root):
     for i, file in enumerate(files):
         _, file_content = get_file(api, file.hash)
         content = None
+        file_content.sort(key=get_file_item_order)
         for item in file_content:
             if item.uuid == f'{file.uuid}.content':
                 content = get_file_contents(api, item.hash)
@@ -138,6 +148,7 @@ def get_documents_using_root(api: 'API', progress, root):
 
                     if file.uuid in deleted_document_collections_list:
                         deleted_document_collections_list.remove(file.uuid)
+                    break
                 elif metadata.type == 'DocumentType':
                     api.documents[file.uuid] = models.Document(api, models.Content(content, item.hash, api.debug),
                                                                metadata, file_content, file.uuid)
@@ -147,6 +158,7 @@ def get_documents_using_root(api: 'API', progress, root):
                     document_collections_with_items.add(api.documents[file.uuid].parent)
                     if file.uuid in deleted_documents_list:
                         deleted_documents_list.remove(file.uuid)
+                    break
         progress(i + 1, total)
     else:
         i = 0
