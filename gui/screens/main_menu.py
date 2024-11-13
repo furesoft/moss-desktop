@@ -1,6 +1,7 @@
+from functools import lru_cache
 from queue import Queue
 from threading import Lock
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 
 import pygameextra as pe
 
@@ -9,7 +10,7 @@ from rm_api.notifications.models import SyncRefresh
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
-from gui.rendering import render_document, render_collection, render_header, draw_bottom_loading_bar
+from gui.rendering import render_button_using_text, render_document, render_collection, render_header, draw_bottom_loading_bar
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -18,13 +19,93 @@ if TYPE_CHECKING:
     from gui.screens.loader import Loader
 
 
+class TopBar(pe.ChildContext):
+    LAYER = pe.AFTER_LOOP_LAYER
+    BUTTONS = (
+        {
+            "text": "Notebook",
+            "icon": "notebook",
+            "action": None
+        }, {
+            "text": "Import",
+            "icon": "notebook",
+            "action": None
+        }, {
+            "text": "Export",
+            "icon": "notebook",
+            "action": None
+        },
+    )
+
+    # definitions from GUI
+    icons: Dict[str, pe.Image]
+    ratios: 'Ratios'
+
+    # Scaled button texts
+    texts: List[pe.Text]
+
+
+    def __init__(self, parent: 'MainMenu'):
+        self.texts = []
+        super().__init__(parent)
+        self.handle_scales()
+
+    @property
+    @lru_cache()
+    def buttons(self) -> List[pe.RectButton]:
+        width = 0
+        buttons: List[pe.RectButton] = []
+        for i, button in enumerate(self.BUTTONS):
+            icon = self.icons[button['icon']]
+            buttons.append((
+                pe.RectButton(
+                    pe.Rect(0, 0, self.texts[i].rect.width+icon.width*1.5, self.ratios.main_menu_top_height),
+                    (0,0,0,0), Defaults.BUTTON_ACTIVE_COLOR,
+                    action=button['action']
+                )                
+            ))
+            width += buttons[-1].area.width
+        width += (len(self.BUTTONS) - 1) * self.ratios.main_menu_bar_padding
+        x = self.width / 2
+        x -= width / 2
+        for button in buttons:
+            button.area.left = x
+            x = button.area.right + self.ratios.main_menu_bar_padding
+        
+        return buttons
+
+
+    def handle_scales(self):
+        self.texts.clear()
+        for button in self.BUTTONS:
+            self.texts.append(pe.Text(
+                button['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size, colors=Defaults.TEXT_COLOR_T
+            ))
+            
+
+    def loop(self):
+        for button, button_meta, button_text in zip(self.buttons, self.BUTTONS, self.texts):
+            pe.settings.game_context.buttons.append(button)
+            pe.button.check_hover(button)
+
+            button_text.rect.midright = button.area.midright
+            button_text.display()
+
+            icon = self.icons[button_meta['icon']]
+            icon_rect = pe.Rect(0, 0, *icon.size)
+            icon_rect.midleft = button.area.midleft
+            icon.display(icon_rect.topleft)
+
+
 class MainMenu(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
 
+    # definitions from GUI
     api: 'API'
     parent_context: 'GUI'
     icons: Dict[str, pe.Image]
     ratios: 'Ratios'
+
     SORTING_FUNCTIONS = {
         'last_modified': lambda item: item.metadata.last_modified,
     }
@@ -36,6 +117,7 @@ class MainMenu(pe.ChildContext):
         self.texts: Dict[str, pe.Text] = {}
         self.path_queue = Queue()
         self.call_lock = Lock()
+        self.bar = TopBar(parent)
         parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
@@ -59,6 +141,7 @@ class MainMenu(pe.ChildContext):
     def __call__(self, *args, **kwargs):
         with self.call_lock:
             super().__call__(*args, **kwargs)
+            self.bar()
 
     def get_items(self):
         # Copy the document collections and documents incase they change
@@ -219,6 +302,7 @@ class MainMenu(pe.ChildContext):
     def _critical_event_hook(self, event):
         if isinstance(event, ResizeEvent):
             self.invalidate_cache()
+            self.bar.handle_scales()
         elif isinstance(event, InternalSyncCompleted):
             self.get_items()
 
