@@ -33,7 +33,7 @@ jobs:
           pip install -r requirements-${{ runner.os }}.txt
 
       - name: Build
-        uses: Nuitka/Nuitka-Action@main
+        uses: Nuitka/Nuitka-Action@factory
         with:
           nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
           script-name: moss.py
