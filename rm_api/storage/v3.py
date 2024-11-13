@@ -109,6 +109,8 @@ def get_documents_using_root(api: 'API', progress, root):
         for item in file_content:
             if item.uuid == f'{file.uuid}.content':
                 content = get_file_contents(api, item.hash)
+                if not isinstance(content, dict):
+                    break
             if item.uuid == f'{file.uuid}.metadata':
                 if (old_document_collection := api.document_collections.get(file.uuid)) is not None:
                     if api.document_collections[file.uuid].metadata.hash == item.hash:
