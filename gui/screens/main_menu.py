@@ -31,7 +31,7 @@ class TopBar(pe.ChildContext):
         }, {
             "text": "Import",
             "icon": "import",
-            "action": None
+            "action": 'import_action'
         }, {
             "text": "Export",
             "icon": "export",
@@ -69,9 +69,9 @@ class TopBar(pe.ChildContext):
             buttons.append((
                 pe.RectButton(
                     rect,
-                    Defaults.BUTTON_DISABLED_COLOR if disabled else (0, 0, 0, 0),
+                    Defaults.TRANSPARENT_COLOR if disabled else (0, 0, 0, 0),
                     Defaults.BUTTON_ACTIVE_COLOR,
-                    action=button['action'],
+                    action=getattr(self, button['action']) if button['action'] else None,
                     disabled=disabled
                 )
             ))
@@ -122,6 +122,12 @@ class TopBar(pe.ChildContext):
 
             icon = self.icons[button_meta['icon']]
             icon.display(button_meta['icon_rect'].topleft)
+
+            if button.disabled:
+                pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
+
+    def import_action(self):
+        pass
 
 
 class MainMenu(pe.ChildContext):

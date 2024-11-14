@@ -77,6 +77,7 @@ class Defaults:
     TRANSPARENT_COLOR = (0, 0, 0, 0)
     BUTTON_ACTIVE_COLOR = (0, 0, 0, 25)
     BUTTON_DISABLED_COLOR = (0, 0, 0, 100)
+    BUTTON_DISABLED_LIGHT_COLOR = (255, 255, 255, 150)
 
     # Colors
     RED = (255, 50, 50)
