@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, List
 
 import pygameextra as pe
 
+from gui.cloud_action_helper import import_pdf_to_cloud
 from gui.events import ResizeEvent, InternalSyncCompleted
 from gui.file_prompts import import_prompt
 from rm_api.notifications.models import SyncRefresh
@@ -128,8 +129,9 @@ class TopBar(pe.ChildContext):
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
     def import_action(self):
-        # TODO: Make it actually import
-        import_prompt(print)
+        import_prompt(lambda pdf_path: import_pdf_to_cloud(
+            self.parent_context, pdf_path
+        ))
 
 
 class MainMenu(pe.ChildContext):

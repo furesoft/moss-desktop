@@ -6,6 +6,7 @@ import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
 from gui.events import ResizeEvent, InternalSyncCompleted
+from gui.helpers import Logo
 from rm_api.notifications.models import SyncCompleted
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
@@ -23,7 +24,7 @@ class ReusedIcon:
         self.scale = scale
 
 
-class Loader(pe.ChildContext):
+class Loader(pe.ChildContext, Logo):
     TO_LOAD = {
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
@@ -60,29 +61,6 @@ class Loader(pe.ChildContext):
         self.last_progress = 0
         self.current_progress = 0
         self.initialized = False
-
-    def resize_check_hook(self, event):
-        if isinstance(event, ResizeEvent):
-            self.initialize_logo_and_line()
-
-    def initialize_logo_and_line(self):
-        self.logo = pe.Text(
-            APP_NAME,
-            Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
-            pe.math.center(
-                (
-                    0, 0, self.width,
-                    self.height - (
-                            self.ratios.loader_loading_bar_height + self.ratios.loader_loading_bar_padding
-                    )
-                )
-            ),
-            Defaults.TEXT_COLOR
-        )
-        self.line_rect = pe.Rect(0, 0, self.ratios.loader_loading_bar_width,
-                                 self.ratios.loader_loading_bar_height)
-        self.line_rect.midtop = self.logo.rect.midbottom
-        self.line_rect.top += self.ratios.loader_loading_bar_padding
 
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()

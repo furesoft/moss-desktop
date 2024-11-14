@@ -50,8 +50,7 @@ class Defaults:
     MONO_FONT = os.path.join(FONT_DIR, 'JetBrainsMono-Bold.ttf')
     ROBOTO_REGULAR_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
     ROBOTO_MEDIUM_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
-    
-    
+
     FOLDER_FONT = ROBOTO_MEDIUM_FONT
     PATH_FONT = ROBOTO_REGULAR_FONT
     DOCUMENT_TITLE_FONT = ROBOTO_REGULAR_FONT
@@ -88,11 +87,18 @@ class Defaults:
         "previous": [pe.K_LEFT],
     }
 
-
     APP_ICON = os.path.join(ICON_DIR, 'moss.png')
     ICO_APP_ICON = os.path.join(ICON_DIR, 'moss.ico')
 
     IMPORT_TYPES = ['rm', 'pdf', 'epub']
+
+    PROGRESS_ORDER = [
+        "total",
+    ]
+    PROGRESS_COLOR = {
+        "total": pe.colors.white,  # This should never get used!!!
+    }
+
 
 if pe.settings.config.debug:
     print("\nDefaults:")

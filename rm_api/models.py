@@ -117,7 +117,6 @@ class Page:
         })
 
 
-
 # TODO: Figure out what the CPagesUUID is referring to
 class CPagesUUID(TypedDict):
     first: str
@@ -282,6 +281,33 @@ class Content:
         }
         return cls(content, make_hash(json.dumps(content, indent=4)))
 
+    @classmethod
+    def new_pdf(cls):
+        content = {
+            "coverPageNumber": -1,
+            "documentMetadata": {},
+            "dummyDocument": False,
+            "extraMetadata": {
+            },
+            "fileType": "pdf",
+            "fontName": "",
+            "formatVersion": 1,
+            "lineHeight": -1,
+            "margins": 125,
+            "orientation": "portrait",
+            "originalPageCount": 0,
+            "pageCount": 0,
+            "pages": None,
+            "sizeInBytes": "",
+            "textAlignment": "",
+            "textScale": 1,
+            "keyboardMetadata": {
+                "count": 0,
+                "timestamp": 0
+            }
+        }
+        return cls(content, make_hash(json.dumps(content, indent=4)))
+
     def to_dict(self) -> dict:
         return self.__content
 
@@ -309,7 +335,6 @@ class Content:
             Page.new_pdf_redirect(i, next(index))
             for i in range(page_count)
         ]
-
 
 
 class Metadata:
