@@ -2,6 +2,7 @@ import atexit
 import json
 import os
 import time
+from numbers import Number
 from typing import TypedDict, Literal, Union
 
 import appdirs
@@ -46,6 +47,7 @@ class ConfigDict(TypedDict):
     download_last_opened_page_to_make_preview: bool
     save_last_opened_folder: bool
     last_opened_folder: Union[None, str]
+    scale: Number
     main_menu_view_mode: MAIN_MENU_MODES
     debug: bool
 
@@ -62,6 +64,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'download_last_opened_page_to_make_preview': False,
     'save_last_opened_folder': False,
     'last_opened_folder': None,
+    'scale': .9,
     'main_menu_view_mode': 'grid',
     'debug': False
 }
@@ -121,7 +124,6 @@ class GUI(pe.GameContext):
     ASPECT = 0.75
     HEIGHT = 1000
     WIDTH = int(HEIGHT * ASPECT)
-    SCALE = .9
     FPS = 60
     BACKGROUND = pe.colors.white
     TITLE = f"{AUTHOR} {APP_NAME}"
@@ -130,12 +132,13 @@ class GUI(pe.GameContext):
 
     def __init__(self):
         global Defaults
+        self.config = load_config()
 
-        self.AREA = (self.WIDTH * self.SCALE, self.HEIGHT * self.SCALE)
+        self.AREA = (self.WIDTH * self.config.scale, self.HEIGHT * self.config.scale)
         self.dirty_config = False
         atexit.register(self.save_config_if_dirty)
         super().__init__()
-        self.config = load_config()
+
         setattr(pe.settings, 'config', self.config)
         from .defaults import Defaults
         try:
@@ -145,7 +148,7 @@ class GUI(pe.GameContext):
             self.api = API(**self.api_kwargs)
         self.api.debug = self.config.debug
         self.screens = Queue()
-        self.ratios = Ratios(self.SCALE)
+        self.ratios = Ratios(self.config.scale)
         self.icons = {}
         if self.api.token:
             from gui.screens.loader import Loader
