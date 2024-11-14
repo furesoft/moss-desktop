@@ -90,6 +90,9 @@ class Defaults:
 
 
     APP_ICON = os.path.join(ICON_DIR, 'moss.png')
+    ICO_APP_ICON = os.path.join(ICON_DIR, 'moss.ico')
+
+    IMPORT_TYPES = ['rm', 'pdf', 'epub']
 
 if pe.settings.config.debug:
     print("\nDefaults:")

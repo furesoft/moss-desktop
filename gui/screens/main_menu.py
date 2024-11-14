@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict, List
 import pygameextra as pe
 
 from gui.events import ResizeEvent, InternalSyncCompleted
+from gui.file_prompts import import_prompt
 from rm_api.notifications.models import SyncRefresh
 
 from gui.defaults import Defaults
@@ -127,7 +128,8 @@ class TopBar(pe.ChildContext):
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
     def import_action(self):
-        pass
+        # TODO: Make it actually import
+        import_prompt(print)
 
 
 class MainMenu(pe.ChildContext):
