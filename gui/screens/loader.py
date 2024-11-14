@@ -35,7 +35,11 @@ class Loader(pe.ChildContext):
         'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
+        'notebook_add': os.path.join(Defaults.ICON_DIR, 'notebook_add.svg'),
         'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
+        'share': os.path.join(Defaults.ICON_DIR, 'share.svg'),
+        'export': os.path.join(Defaults.ICON_DIR, 'export.svg'),
+        'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
         # 'screenshot': 'Screenshot_20241023_162027.png',
     }
 

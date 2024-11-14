@@ -25,16 +25,18 @@ class TopBar(pe.ChildContext):
     BUTTONS = (
         {
             "text": "Notebook",
-            "icon": "notebook",
-            "action": None
+            "icon": "notebook_add",
+            "action": None,
+            "disabled": True
         }, {
             "text": "Import",
-            "icon": "notebook",
+            "icon": "import",
             "action": None
         }, {
             "text": "Export",
-            "icon": "notebook",
-            "action": None
+            "icon": "export",
+            "action": None,
+            "disabled": True
         },
     )
 
@@ -63,11 +65,14 @@ class TopBar(pe.ChildContext):
                 self.ratios.main_menu_top_height
             )
             rect.inflate_ip(self.ratios.main_menu_x_padding, 0)
+            disabled = button.get('disabled', False)
             buttons.append((
                 pe.RectButton(
                     rect,
-                    (0, 0, 0, 0), Defaults.BUTTON_ACTIVE_COLOR,
-                    action=button['action']
+                    Defaults.BUTTON_DISABLED_COLOR if disabled else (0, 0, 0, 0),
+                    Defaults.BUTTON_ACTIVE_COLOR,
+                    action=button['action'],
+                    disabled=disabled
                 )
             ))
             width += buttons[-1].area.width
