@@ -64,7 +64,7 @@ class TopBar(pe.ChildContext):
                 self.texts[i].rect.width + icon.width * 1.5,
                 self.ratios.main_menu_top_height
             )
-            rect.inflate_ip(self.ratios.main_menu_x_padding, 0)
+            rect.inflate_ip(self.ratios.main_menu_x_padding, -self.ratios.main_menu_x_padding)
             disabled = button.get('disabled', False)
             buttons.append((
                 pe.RectButton(
