@@ -10,7 +10,8 @@ from rm_api.notifications.models import SyncRefresh
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
-from gui.rendering import render_button_using_text, render_document, render_collection, render_header, draw_bottom_loading_bar
+from gui.rendering import render_button_using_text, render_document, render_collection, render_header, \
+    draw_bottom_loading_bar
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -44,7 +45,6 @@ class TopBar(pe.ChildContext):
     # Scaled button texts
     texts: List[pe.Text]
 
-
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
         super().__init__(parent)
@@ -57,12 +57,18 @@ class TopBar(pe.ChildContext):
         buttons: List[pe.RectButton] = []
         for i, button in enumerate(self.BUTTONS):
             icon = self.icons[button['icon']]
+            rect = pe.Rect(
+                0, 0,
+                self.texts[i].rect.width + icon.width * 1.5,
+                self.ratios.main_menu_top_height
+            )
+            rect.inflate_ip(self.ratios.main_menu_x_padding, 0)
             buttons.append((
                 pe.RectButton(
-                    pe.Rect(0, 0, self.texts[i].rect.width+icon.width*1.5, self.ratios.main_menu_top_height),
-                    (0,0,0,0), Defaults.BUTTON_ACTIVE_COLOR,
+                    rect,
+                    (0, 0, 0, 0), Defaults.BUTTON_ACTIVE_COLOR,
                     action=button['action']
-                )                
+                )
             ))
             width += buttons[-1].area.width
         width += (len(self.BUTTONS) - 1) * self.ratios.main_menu_bar_padding
@@ -71,30 +77,46 @@ class TopBar(pe.ChildContext):
         for button in buttons:
             button.area.left = x
             x = button.area.right + self.ratios.main_menu_bar_padding
-        
+
         return buttons
 
+    @property
+    def button_data_zipped(self):
+        return zip(self.buttons, self.BUTTONS, self.texts)
 
     def handle_scales(self):
+        # Cache reset
         self.texts.clear()
-        for button in self.BUTTONS:
+        self.buttons.fget.cache_clear()
+
+        # Handle texts so we know their size
+        for button_meta in self.BUTTONS:
             self.texts.append(pe.Text(
-                button['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size, colors=Defaults.TEXT_COLOR_T
+                button_meta['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
+                colors=Defaults.TEXT_COLOR_T
             ))
-            
 
-    def loop(self):
-        for button, button_meta, button_text in zip(self.buttons, self.BUTTONS, self.texts):
-            pe.settings.game_context.buttons.append(button)
-            pe.button.check_hover(button)
-
+        # Process final text and icon positions inside button and padding
+        for button, button_meta, button_text in self.button_data_zipped:
+            # Position the button text with padding
             button_text.rect.midright = button.area.midright
-            button_text.display()
+            button_text.rect.right -= self.ratios.main_menu_x_padding / 2
 
+            # Position the icon with padding
             icon = self.icons[button_meta['icon']]
             icon_rect = pe.Rect(0, 0, *icon.size)
             icon_rect.midleft = button.area.midleft
-            icon.display(icon_rect.topleft)
+            icon_rect.left += self.ratios.main_menu_x_padding / 2
+            button_meta['icon_rect'] = icon_rect
+
+    def loop(self):
+        for button, button_meta, button_text in self.button_data_zipped:
+            pe.settings.game_context.buttons.append(button)
+            pe.button.check_hover(button)
+            button_text.display()
+
+            icon = self.icons[button_meta['icon']]
+            icon.display(button_meta['icon_rect'].topleft)
 
 
 class MainMenu(pe.ChildContext):
