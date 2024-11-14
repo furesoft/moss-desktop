@@ -232,7 +232,8 @@ class DocumentViewer(pe.ChildContext):
             parent.width,
             parent.ratios.document_viewer_top_draggable_height
         )
-        self.document = parent.api.documents[document_uuid]
+        self.document: Document = parent.api.documents[document_uuid]
+        self.document.check()
 
         self.top_puller = DraggablePuller(
             parent, top_rect,

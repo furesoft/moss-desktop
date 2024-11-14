@@ -12,6 +12,7 @@ from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple
 
 from colorama import Fore
 
+from rm_api.helpers import get_pdf_page_count
 from rm_api.storage.v3 import get_file_contents
 from rm_api.templates import BLANK_TEMPLATE
 
@@ -101,6 +102,21 @@ class Page:
         else:
             self.redirect = None
 
+    @classmethod
+    def new_pdf_redirect(cls, redirection_page: int, index: str, uuid: str = None):
+        return cls({
+            "id": uuid if uuid else make_uuid(),
+            "idx": {
+                "timestamp": "1:2",
+                "value": index
+            },
+            "redir": {
+                "timestamp": "1:2",
+                "value": redirection_page
+            }
+        })
+
+
 
 # TODO: Figure out what the CPagesUUID is referring to
 class CPagesUUID(TypedDict):
@@ -158,6 +174,7 @@ class Content:
         self.__content = content
         self.usable = True
         self.c_pages = None
+        self.content_file_pdf_check = False
         self.cover_page_number: int = content.get('coverPageNumber', 0)
         self.dummy_document: bool = content.get('dummyDocument', False)
         self.file_type: str = content['fileType']
@@ -183,24 +200,27 @@ class Content:
 
     def parse_version_1(self):
         self.version = 2  # promote to version 2
-        original_page_count = self.__content.pop('originalPageCount')
-        pages = self.__content.pop('pages')
-        redirection_page_map = self.__content.pop('redirectionPageMap')
+        # Handle error checking since a lot of these can be empty
+        try:
+            original_page_count = self.__content.pop('originalPageCount')
+        except KeyError:
+            original_page_count = 0
+        try:
+            pages = self.__content.pop('pages')
+        except KeyError:
+            pages = None
+        if not pages:
+            pages = []
+            self.content_file_pdf_check = True
+        try:
+            redirection_page_map = self.__content.pop('redirectionPageMap')
+        except KeyError:
+            redirection_page_map = []
         index = self.page_index_generator()
         c_page_pages = []
         last_opened_page = None
         for i, (page, redirection_page) in enumerate(zip(pages, redirection_page_map)):
-            c_page_pages.append({
-                "id": page,
-                "idx": {
-                    "timestamp": "1:2",
-                    "value": next(index)
-                },
-                "redir": {
-                    "timestamp": "1:2",
-                    "value": redirection_page
-                }
-            })
+            c_page_pages.append(Page.new_pdf_redirect(redirection_page, next(index), page))
             if i == self.__content.get('lastOpenedPage'):
                 last_opened_page = page
 
@@ -210,7 +230,7 @@ class Content:
                 'original': TimestampedValue.create(original_page_count, bare=True),
                 'lastOpened': TimestampedValue.create(last_opened_page, bare=True),
                 'uuids': {
-                    'first': pages[0],  # TODO: Figure out what the first uuid is meant to be in c_pages
+                    'first': make_uuid(),  # Author
                     'second': 1
                 }
             }
@@ -273,6 +293,23 @@ class Content:
         # TODO: Figure out the index pattern and make a generator
         while True:
             yield 'ba'
+
+    def check(self, document: 'Document'):
+        print(self.content_file_pdf_check, self.file_type)
+        if self.content_file_pdf_check and self.file_type == 'pdf':
+            self.parse_create_new_pdf_content_file(document)
+
+    def parse_create_new_pdf_content_file(self, document: 'Document'):
+        """Creates the c_pages data for a pdf that wasn't indexed"""
+        pdf = document.content_data[f'{document.uuid}.pdf']
+        page_count = get_pdf_page_count(pdf)
+
+        index = self.page_index_generator()
+        self.c_pages.pages = [
+            Page.new_pdf_redirect(i, next(index))
+            for i in range(page_count)
+        ]
+
 
 
 class Metadata:
@@ -447,3 +484,6 @@ class Document:
     @parent.setter
     def parent(self, value):
         self.metadata.parent = value
+
+    def check(self):
+        self.content.check(self)
