@@ -87,7 +87,7 @@ class TopBar(pe.ChildContext):
     def handle_scales(self):
         # Cache reset
         self.texts.clear()
-        self.buttons.fget.cache_clear()
+        self.__class__.buttons.fget.cache_clear()
 
         # Handle texts so we know their size
         for button_meta in self.BUTTONS:
