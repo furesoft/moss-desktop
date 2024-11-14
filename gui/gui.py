@@ -50,6 +50,7 @@ class ConfigDict(TypedDict):
     scale: Number
     main_menu_view_mode: MAIN_MENU_MODES
     debug: bool
+    portable_mode: bool
 
 
 DEFAULT_CONFIG: ConfigDict = {
@@ -66,7 +67,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'last_opened_folder': None,
     'scale': .9,
     'main_menu_view_mode': 'grid',
-    'debug': False
+    'debug': False,
+    'portable_mode': False
 }
 
 ConfigType = Box[ConfigDict]
@@ -156,7 +158,7 @@ class GUI(pe.GameContext):
         else:
             from gui.screens.code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
-        if not self.config.debug and not Defaults.INSTALLED:
+        if not self.config.debug and not self.config.portable_mode and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
         self.running = True
