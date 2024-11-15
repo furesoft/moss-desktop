@@ -32,7 +32,7 @@ INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 
 MAIN_MENU_MODES = Literal['grid', 'list', 'compressed']
-PDF_RENDER_MODES = Literal['cef']
+PDF_RENDER_MODES = Literal['cef', 'none']
 NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
 
