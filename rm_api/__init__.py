@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+from hashlib import sha256
 from io import BytesIO
 from traceback import print_exc
 from typing import Dict, List
@@ -209,12 +210,16 @@ class API:
 
         # Make a new document file with the updated files for this document
         document_file_content = ['3\n']
-        for file in document.files:
+        document_file_hash = sha256()
+
+        for file in sorted(document.files, key=lambda file: file.uuid):
             file.hash = make_hash(content_data[file.uuid])
+            document_file_hash.update(bytes.fromhex(file.hash))
             file.size = len(content_data[file.uuid])
             document_file_content.append(file.to_line())
+
         document_file_content = ''.join(document_file_content).encode()
-        document_file.hash = make_hash(document_file_content)
+        document_file.hash = document_file_hash.hexdigest()
         document_file.size = len(document_file_content)
 
         # Add the document file to the content_data
