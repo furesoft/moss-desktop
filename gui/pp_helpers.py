@@ -6,6 +6,7 @@ import io
 import os
 import shutil
 import time
+import json
 from functools import lru_cache
 from traceback import print_exc
 from typing import TYPE_CHECKING
@@ -175,8 +176,15 @@ class DocumentDebugPopup(pe.ChildContext):
             data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
             file_path = os.path.join(self.extract_location, self.clean_file_uuid(file))
 
+            is_json = file.uuid.rsplit('.')[-1] in ("content", "metadata")
+
+            if self.config.add_ext_to_raw_exports and is_json:
+                file_path += '.json'
+
             # Save the file
             with open(file_path, 'wb') as f:
+                if self.config.format_raw_exports and is_json:
+                    data = json.dumps(json.loads(data), indent=4, sort_keys=True).encode()
                 f.write(data)
 
     def render_pages(self, important: bool = False):

@@ -49,6 +49,8 @@ class ConfigDict(TypedDict):
     last_opened_folder: Union[None, str]
     scale: Number
     main_menu_view_mode: MAIN_MENU_MODES
+    format_raw_exports: bool
+    add_ext_to_raw_exports: bool
     debug: bool
     portable_mode: bool
 
@@ -67,6 +69,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'last_opened_folder': None,
     'scale': .9,
     'main_menu_view_mode': 'grid',
+    'format_raw_exports': True,
+    'add_ext_to_raw_exports': True,
     'debug': False,
     'portable_mode': False
 }
