@@ -4,12 +4,13 @@ import string
 import threading
 import time
 import uuid
+from copy import copy, deepcopy
 from functools import lru_cache
 import random
 from hashlib import sha256
 from io import BytesIO
 from sqlite3.dbapi2 import Timestamp
-from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple
+from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple, Dict
 
 from colorama import Fore
 
@@ -60,6 +61,13 @@ class File:
 
     def __str__(self):
         return self.__repr__()
+
+    # Parse and re-unparse the file to make a copy
+    def __copy__(self):
+        return self.from_line(self.to_line())
+
+    def __deepcopy__(self, memo=None):
+        return self.from_line(self.to_line())
 
 
 class TimestampedValue(Generic[T]):
@@ -456,12 +464,16 @@ class Document:
         'pdf', 'notebook'
     ]
 
+    files: List[File]
+    content_data: Dict[str, bytes]
+
     def __init__(self, api: 'API', content: Content, metadata: Metadata, files: List[File], uuid: str):
         self.api = api
         self.content = content
         self.metadata = metadata
         self.files = files
         self.uuid = uuid
+        self.content_data = {}
         self.files_available = self.check_files_availability()
         self.downloading = False
 
@@ -469,17 +481,24 @@ class Document:
                 not self.content.file_type in self.unknown_file_types:
             self.unknown_file_types.add(self.content.file_type)
             print(f'{Fore.RED}Unknown file type: {self.content.file_type}{Fore.RESET}')
-        self.content_data = {}
 
     @property
     def content_files(self):
         return [file.uuid for file in self.files]
 
     @property
+    def file_uuid_map(self):
+        return {
+            file.uuid: file
+            for file in self.files
+        }
+
+    @property
     def available(self):
         return all(file in self.files_available.keys() for file in self.content_files)
 
-    def _download_files(self, callback):
+    # noinspection PyTypeChecker
+    def _download_files(self, callback=None):
         self.downloading = True
         for file in self.files:
             if file.uuid not in self.content_files:
@@ -487,7 +506,8 @@ class Document:
             self.content_data[file.uuid] = get_file_contents(self.api, file.hash, binary=True)
         self.downloading = False
         self.files_available = self.check_files_availability()
-        callback()
+        if callback is not None:
+            callback()
 
     def _load_files(self):
         for file in self.files:
@@ -503,12 +523,25 @@ class Document:
                 self._load_files()
             callback()
 
+    def ensure_download(self):
+        if not self.available:
+            self._download_files()
+        else:
+            if not self.content_data:
+                self._load_files()
+
     def check_files_availability(self):
         if not self.api.sync_file_path:
             return {}
-        # TODO: Fix this implementation
-        return {file.uuid: file for file in self.files if
-                os.path.exists(os.path.join(self.api.sync_file_path, file.hash))}
+        available = {}
+        for file in self.files:
+            if file.uuid in self.content_data:  # Check if the file was loaded (could be a new file)
+                available[file.uuid] = file
+                continue
+            if os.path.exists(os.path.join(self.api.sync_file_path, file.hash)):  # Check if the file was cached
+                available[file.uuid] = file
+                continue
+        return available
 
     def export(self):
         self.content_data[f'{self.uuid}.metadata'] = json.dumps(self.metadata.to_dict(), indent=4).encode()
@@ -526,7 +559,7 @@ class Document:
         self.content.check(self)
 
     @classmethod
-    def new_notebook(cls, api: 'API', name: str, parent: str = None) -> 'Document':
+    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None) -> 'Document':
         metadata = Metadata.new(name, parent)
         content = Content.new_notebook(api.author_id)
         first_page_uuid = content.c_pages.pages[0].id
@@ -534,7 +567,8 @@ class Document:
         buffer = BytesIO()
         write_blocks(buffer, blank_document(api.author_id))
 
-        document_uuid = make_uuid()
+        if document_uuid is None:
+            document_uuid = make_uuid()
 
         content_data: List[bytes] = [
             json.dumps(content.to_dict(), indent=4).encode(),
@@ -550,6 +584,85 @@ class Document:
 
         document = cls(api, content, metadata, files, document_uuid)
         document.content_data = {file.uuid: data for file, data in zip(files, content_data)}
-        document.files_available = {file.uuid: file for file in files}
+        document.files_available = document.check_files_availability()
+
+        return document
+
+    @classmethod
+    def new_pdf(cls, api: 'API', name: str, pdf_data: bytes, parent: str = None, document_uuid: str = None):
+        if document_uuid is None:
+            document_uuid = make_uuid()
+        content = Content.new_pdf()
+        metadata = Metadata.new(name, parent)
+        pagedata = b'Blank\n'
+
+        content_uuid = f'{document_uuid}.content'
+        metadata_uuid = f'{document_uuid}.metadata'
+        pagedata_uuid = f'{document_uuid}.pagedata'
+        pdf_uuid = f'{document_uuid}.pdf'
+
+        content_data = {
+            content_uuid: json.dumps(content.to_dict(), indent=4),
+            metadata_uuid: json.dumps(metadata.to_dict(), indent=4),
+            pagedata_uuid: pagedata,
+            pdf_uuid: pdf_data
+        }
+
+        content_hashes = {
+            content_uuid: content.hash,
+            metadata_uuid: metadata.hash,
+            pagedata_uuid: make_hash(pagedata),
+            pdf_uuid: make_hash(pdf_data)
+        }
+
+        document = Document(api, content, metadata, [
+            File(content_hashes[key], key, 0, len(content))
+            for key, content in content_data.items()
+        ], document_uuid)
+
+        document.content_data = content_data
+        document.files_available = document.check_files_availability()
+
+        return document
+
+    @classmethod
+    def __copy(cls, document: 'Document', shallow: bool = True):
+        # Duplicate content and metadata
+        content = Content(document.content.to_dict(), document.file_uuid_map[f'{document.uuid}.content'].hash)
+        metadata = Metadata(document.metadata.to_dict(), document.file_uuid_map[f'{document.uuid}.metadata'].hash)
+
+        # Make a new document
+        if shallow:
+            files = document.files
+        else:
+            files = [
+                copy(file)
+                for file in document.files
+            ]
+
+        new = cls(document.api, content, metadata, files, document.uuid)
+        if shallow:
+            new.content_data = copy(document.content_data)
+        else:
+            new.content_data = deepcopy(document.content_data)
+        new.files_available = new.check_files_availability()
+        return new
+
+    def __copy__(self):
+        return self.__copy(self)
+
+    def __deepcopy__(self, memo=None):
+        return self.__copy(self, shallow=False)
+
+    def replace_pdf(self, pdf_data: bytes):
+        pdf_uuid = f'{self.uuid}.pdf'
+        document = deepcopy(self)
+
+        pdf_file_info = document.file_uuid_map[pdf_uuid]
+
+        pdf_file_info.hash = make_hash(pdf_data)
+        pdf_file_info.content_count = len(pdf_data)
+
+        document.content_data[pdf_uuid] = pdf_data
 
         return document

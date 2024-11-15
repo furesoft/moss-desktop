@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Tuple, Union
 import pygameextra as pe
 
 from gui.defaults import Defaults
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
-    pe.draw.rect(Defaults.LINE_GRAY, rect, gui.ratios.pixel(3))
+    pe.draw.rect(Defaults.OUTLINE_COLOR, rect, gui.ratios.outline)
     text = texts[collection_uuid]
     text_full = texts[collection_uuid + '_full']
     if text.text != text_full.text:
@@ -202,11 +202,15 @@ def render_button_using_text(
         *args,
         name: str = None, action=None, data=None,
         rect: pe.Rect = None,
+        outline: int = None,
+        outline_color: Union[Tuple[int, int, int], Tuple[int, int, int, int]] = Defaults.OUTLINE_COLOR,
         **kwargs
 ):
     text.display()
+    if not rect:
+        rect = gui.ratios.pad_button_rect(text.rect)
     pe.button.rect(
-        rect or gui.ratios.pad_button_rect(text.rect),
+        rect,
         inactive_color, active_color,
         *args,
         name=name,
@@ -214,6 +218,8 @@ def render_button_using_text(
         data=data,
         **kwargs
     )
+    if outline is not None and outline > 0:
+        pe.draw.rect(outline_color, rect, outline)
 
 
 def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: 'Queue'):

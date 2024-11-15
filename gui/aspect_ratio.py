@@ -72,8 +72,17 @@ class Ratios:
         self.document_viewer_loading_circle_radius = int(5 * scale)
         self.document_viewer_error_font_size = int(20 * scale)
 
+        # Import Screen
+        self.import_screen_button_padding = int(20 * scale)
+        self.import_screen_button_margin = int(20 * scale) + self.import_screen_button_padding
+        self.import_screen_button_size = int(18 * scale)
+
     def pixel(self, value):
         return max(1, int(value * self.scale))
 
     def pad_button_rect(self, rect: pe.Rect):
         return rect.inflate(self.pixel(20), self.pixel(20))
+
+    @property
+    def outline(self):
+        return self.pixel(3)

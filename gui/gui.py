@@ -13,7 +13,6 @@ from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
 from .events import ResizeEvent
-from .screens.import_screen import ImportScreen
 
 Defaults = None
 
@@ -27,6 +26,7 @@ from .aspect_ratio import Ratios
 
 if TYPE_CHECKING:
     from gui.screens.main_menu import MainMenu
+    from .screens.import_screen import ImportScreen
 
 pe.init()
 
@@ -160,6 +160,7 @@ class GUI(pe.GameContext):
         self.screens = Queue()
         self.ratios = Ratios(self.config.scale)
         self.icons = {}
+        self.data = {}
         self._import_screen: Union[ImportScreen, None] = None
         self.main_menu: Union['MainMenu', None] = None
         if self.api.token:
@@ -287,13 +288,14 @@ class GUI(pe.GameContext):
     def import_screen(self):
         if self._import_screen:
             return self._import_screen
+        from .screens.import_screen import ImportScreen
         self.screens.put(ImportScreen(self))
         return self.import_screen
 
     @import_screen.setter
-    def import_screen(self, screen: Union[ImportScreen, None]):
+    def import_screen(self, screen: Union['ImportScreen', None]):
         if screen is None:
             del self._import_screen
             self._import_screen = None
-        elif isinstance(screen, ImportScreen):
+        else:
             self._import_screen = screen

@@ -26,6 +26,7 @@ class ReusedIcon:
 
 class Loader(pe.ChildContext, Logo):
     TO_LOAD = {
+        # Icons and Images
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
         'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
@@ -42,6 +43,9 @@ class Loader(pe.ChildContext, Logo):
         'export': os.path.join(Defaults.ICON_DIR, 'export.svg'),
         'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
         # 'screenshot': 'Screenshot_20241023_162027.png',
+
+        # Data files
+        'light_pdf': os.path.join(Defaults.DATA_DIR, 'light.pdf')
     }
 
     LAYER = pe.AFTER_LOOP_LAYER
@@ -79,6 +83,8 @@ class Loader(pe.ChildContext, Logo):
                 self.load_image(key, item, 0.5)
             elif item.endswith('.png'):
                 self.load_image(key, item)
+            else:
+                self.load_data(key, item)
             self.items_loaded += 1
 
     def load(self):
@@ -102,6 +108,10 @@ class Loader(pe.ChildContext, Logo):
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)
         self.icons[key].resize(tuple(self.ratios.pixel(v * multiplier) for v in self.icons[key].size))
+
+    def load_data(self, key, file):
+        with open(file, 'rb') as f:
+            self.data[key] = f.read()
 
     def progress(self):
         if self.files_to_load is None and self.config.wait_for_everything_to_load and not self.current_progress:

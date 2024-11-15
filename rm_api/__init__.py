@@ -11,6 +11,7 @@ import colorama
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
+from rm_api.notifications.models import FileSyncProgress
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync, update_root
@@ -134,23 +135,35 @@ class API:
                 uri = f'https://{uri}'
             self.document_storage_uri = uri
 
+    def upload(self, document: Document):
+        upload_event = FileSyncProgress()
+        self.spread_event(upload_event)
+        try:
+            document.ensure_download()
+            self._upload_document_contents(document, upload_event)
+        finally:
+            upload_event.finished = True
 
+    def upload_many_documents(self, documents: List[Document], callback=None):
+        upload_event = FileSyncProgress()
+        self.spread_event(upload_event)
+        try:
+            for document in documents:
+                document.ensure_download()
+                self._upload_document_contents(document, upload_event)
+        finally:
+            upload_event.finished = True
 
-    def upload(self, document: Document, callback):
-        document.ensure_download_and_callback(lambda: self._upload_document_contents(document, callback))
-
-    def _upload_document_contents(self, document: Document, callback=lambda done, total: None):
+    def _upload_document_contents(self, document: Document, progress: FileSyncProgress):
         # We need to upload the content, metadata, rm file, file list and update root
         # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
         # API tampering, so we wanna follow their upload cycle
-        total = 2  # Getting root / Uploading root
-        done = 1  # Got root
-        callback(0, total)
+        progress.total += 2  # Getting root / Uploading root
 
         root = self.get_root()  # root info
 
         _, files = get_file(self, root['hash'])
-        callback(done, total)
+        progress.done += 1  # Got root
 
         new_root = {
             "broadcast": True,
@@ -221,17 +234,15 @@ class API:
         content_data[root_file.uuid] = root_file_content
 
         # Upload all the files that have changed
-        total += len(files_with_changes)
-        callback(done, total)  # Update total
+        progress.total += len(files_with_changes)
 
         for file in files_with_changes:
             put_file(self, file, content_data[file.uuid])
-            done += 1
-            callback(done, total)  # Update done
+            progress.done += 1
 
         # Update the root
         update_root(self, new_root)
-        callback(done + 1, total)  # Update done finally matching done/total
+        progress.done += 1  # Update done finally matching done/total
 
     def check_for_document_notifications(self):
         if not self.document_notifications_uri:

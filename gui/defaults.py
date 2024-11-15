@@ -37,6 +37,7 @@ class Defaults:
 
     HTML_DIR = os.path.join(ASSET_DIR, 'html')
     ICON_DIR = os.path.join(ASSET_DIR, 'icons')
+    DATA_DIR = os.path.join(ASSET_DIR, 'data')
     FONT_DIR = os.path.join(ASSET_DIR, 'fonts')
 
     if INSTALLED:
@@ -56,6 +57,7 @@ class Defaults:
     DOCUMENT_TITLE_FONT = ROBOTO_REGULAR_FONT
     DOCUMENT_ERROR_FONT = ROBOTO_MEDIUM_FONT
     INSTALLER_FONT = ROBOTO_REGULAR_FONT
+    BUTTON_FONT = ROBOTO_REGULAR_FONT
 
     LOGO_FONT = CUSTOM_FONT_BOLD
     MAIN_MENU_FONT = CUSTOM_FONT_BOLD
@@ -79,6 +81,7 @@ class Defaults:
     BUTTON_DISABLED_LIGHT_COLOR = (255, 255, 255, 150)
 
     # Colors
+    OUTLINE_COLOR = pe.colors.black
     RED = (255, 50, 50)
 
     # Key bindings
