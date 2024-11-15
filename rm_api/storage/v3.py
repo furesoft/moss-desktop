@@ -164,10 +164,9 @@ def get_documents_using_root(api: 'API', progress, root):
                 except:
                     continue
                 if metadata.type == 'CollectionType':
-                    if 'tags' not in content:
-                        continue
+                    tags = content.get('tags', ())
                     api.document_collections[file.uuid] = models.DocumentCollection(
-                        [models.Tag(tag) for tag in content['tags']],
+                        [models.Tag(tag) for tag in tags],
                         metadata, file.uuid
                     )
 
