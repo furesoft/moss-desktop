@@ -162,15 +162,22 @@ class API:
 
         return document
 
-    def upload(self, document: Document):
-        document.ensure_download_and_callback(lambda: self._upload_document_contents(document))
+    def upload(self, document: Document, callback):
+        document.ensure_download_and_callback(lambda: self._upload_document_contents(document, callback))
 
-    def _upload_document_contents(self, document: Document):
+    def _upload_document_contents(self, document: Document, callback=lambda done, total: None):
         # We need to upload the content, metadata, rm file, file list and update root
         # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
         # API tampering, so we wanna follow their upload cycle
-        root = self.get_root()
+        total = 2  # Getting root / Uploading root
+        done = 1  # Got root
+        callback(0, total)
+
+        root = self.get_root()  # root info
+
         _, files = get_file(self, root['hash'])
+        callback(done, total)
+
         new_root = {
             "broadcast": True,
             "generation": root['generation']
@@ -240,13 +247,17 @@ class API:
         content_data[root_file.uuid] = root_file_content
 
         # Upload all the files that have changed
+        total += len(files_with_changes)
+        callback(done, total)  # Update total
+
         for file in files_with_changes:
             put_file(self, file, content_data[file.uuid])
+            done += 1
+            callback(done, total)  # Update done
 
         # Update the root
         update_root(self, new_root)
-
-        pass
+        callback(done + 1, total)  # Update done finally matching done/total
 
     def check_for_document_notifications(self):
         if not self.document_notifications_uri:
