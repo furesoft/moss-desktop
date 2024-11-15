@@ -3,7 +3,7 @@ import json
 import os
 import time
 from numbers import Number
-from typing import TypedDict, Literal, Union
+from typing import TypedDict, Literal, Union, TYPE_CHECKING
 
 import appdirs
 import pygameextra as pe
@@ -13,6 +13,7 @@ from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
 from .events import ResizeEvent
+from .screens.import_screen import ImportScreen
 
 Defaults = None
 
@@ -23,6 +24,9 @@ except Exception:
 
 from rm_api import API
 from .aspect_ratio import Ratios
+
+if TYPE_CHECKING:
+    from gui.screens.main_menu import MainMenu
 
 pe.init()
 
@@ -156,6 +160,8 @@ class GUI(pe.GameContext):
         self.screens = Queue()
         self.ratios = Ratios(self.config.scale)
         self.icons = {}
+        self._import_screen: Union[ImportScreen, None] = None
+        self.main_menu: Union['MainMenu', None] = None
         if self.api.token:
             from gui.screens.loader import Loader
             self.screens.put(Loader(self))
@@ -276,3 +282,18 @@ class GUI(pe.GameContext):
             self.running = False
         if pe.event.resize_check():
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
+
+    @property
+    def import_screen(self):
+        if self._import_screen:
+            return self._import_screen
+        self.screens.put(ImportScreen(self))
+        return self.import_screen
+
+    @import_screen.setter
+    def import_screen(self, screen: Union[ImportScreen, None]):
+        if screen is None:
+            del self._import_screen
+            self._import_screen = None
+        elif isinstance(screen, ImportScreen):
+            self._import_screen = screen

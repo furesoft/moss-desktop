@@ -131,7 +131,7 @@ class TopBar(pe.ChildContext):
 
     def import_action(self):
         import_prompt(lambda pdf_path: import_pdf_to_cloud(
-            self.main_menu, pdf_path
+            self, pdf_path
         ))
 
 
@@ -162,6 +162,7 @@ class MainMenu(pe.ChildContext):
         # obviously, non reversed is ascending
         self.current_sorting_reverse = True
         super().__init__(parent)
+        parent.main_menu = self  # Assign myself as the main menu
         self.bar = TopBar(self)
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)

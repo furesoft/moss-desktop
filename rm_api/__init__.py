@@ -134,33 +134,7 @@ class API:
                 uri = f'https://{uri}'
             self.document_storage_uri = uri
 
-    def new_notebook(self, name: str, parent: str = None) -> Document:
-        metadata = Metadata.new(name, parent)
-        content = Content.new_notebook(self.author_id)
-        first_page_uuid = content.c_pages.pages[0].id
 
-        buffer = BytesIO()
-        write_blocks(buffer, blank_document(self.author_id))
-
-        document_uuid = make_uuid()
-
-        content_data: List[bytes] = [
-            json.dumps(content.to_dict(), indent=4).encode(),
-            json.dumps(metadata.to_dict(), indent=4).encode(),
-            buffer.getvalue()
-        ]
-
-        files = [
-            File(make_hash(content_data[0]), f"{document_uuid}.content", 0, len(content_data[0])),
-            File(make_hash(content_data[1]), f"{document_uuid}.metadata", 0, len(content_data[1])),
-            File(make_hash(content_data[2]), f"{document_uuid}/{first_page_uuid}.rm", 0, len(content_data[2])),
-        ]
-
-        document = Document(self, content, metadata, files, document_uuid)
-        document.content_data = {file.uuid: data for file, data in zip(files, content_data)}
-        document.files_available = {file.uuid: file for file in files}
-
-        return document
 
     def upload(self, document: Document, callback):
         document.ensure_download_and_callback(lambda: self._upload_document_contents(document, callback))

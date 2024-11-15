@@ -7,6 +7,7 @@ import uuid
 from functools import lru_cache
 import random
 from hashlib import sha256
+from io import BytesIO
 from sqlite3.dbapi2 import Timestamp
 from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple
 
@@ -15,6 +16,7 @@ from colorama import Fore
 from rm_api.helpers import get_pdf_page_count
 from rm_api.storage.v3 import get_file_contents
 from rm_api.templates import BLANK_TEMPLATE
+from rm_lines.blocks import write_blocks, blank_document
 
 if TYPE_CHECKING:
     from rm_api import API
@@ -522,3 +524,32 @@ class Document:
 
     def check(self):
         self.content.check(self)
+
+    @classmethod
+    def new_notebook(cls, api: 'API', name: str, parent: str = None) -> 'Document':
+        metadata = Metadata.new(name, parent)
+        content = Content.new_notebook(api.author_id)
+        first_page_uuid = content.c_pages.pages[0].id
+
+        buffer = BytesIO()
+        write_blocks(buffer, blank_document(api.author_id))
+
+        document_uuid = make_uuid()
+
+        content_data: List[bytes] = [
+            json.dumps(content.to_dict(), indent=4).encode(),
+            json.dumps(metadata.to_dict(), indent=4).encode(),
+            buffer.getvalue()
+        ]
+
+        files = [
+            File(make_hash(content_data[0]), f"{document_uuid}.content", 0, len(content_data[0])),
+            File(make_hash(content_data[1]), f"{document_uuid}.metadata", 0, len(content_data[1])),
+            File(make_hash(content_data[2]), f"{document_uuid}/{first_page_uuid}.rm", 0, len(content_data[2])),
+        ]
+
+        document = cls(api, content, metadata, files, document_uuid)
+        document.content_data = {file.uuid: data for file, data in zip(files, content_data)}
+        document.files_available = {file.uuid: file for file in files}
+
+        return document
