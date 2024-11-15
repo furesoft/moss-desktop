@@ -1,6 +1,9 @@
 import base64
 import json
 import os
+from hashlib import sha256
+
+from colorama import Fore
 from crc32c import crc32c
 from functools import lru_cache
 from json import JSONDecodeError
@@ -125,12 +128,22 @@ def get_documents_using_root(api: 'API', progress, root):
     deleted_document_collections_list = set(api.document_collections.keys())
     deleted_documents_list = set(api.documents.keys())
     document_collections_with_items = set()
+    badly_hashed = []
 
     total = len(files)
 
     for i, file in enumerate(files):
         _, file_content = get_file(api, file.hash)
         content = None
+
+
+        # Check the hash in case it needs fixing
+        document_file_hash = sha256()
+        for item in sorted(file_content, key=lambda item: file.uuid):
+            document_file_hash.update(bytes.fromhex(item.hash))
+        expected_hash = document_file_hash.hexdigest()
+        matches_hash = file.hash == expected_hash
+
         file_content.sort(key=get_file_item_order)
         for item in file_content:
             if item.uuid == f'{file.uuid}.content':
@@ -184,6 +197,8 @@ def get_documents_using_root(api: 'API', progress, root):
                 elif metadata.type == 'DocumentType':
                     api.documents[file.uuid] = models.Document(api, models.Content(content, item.hash, api.debug),
                                                                metadata, file_content, file.uuid)
+                    if not matches_hash:
+                        badly_hashed.append(api.documents[file.uuid])
                     if (parent_document_collection := api.document_collections.get(
                             api.documents[file.uuid].parent)) is not None:
                         parent_document_collection.has_items = True
@@ -194,6 +209,10 @@ def get_documents_using_root(api: 'API', progress, root):
         progress(i + 1, total)
     else:
         i = 0
+
+    if badly_hashed:
+        print(f"{Fore.YELLOW}Warning, fixing some bad document tree hashes!{Fore.RESET}")
+        api.upload_many_documents(badly_hashed)
 
     total += len(deleted_document_collections_list) + len(deleted_documents_list)
 
