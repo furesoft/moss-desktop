@@ -68,6 +68,7 @@ class ImportScreen(pe.ChildContext):
             args=(self.documents_to_upload,),
             daemon=True
         ).start()
+        self.close()
 
     def light_import(self):
         self.api.upload_many_documents(self.convert_light())
