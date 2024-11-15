@@ -51,7 +51,8 @@ class TopBar(pe.ChildContext):
 
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
-        super().__init__(parent)
+        self.main_menu = parent
+        super().__init__(parent.parent_context)
         self.handle_scales()
 
     @property
@@ -130,7 +131,7 @@ class TopBar(pe.ChildContext):
 
     def import_action(self):
         import_prompt(lambda pdf_path: import_pdf_to_cloud(
-            self.parent_context, pdf_path
+            self.main_menu, pdf_path
         ))
 
 
@@ -154,7 +155,6 @@ class MainMenu(pe.ChildContext):
         self.texts: Dict[str, pe.Text] = {}
         self.path_queue = Queue()
         self.call_lock = Lock()
-        self.bar = TopBar(parent)
         parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
@@ -162,6 +162,7 @@ class MainMenu(pe.ChildContext):
         # obviously, non reversed is ascending
         self.current_sorting_reverse = True
         super().__init__(parent)
+        self.bar = TopBar(self)
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
         self.get_items()

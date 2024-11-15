@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 def import_pdf_to_cloud(gui: Union['GUI', 'MainMenu'], file_path):
     with open(file_path, 'rb') as file:
         pdf_data = file.read()
-
+        
     if type(gui).__name__ == 'MainMenu':
         parent = gui.navigation_parent
     else:

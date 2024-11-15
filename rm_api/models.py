@@ -102,9 +102,9 @@ class Page:
         else:
             self.redirect = None
 
-    @classmethod
-    def new_pdf_redirect(cls, redirection_page: int, index: str, uuid: str = None):
-        return cls({
+    @staticmethod
+    def new_pdf_redirect_dict(redirection_page: int, index: str, uuid: str = None):
+        return {
             "id": uuid if uuid else make_uuid(),
             "idx": {
                 "timestamp": "1:2",
@@ -114,7 +114,11 @@ class Page:
                 "timestamp": "1:2",
                 "value": redirection_page
             }
-        })
+        }
+
+    @classmethod
+    def new_pdf_redirect(cls, redirection_page: int, index: str, uuid: str = None):
+        return cls(cls.new_pdf_redirect_dict(redirection_page, index, uuid))
 
 
 # TODO: Figure out what the CPagesUUID is referring to
@@ -219,7 +223,7 @@ class Content:
         c_page_pages = []
         last_opened_page = None
         for i, (page, redirection_page) in enumerate(zip(pages, redirection_page_map)):
-            c_page_pages.append(Page.new_pdf_redirect(redirection_page, next(index), page))
+            c_page_pages.append(Page.new_pdf_redirect_dict(redirection_page, next(index), page))
             if i == self.__content.get('lastOpenedPage'):
                 last_opened_page = page
 
@@ -284,28 +288,36 @@ class Content:
     @classmethod
     def new_pdf(cls):
         content = {
-            "coverPageNumber": -1,
-            "documentMetadata": {},
             "dummyDocument": False,
             "extraMetadata": {
+                "LastPen": "Finelinerv2",
+                "LastTool": "Finelinerv2",
+                "ThicknessScale": "",
+                "LastFinelinerv2Size": "1"
             },
             "fileType": "pdf",
             "fontName": "",
-            "formatVersion": 1,
+            "lastOpenedPage": 0,
             "lineHeight": -1,
-            "margins": 125,
+            "margins": 180,
             "orientation": "portrait",
-            "originalPageCount": 0,
             "pageCount": 0,
-            "pages": None,
-            "sizeInBytes": "",
-            "textAlignment": "",
+            "pages": [],
             "textScale": 1,
-            "keyboardMetadata": {
-                "count": 0,
-                "timestamp": 0
+            "formatVersion": 1,
+            "transform": {
+                "m11": 1,
+                "m12": 0,
+                "m13": 0,
+                "m21": 0,
+                "m22": 1,
+                "m23": 0,
+                "m31": 0,
+                "m32": 0,
+                "m33": 1
             }
         }
+
         return cls(content, make_hash(json.dumps(content, indent=4)))
 
     def to_dict(self) -> dict:
@@ -371,7 +383,7 @@ class Metadata:
             "pinned": False,
             "synced": False,
             "type": document_type,
-            "version": 0,
+            "version": 1,
             "visibleName": name
         }
         return cls(metadata, make_hash(json.dumps(metadata, indent=4)))
