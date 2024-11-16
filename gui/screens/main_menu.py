@@ -1,14 +1,14 @@
 from functools import lru_cache
 from queue import Queue
 from threading import Lock
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Union
 
 import pygameextra as pe
 
 from gui.cloud_action_helper import import_pdf_to_cloud
 from gui.events import ResizeEvent, InternalSyncCompleted
 from gui.file_prompts import import_prompt
-from rm_api.notifications.models import SyncRefresh
+from rm_api.notifications.models import SyncRefresh, FileSyncProgress
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
@@ -148,6 +148,8 @@ class MainMenu(pe.ChildContext):
         'last_modified': lambda item: item.metadata.last_modified,
     }
 
+    file_sync_operation: Union[None, FileSyncProgress]
+
     def __init__(self, parent: 'GUI'):
         self.navigation_parent = parent.config.last_opened_folder
         self.document_collections = {}
@@ -155,6 +157,7 @@ class MainMenu(pe.ChildContext):
         self.texts: Dict[str, pe.Text] = {}
         self.path_queue = Queue()
         self.call_lock = Lock()
+        self.file_sync_operation = None
         parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
@@ -327,7 +330,13 @@ class MainMenu(pe.ChildContext):
                            (255, 0, 0, 50), action=self.refresh)
 
     def post_loop(self):
-        loader: 'Loader' = self.parent_context.screens.queue[0]
+        # Draw progress bar for file sync operations
+        if self.file_sync_operation and not self.file_sync_operation.finished:
+            draw_bottom_loading_bar(self.parent_context, self.file_sync_operation.done, self.file_sync_operation.total)
+            return
+
+        # Draw sync operation from loader
+        loader: 'Loader' = self.parent_context.screens.queue[0]  # The loader is always the first screen
         if loader.files_to_load is not None:
             draw_bottom_loading_bar(self.parent_context, loader.files_loaded, loader.files_to_load)
             # Update the data if the loader has loaded more files
@@ -345,7 +354,12 @@ class MainMenu(pe.ChildContext):
         elif isinstance(event, InternalSyncCompleted):
             self.get_items()
 
+    def _non_critical_event_hook(self, event):
+        if isinstance(event, FileSyncProgress):
+            self.file_sync_operation = event
+
     def api_event_hook(self, event):
+        self._non_critical_event_hook(event)
         with self.call_lock:
             self._critical_event_hook(event)
 
