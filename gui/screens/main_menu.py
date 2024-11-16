@@ -13,7 +13,7 @@ from rm_api.notifications.models import SyncRefresh, FileSyncProgress
 from gui.defaults import Defaults
 from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
 from gui.rendering import render_button_using_text, render_document, render_collection, render_header, \
-    draw_bottom_loading_bar
+    draw_bottom_loading_bar, get_bottom_bar_rect
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -368,3 +368,4 @@ class MainMenu(pe.ChildContext):
         self.texts.clear()
         self.texts['my_files'] = my_files_text
         self.get_items()
+        get_bottom_bar_rect.cache_clear()
