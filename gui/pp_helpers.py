@@ -12,6 +12,7 @@ from traceback import print_exc
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
+from colorama import Fore
 
 from gui.defaults import Defaults
 import rm_api.models as models
@@ -173,7 +174,11 @@ class DocumentDebugPopup(pe.ChildContext):
 
         for file in self.document.files:
             # Fetch the file
-            data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
+            try:
+                data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
+            except:
+                print(f"{Fore.RED}Could not fetch file with UUID={file.uuid} HASH={file.hash}{Fore.RESET}")
+                continue
             file_path = os.path.join(self.extract_location, self.clean_file_uuid(file))
 
             is_json = file.uuid.rsplit('.')[-1] in ("content", "metadata")
