@@ -20,6 +20,7 @@ class ImportScreen(pe.ChildContext):
     parent_context: 'GUI'
     icons: Dict[str, pe.Image]
     ratios: 'Ratios'
+    import_screen: 'ImportScreen'
 
     documents_to_upload: List['Document']
 
@@ -60,6 +61,7 @@ class ImportScreen(pe.ChildContext):
                                  action=self.light_import)
 
     def close(self):
+        self.import_screen = None
         del self.screens.queue[-1]
 
     def full_import(self):
