@@ -61,7 +61,7 @@ class ImportScreen(pe.ChildContext):
                                  action=self.light_import)
 
     def close(self):
-        self.import_screen = None
+        self.parent_context.import_screen = None
         del self.screens.queue[-1]
 
     def full_import(self):

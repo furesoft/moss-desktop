@@ -286,7 +286,7 @@ class GUI(pe.GameContext):
 
     @property
     def import_screen(self):
-        if self._import_screen:
+        if self._import_screen is not None:
             return self._import_screen
         from .screens.import_screen import ImportScreen
         self.screens.put(ImportScreen(self))
@@ -295,7 +295,6 @@ class GUI(pe.GameContext):
     @import_screen.setter
     def import_screen(self, screen: Union['ImportScreen', None]):
         if screen is None:
-            del self._import_screen
             self._import_screen = None
         else:
             self._import_screen = screen
