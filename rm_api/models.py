@@ -343,7 +343,6 @@ class Content:
             yield 'ba'
 
     def check(self, document: 'Document'):
-        print(self.content_file_pdf_check, self.file_type)
         if self.content_file_pdf_check and self.file_type == 'pdf':
             self.parse_create_new_pdf_content_file(document)
 
