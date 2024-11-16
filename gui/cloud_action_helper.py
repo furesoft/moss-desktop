@@ -11,15 +11,10 @@ if TYPE_CHECKING:
 def import_pdf_to_cloud(gui: 'GUI', file_path):
     with open(file_path, 'rb') as file:
         pdf_data = file.read()
-        
-    if type(gui).__name__ == 'MainMenu':
-        parent = gui.navigation_parent
-    else:
-        parent = None
 
+    parent = gui.main_menu.navigation_parent
     name = os.path.basename(file_path).rsplit('.', 1)[0]  # remove .pdf from the end
 
     document = Document.new_pdf(gui.api, name, pdf_data, parent)
-
 
     gui.import_screen.add_item(document)
