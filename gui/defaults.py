@@ -66,7 +66,9 @@ class Defaults:
     CODE_FONT = MONO_FONT
     DEBUG_FONT = MONO_FONT
 
-    TEXT_COLOR = (pe.colors.black, pe.colors.white)
+    BACKGROUND = pe.colors.white
+
+    TEXT_COLOR = (pe.colors.black, BACKGROUND)
     TEXT_COLOR_CODE = (pe.colors.darkaqua, None)
     TEXT_COLOR_LINK = (pe.colors.darkblue, None)
     DOCUMENT_TITLE_COLOR = ((20, 20, 20), TEXT_COLOR[1])
@@ -79,7 +81,7 @@ class Defaults:
     TRANSPARENT_COLOR = (0, 0, 0, 0)
     BUTTON_ACTIVE_COLOR = (0, 0, 0, 25)
     BUTTON_DISABLED_COLOR = (0, 0, 0, 100)
-    BUTTON_DISABLED_LIGHT_COLOR = (255, 255, 255, 150)
+    BUTTON_DISABLED_LIGHT_COLOR = (*BACKGROUND, 150)
 
     # Colors
     OUTLINE_COLOR = pe.colors.black

@@ -135,7 +135,6 @@ class GUI(pe.GameContext):
     HEIGHT = 1000
     WIDTH = int(HEIGHT * ASPECT)
     FPS = 60
-    BACKGROUND = pe.colors.white
     TITLE = f"{AUTHOR} {APP_NAME}"
     MODE = pe.display.DISPLAY_MODE_RESIZABLE
     FAKE_SCREEN_REFRESH_TIME = .1
@@ -146,11 +145,14 @@ class GUI(pe.GameContext):
 
         self.AREA = (self.WIDTH * self.config.scale, self.HEIGHT * self.config.scale)
         self.dirty_config = False
+
         atexit.register(self.save_config_if_dirty)
+        setattr(pe.settings, 'config', self.config)
+
+        from .defaults import Defaults
+        self.BACKGROUND = Defaults.BACKGROUND
         super().__init__()
 
-        setattr(pe.settings, 'config', self.config)
-        from .defaults import Defaults
         try:
             self.api = API(**self.api_kwargs)
         except FailedToRefreshToken:
