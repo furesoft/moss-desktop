@@ -2,8 +2,11 @@ import base64
 import json
 import os
 from hashlib import sha256
+from io import BytesIO
+from traceback import print_exc
 
-from colorama import Fore
+import httpx
+from colorama import Fore, Style
 from crc32c import crc32c
 from functools import lru_cache
 from json import JSONDecodeError
@@ -11,6 +14,7 @@ from json import JSONDecodeError
 import rm_api.models as models
 from typing import TYPE_CHECKING, Union, Tuple, List
 
+from rm_api.notifications.models import DocumentSyncProgress
 from rm_api.storage.exceptions import NewSyncRequired
 
 FILES_URL = "{0}sync/v3/files/{1}"
@@ -75,7 +79,7 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
     if response.content == b'{"message":"invalid hash"}\n':
         return None
     elif not response.ok:
-        raise Exception("Failed to make files request")
+        raise Exception(f"Failed to make files request - {response.status_code}\n{response.text}")
     if binary:
         if location:
             with open(location, "wb") as f:
@@ -91,22 +95,39 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
             return response.text
 
 
-def put_file(api: 'API', file: 'File', data: bytes):
+def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
     checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
-    response = api.session.put(
-        FILES_URL.format(api.document_storage_uri, file.hash),
-        data=data,
-        headers={
-            **api.session.headers,
-            'rm-filename': file.rm_filename,
-            'x-goog-hash': f'crc32c={checksum_bs4}'
-        }
-    )
-    if not response.ok:
-        raise Exception(f"Failed to put file - {response.status_code}\n{response.text}")
-    else:
-        print(file.uuid, "uploaded")
-    return True
+    with httpx.Client(http2=False) as request:
+        response = request.put(
+            FILES_URL.format(api.document_storage_uri, file.hash),
+            content=data,
+            headers={
+                **api.session.headers,
+                'content-type': 'application/octet-stream',
+                'rm-filename': file.rm_filename,
+                'x-goog-hash': f'crc32c={checksum_bs4}'
+            }
+        )
+
+        sync_event.total += (total := int(response.headers["Content-Length"]))
+        sync_event.add_task()
+        progress = 0
+        while progress < total:
+            for chunk in response.iter_bytes():
+                print(chunk)
+                progress += len(chunk)
+                sync_event.done += len(chunk)
+
+        if response.status_code == 302:
+            print(file.uuid, "found")
+        elif response.status_code != 200:
+            raise Exception(f"Put file failed - {response.status_code}\n{response.text}")
+        else:
+            print(file.uuid, "uploaded")
+
+        sync_event.finish_task()
+
+
 
 
 def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
@@ -124,7 +145,26 @@ def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = 
 
 
 def get_documents_using_root(api: 'API', progress, root):
-    _, files = get_file(api, root)
+    try:
+        _, files = get_file(api, root)
+    except:
+        from rm_api.storage.old_sync import update_root
+        print(f"{Fore.RED}{Style.BRIGHT}AN ISSUE OCCURRED GETTING YOUR ROOT INDEX!{Fore.RESET}{Style.RESET_ALL}")
+
+        root = api.get_root()
+
+        new_root = {
+            "broadcast": True,
+            "generation": root['generation']
+        }
+
+        root_file_content = b'3\n'
+
+        root_file = models.File(models.make_hash(root_file_content), f"root.docSchema", 0, len(root_file_content))
+        new_root['hash'] = root_file.hash
+        put_file(api, root_file, root_file_content, DocumentSyncProgress(''))
+        update_root(api, new_root)
+        _, files = get_file(api, new_root['hash'])
     deleted_document_collections_list = set(api.document_collections.keys())
     deleted_documents_list = set(api.documents.keys())
     document_collections_with_items = set()
@@ -136,7 +176,6 @@ def get_documents_using_root(api: 'API', progress, root):
         _, file_content = get_file(api, file.hash)
         content = None
 
-
         # Check the hash in case it needs fixing
         document_file_hash = sha256()
         for item in sorted(file_content, key=lambda item: file.uuid):
@@ -147,7 +186,10 @@ def get_documents_using_root(api: 'API', progress, root):
         file_content.sort(key=get_file_item_order)
         for item in file_content:
             if item.uuid == f'{file.uuid}.content':
-                content = get_file_contents(api, item.hash)
+                try:
+                    content = get_file_contents(api, item.hash)
+                except:
+                    break
                 if not isinstance(content, dict):
                     break
             if item.uuid == f'{file.uuid}.metadata':

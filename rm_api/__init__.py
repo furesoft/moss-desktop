@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 import uuid
 from hashlib import sha256
 from io import BytesIO
@@ -12,7 +13,7 @@ import colorama
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
-from rm_api.notifications.models import FileSyncProgress, SyncRefresh
+from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync, update_root
@@ -241,11 +242,14 @@ class API:
         content_data[root_file.uuid] = root_file_content
 
         # Upload all the files that have changed
-        progress.total += len(files_with_changes)
-
+        document_sync_operation = DocumentSyncProgress(document.uuid, progress)
         for file in files_with_changes:
-            put_file(self, file, content_data[file.uuid])
-            progress.done += 1
+            threading.Thread(target=put_file,
+                             args=(self, file, content_data[file.uuid], document_sync_operation)).start()
+
+        # Wait for operation to finish
+        while not document_sync_operation.finished:
+            pass
 
         # Update the root
         update_root(self, new_root)
