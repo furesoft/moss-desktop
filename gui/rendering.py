@@ -38,7 +38,7 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Te
 
     # Draw the star icon
     if collection.metadata.pinned:
-        star_icon.display((extra_x, text.rect.centery-star_icon.width//2))
+        star_icon.display((extra_x, text.rect.centery - star_icon.width // 2))
         extra_x += star_icon.width + gui.ratios.main_menu_folder_padding
     if collection.tags:
         tag_icon.display((extra_x, text.rect.centery - tag_icon.width // 2))
@@ -289,3 +289,10 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int):
     loading_bar_rect.width = int(loading_bar_rect.width * current / total)
 
     pe.draw.rect(pe.colors.white, loading_bar_rect, 0)
+
+    # Make and show text of current / total
+    text = pe.Text(f"{current} | {total}", Defaults.MAIN_MENU_PROGRESS_FONT, gui.ratios.bottom_bar_size,
+                   colors=Defaults.TEXT_COLOR_H)
+    text.rect.midright = loading_bar_rect.midleft
+    text.rect.right -= gui.ratios.bottom_loading_bar_padding
+    text.display()
