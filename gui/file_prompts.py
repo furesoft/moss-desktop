@@ -3,13 +3,20 @@ import threading
 import tkinter as tk
 from typing import TYPE_CHECKING
 from tkinter import filedialog
-
+import pygameextra as pe
 from gui.defaults import Defaults
 
 if TYPE_CHECKING:
     from rm_api.models import Document
+    from gui.gui import ConfigDict
 
 tk_lock = False
+
+
+# noinspection PyTypeHints
+def get_config() -> 'ConfigDict':
+    pe.settings.game_context.config: 'ConfigDict'
+    return pe.settings.game_context.config
 
 
 def make_tk():
@@ -34,13 +41,24 @@ def open_file(title: str, types_text: str, *filetypes):
                     return
                 root = make_tk()
                 filetypes_with_default = [(types_text, filetypes)]
+                config = get_config()
                 file_name = filedialog.askopenfilename(
                     parent=root,
                     title=title,
-                    filetypes=filetypes_with_default
+                    filetypes=filetypes_with_default,
+                    initialdir=config.last_prompt_directory if config.last_prompt_directory and os.path.isdir(
+                        config.last_prompt_directory) else None
                 )
                 root.destroy()
                 tk_lock = False
+
+                if not file_name:
+                    return
+
+                if os.path.isdir(directory := os.path.dirname(file_name)):
+                    config.last_prompt_directory = directory
+                    pe.settings.game_context.dirty_config = True
+
                 return func(file_name, *args, **kwargs) if file_name else None
 
             threading.Thread(target=prompt_file).start()
