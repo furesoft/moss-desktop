@@ -17,7 +17,7 @@ def import_pdf_to_cloud(gui: 'GUI', file_path):
     else:
         parent = None
 
-    name = os.path.basename(file_path)
+    name = os.path.basename(file_path).rsplit('.', 1)[0]  # remove .pdf from the end
 
     document = Document.new_pdf(gui.api, name, pdf_data, parent)
 
