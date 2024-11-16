@@ -88,7 +88,7 @@ contents = '3\n' + '\n'.join(File.to_root_line(file) for file in files)
 contents = contents.encode()
 
 if input("also upload this root file? (shouldn't need to) [y/N]").lower().startswith('y'):
-    file = File(current_root, f"root.docSchema", len(files), make_hash(contents))
+    file = File(make_hash(contents), f"root.docSchema", len(files), len(contents))
     put_file(api, file, contents, DocumentSyncProgress(file.uuid))
 
 new_root = {
