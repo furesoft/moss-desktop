@@ -152,6 +152,8 @@ class API:
             for document in documents:
                 document.ensure_download()
                 self._upload_document_contents(document, upload_event)
+        except:
+            print_exc()
         finally:
             upload_event.finished = True
 
