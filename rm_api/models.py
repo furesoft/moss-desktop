@@ -314,6 +314,7 @@ class Content:
             "pageCount": 0,
             "pages": [],
             "textScale": 1,
+            "formatVersion": 1,
             "transform": {
                 "m11": 1,
                 "m12": 0,
