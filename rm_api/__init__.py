@@ -12,7 +12,7 @@ import colorama
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
-from rm_api.notifications.models import FileSyncProgress
+from rm_api.notifications.models import FileSyncProgress, SyncRefresh
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync, update_root
@@ -248,6 +248,7 @@ class API:
         # Update the root
         update_root(self, new_root)
         progress.done += 1  # Update done finally matching done/total
+        self.spread_event(SyncRefresh())
 
     def check_for_document_notifications(self):
         if not self.document_notifications_uri:

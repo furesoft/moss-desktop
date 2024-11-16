@@ -8,23 +8,31 @@ class Notification:  # A class to be used as a base class for all notifications
     ...
 
 
-class LongLasting:
+class LongLasting:  # A class to be used as a base class for all ongoing operation events
     ...
 
 
 class SyncCompleted(Notification):
+    """
+    This event is used by the websocket to spread a sync completion,
+    when received from remarkable cloud.
+    """
     def __init__(self, message: dict):
         self.source_device_id = message['attributes'].get('sourceDeviceID')
 
 
 class SyncRefresh(SyncCompleted):
+    """
+    Used when new files were synced by moss / moss doesn't pick up sync complete.
+    This will force a sync refresh to get the latest document information.
+    """
     # noinspection PyMissingConstructor
     def __init__(self):
         self.source_device_id = None
 
 
 class FileSyncProgress(LongLasting):
-    """This event is designed to be spread once and kept for monitoring the progress"""
+    """This event is designed to be spread once and kept for monitoring the progress."""
 
     def __init__(self):
         self.done = 0
