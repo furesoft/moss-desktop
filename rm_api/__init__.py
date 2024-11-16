@@ -192,7 +192,7 @@ class API:
         # Figure out what files have changed
         for file in document.files:
             try:
-                old_content = get_file_contents(self, file.hash, binary=True)
+                old_content = get_file_contents(self, file.hash, binary=True, use_cache=False)
                 if old_content != document.content_data[file.uuid]:
                     files_with_changes.append(file)
                 else:
