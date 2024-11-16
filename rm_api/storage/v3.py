@@ -128,8 +128,6 @@ def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProg
         sync_event.finish_task()
 
 
-
-
 def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
     res = make_files_request(api, "GET", file, use_cache=use_cache)
     if isinstance(res, int):
