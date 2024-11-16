@@ -51,6 +51,7 @@ class ConfigDict(TypedDict):
     download_last_opened_page_to_make_preview: bool
     save_last_opened_folder: bool
     last_opened_folder: Union[None, str]
+    last_prompt_directory: Union[None, str]
     scale: Number
     main_menu_view_mode: MAIN_MENU_MODES
     format_raw_exports: bool
@@ -71,6 +72,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'download_last_opened_page_to_make_preview': False,
     'save_last_opened_folder': False,
     'last_opened_folder': None,
+    'last_prompt_directory': None,
     'scale': .9,
     'main_menu_view_mode': 'grid',
     'format_raw_exports': True,
@@ -148,6 +150,7 @@ class GUI(pe.GameContext):
 
         atexit.register(self.save_config_if_dirty)
         setattr(pe.settings, 'config', self.config)
+        setattr(pe.settings, 'indev', False)
 
         from .defaults import Defaults
         self.BACKGROUND = Defaults.BACKGROUND
@@ -171,7 +174,7 @@ class GUI(pe.GameContext):
         else:
             from gui.screens.code_screen import CodeScreen
             self.screens.put(CodeScreen(self))
-        if not self.config.debug and not self.config.portable_mode and not Defaults.INSTALLED:
+        if not pe.settings.indev and not self.config.debug and not self.config.portable_mode and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
         self.running = True

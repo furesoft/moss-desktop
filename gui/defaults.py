@@ -21,6 +21,7 @@ def get_asset_path():
     else:
         if pe.settings.config.debug:
             print("Running in development")
+        pe.settings.indev = True
         base_asset_dir = os.path.abspath(".")
         script_dir = os.path.abspath(os.path.dirname(__main__.__file__))
 
