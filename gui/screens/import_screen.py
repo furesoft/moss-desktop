@@ -46,15 +46,16 @@ class ImportScreen(pe.ChildContext):
                 'cancel': "Cancel",
                 'full': "Full Sync",
                 'light': "Light Sync",
-                'info_text': "Syncs a dummy so that you can archive it, \nbefore syncing the full document ->"
+                'info_text': "Syncs a dummy so that you can archive it,\nbefore syncing the full document"
             }.items()
         }
 
         right = self.width - self.ratios.import_screen_button_margin
         for text in self.texts.values():
-            text.rect.height = self.ratios.import_screen_button_size
-            text.rect.bottom = self.height - self.ratios.import_screen_button_margin
+            text.rect.height = max(text.rect.height, self.ratios.import_screen_button_size)
+            text.rect.centery = self.height - self.ratios.import_screen_button_margin
             text.rect.right = right
+            text.position = text.rect.center
             right = text.rect.left - self.ratios.import_screen_button_margin
 
     def add_item(self, document: 'Document'):
