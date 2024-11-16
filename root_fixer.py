@@ -64,15 +64,7 @@ print("\nNEWEST FIRST, OLDEST LAST")
 for hash_of_root, files in sorted(potential_roots.items(), key=lambda root: root_last_modified.get(root[0], 0),
                                   reverse=True):
     last_modified = root_last_modified.get(hash_of_root, 0)
-    valid = 0
-    for file in files:
-        try:
-            get_file_contents(api, file.hash, use_cache=False)
-            valid += 1
-        except:
-            pass
-    print(f'{hash_of_root} - ITEMS: {len(files)} OF WHICH ARE VALID: {valid}' + (
-        '' if valid < len(files) else ' - GOOD?'))
+    print(f'{hash_of_root} - ITEMS: {len(files)}')
 
 picked_root = input("\nType the hash of the root file you picked: ")
 
