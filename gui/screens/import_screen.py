@@ -4,7 +4,7 @@ from typing import Dict, TYPE_CHECKING, List
 import pygameextra as pe
 from gui.aspect_ratio import Ratios
 from gui.defaults import Defaults
-from gui.rendering import render_button_using_text
+from gui.rendering import render_button_using_text, render_full_text
 from rm_api import Document
 
 if TYPE_CHECKING:
@@ -29,6 +29,14 @@ class ImportScreen(pe.ChildContext):
         self.folder = parent.main_menu.navigation_parent
         super().__init__(parent)
         parent.import_screen = self
+        self.title = pe.Text("Import", Defaults.MAIN_MENU_FONT, self.ratios.import_screen_title_size,
+                             colors=Defaults.TEXT_COLOR)
+
+        self.title.rect.topleft = (
+            self.ratios.import_screen_title_padding,
+            self.ratios.import_screen_title_padding
+        )
+
         self.texts: Dict[str, pe.Text] = {
             key: pe.Text(
                 text,
@@ -37,7 +45,8 @@ class ImportScreen(pe.ChildContext):
             for key, text in {
                 'cancel': "Cancel",
                 'full': "Full Sync",
-                'light': "Light Sync"
+                'light': "Light Sync",
+                'info_text': "Syncs a dummy so that you can archive it, \nbefore syncing the full document ->"
             }.items()
         }
 
@@ -53,12 +62,25 @@ class ImportScreen(pe.ChildContext):
         self.documents_to_upload.append(document)
 
     def loop(self):
+        self.title.display()
+
         render_button_using_text(self.parent_context, self.texts['cancel'], outline=self.ratios.outline,
                                  action=self.close)
         render_button_using_text(self.parent_context, self.texts['full'], outline=self.ratios.outline,
                                  action=self.full_import)
-        render_button_using_text(self.parent_context, self.texts['light'], outline=self.ratios.outline,
-                                 action=self.light_import)
+        light_import_rect = render_button_using_text(self.parent_context, self.texts['light'],
+                                                     outline=self.ratios.outline,
+                                                     action=self.light_import)
+        info_icon = self.icons['info']
+        info_rect = pe.Rect(0, 0, *info_icon.size)
+        info_rect.center = light_import_rect.topright
+        pe.button.rect(
+            info_rect,
+            self.BACKGROUND, self.BACKGROUND,
+            hover_draw_action=render_full_text,
+            hover_draw_data=(self.parent_context, self.texts['info_text'])
+        )
+        info_icon.display(info_rect.topleft)
 
     def close(self):
         self.parent_context.import_screen = None

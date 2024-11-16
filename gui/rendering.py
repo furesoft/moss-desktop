@@ -23,6 +23,10 @@ def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
         FullTextPopup.create(gui, text_full, text)()
 
 
+def render_full_text(gui: 'GUI', text: pe.Text):
+    FullTextPopup.create(gui, text, text)()
+
+
 def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y, width):
     icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
     icon.display((x, y))
@@ -220,6 +224,7 @@ def render_button_using_text(
     )
     if outline is not None and outline > 0:
         pe.draw.rect(outline_color, rect, outline)
+    return rect
 
 
 def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: 'Queue'):
