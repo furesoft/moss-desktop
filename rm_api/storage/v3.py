@@ -103,7 +103,7 @@ def put_file(api: 'API', file: 'File', data: bytes):
         }
     )
     if not response.ok:
-        raise Exception("Failed to put file")
+        raise Exception(f"Failed to put file - {response.status_code}\n{response.text}")
     else:
         print(file.uuid, "uploaded")
     return True
