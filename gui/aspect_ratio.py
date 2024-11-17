@@ -17,6 +17,7 @@ class Ratios:
         self.bottom_loading_bar_height = int(10 * scale)
         self.bottom_bar_size = int(15 * scale)
         self.bottom_loading_bar_padding = (self.bottom_bar_height - self.bottom_loading_bar_height) / 2
+        self.bottom_loading_bar_rounding = int(5 * scale)
         self.bottom_loading_bar_width = int(100 * scale)
 
         # DEBUG
@@ -87,8 +88,8 @@ class Ratios:
     def pixel(self, value):
         return max(1, int(value * self.scale))
 
-    def pad_button_rect(self, rect: pe.Rect):
-        return rect.inflate(self.pixel(20), self.pixel(20))
+    def pad_button_rect(self, rect: pe.Rect, amount: int = 20):
+        return rect.inflate(self.pixel(amount), self.pixel(amount))
 
     @property
     def outline(self):

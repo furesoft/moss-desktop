@@ -304,14 +304,14 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int):
     loading_bar_rect.x -= gui.ratios.bottom_loading_bar_padding
 
     # Draw the loading bar background
-    pe.draw.rect(Defaults.LINE_GRAY, loading_bar_rect, 0)
+    pe.draw.rect(Defaults.LINE_GRAY, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
     loading_bar_rect.width = int(loading_bar_rect.width * current / total)
 
-    pe.draw.rect(pe.colors.white, loading_bar_rect, 0)
+    pe.draw.rect(pe.colors.white, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
     # Make and show text of current / total
-    text = pe.Text(f"{current} | {total}", Defaults.MAIN_MENU_PROGRESS_FONT, gui.ratios.bottom_bar_size,
+    text = pe.Text(f"{current} / {total}", Defaults.MAIN_MENU_PROGRESS_FONT, gui.ratios.bottom_bar_size,
                    colors=Defaults.TEXT_COLOR_H)
     text.rect.midright = loading_bar_rect.midleft
     text.rect.right -= gui.ratios.bottom_loading_bar_padding
