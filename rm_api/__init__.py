@@ -21,7 +21,7 @@ from rm_api.notifications import handle_notifications
 from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress, NewDocuments
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
-from rm_api.storage.old_sync import get_documents_old_sync, update_root
+from rm_api.storage.old_sync import get_documents_old_sync, update_root, RootUploadFailure
 from rm_api.storage.new_sync import get_root as get_root_new
 from rm_api.storage.old_sync import get_root as get_root_old
 from rm_api.storage.v3 import get_documents_using_root, get_file, get_file_contents, make_files_request, put_file, \
@@ -301,7 +301,13 @@ class API:
             pass
 
         # Update the root
-        update_root(self, new_root)
+        try:
+            update_root(self, new_root)
+        except RootUploadFailure:
+            self.log("Sync root failed, this is fine if you decided to sync on another device / start a secondary sync")
+            progress.done = 0
+            progress.total = 0
+            self._upload_document_contents(documents, progress)
         progress.done += 1  # Update done finally matching done/total
 
         for document in documents:

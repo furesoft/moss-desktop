@@ -309,5 +309,9 @@ def get_documents_using_root(api: 'API', progress, root):
         j = 0
 
     for k, uuid in enumerate(deleted_documents_list):
-        del api.documents[uuid]
+        try:
+            if not api.documents[uuid].provision:
+                del api.documents[uuid]
+        except KeyError:
+            pass
         progress(i + j + k + 1, total)

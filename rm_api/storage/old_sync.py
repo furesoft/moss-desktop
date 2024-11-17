@@ -23,6 +23,12 @@ def get_root(api: 'API'):
     return make_storage_request(api, "GET", SYNC_ROOT_URL)
 
 
+class RootUploadFailure(Exception):
+    """This happens if it was updated by another process"""
+    def __init__(self):
+        super().__init__("Failed to update root")
+
+
 def update_root(api: 'API', root: dict):
     data = json.dumps(root, indent=4).encode('utf-8')
     checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
@@ -43,7 +49,7 @@ def update_root(api: 'API', root: dict):
     )
 
     if not response.ok:
-        raise Exception("Failed to update root")
+        raise RootUploadFailure()
     else:
         api.log("Root updated:", response.json())
     return True
