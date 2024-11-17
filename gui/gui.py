@@ -192,6 +192,7 @@ class GUI(pe.GameContext):
             'require_token': False,
             'token_file_path': Defaults.TOKEN_FILE_PATH,
             'sync_file_path': Defaults.SYNC_FILE_PATH,
+            'log_file': Defaults.LOG_FILE,
             'uri': self.config.uri,
             'discovery_uri': self.config.discovery_uri
         }

@@ -39,7 +39,7 @@ def update_root(api: 'API', root: dict):
     if not response.ok:
         raise Exception("Failed to update root")
     else:
-        print(response.json())
+        api.log("Root updated:", response.json())
     return True
 
 

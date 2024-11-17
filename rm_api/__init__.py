@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import threading
 import uuid
@@ -30,7 +31,7 @@ class API:
     documents: Dict[str, Document]
 
     def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync',
-                 uri: str = None, discovery_uri: str = None, author_id: str = None):
+                 uri: str = None, discovery_uri: str = None, author_id: str = None, log_file='rm_api.log'):
         self.session = requests.Session()
         self.token_file_path = token_file_path
         if not author_id:
@@ -67,6 +68,13 @@ class API:
                 self.get_token()
         else:
             self.token = token
+
+        self.log_file = log_file
+
+        # Set up logging configuration
+        logging.basicConfig(filename=self.log_file, level=logging.INFO,
+                            format='%(asctime)s - %(message)s',
+                            filemode='a')  # 'a' for append mode
 
     @property
     def use_new_sync(self):
@@ -268,3 +276,8 @@ class API:
                     uri += "/"
                 uri = f'https://{uri}'
             self.document_notifications_uri = uri
+
+    def log(self, *args):
+        if self.debug:
+            print(*args)
+        logging.info(' '.join(map(str, args)))

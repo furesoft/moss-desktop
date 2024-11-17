@@ -2,8 +2,6 @@ import base64
 import json
 import os
 from hashlib import sha256
-from io import BytesIO
-from traceback import print_exc
 
 import httpx
 from colorama import Fore, Style
@@ -76,6 +74,8 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
         FILES_URL.format(api.document_storage_uri, file),
         json=data or None,
     )
+    if method.upper() == 'HEAD':
+        return response.ok
     if response.content == b'{"message":"invalid hash"}\n':
         return None
     elif not response.ok:
@@ -97,33 +97,52 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
 
 def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
     checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
+    content_length = len(data)
+
+    position = 0
+
+    def file_chunk_generator(chunk_size=int(4e+6)):
+        nonlocal sync_event, data, content_length, position
+        for i in range(0, len(data), chunk_size):
+            chunk = data[i:i + chunk_size]
+            sync_event.done += len(chunk)  # Update progress
+            yield chunk
+            position += len(chunk)
+
     with httpx.Client(http2=False) as request:
+        sync_event.total += content_length
+        sync_event.add_task()
+
+        # Try uploading through remarkable
         response = request.put(
             FILES_URL.format(api.document_storage_uri, file.hash),
-            content=data,
-            headers={
+            content=file_chunk_generator(),
+            headers=(headers := {
                 **api.session.headers,
+                'content-length': str(content_length),
                 'content-type': 'application/octet-stream',
                 'rm-filename': file.rm_filename,
                 'x-goog-hash': f'crc32c={checksum_bs4}'
-            }
+            })
         )
 
-        sync_event.total += (total := int(response.headers["Content-Length"]))
-        sync_event.add_task()
-        progress = 0
-        while progress < total:
-            for chunk in response.iter_bytes():
-                print(chunk)
-                progress += len(chunk)
-                sync_event.done += len(chunk)
-
         if response.status_code == 302:
-            print(file.uuid, "found")
-        elif response.status_code != 200:
+            # Reset progress, start uploading through google instead
+            sync_event.done -= position
+            response = request.put(
+                response.headers['location'],
+                content=file_chunk_generator(),
+                headers={
+                    **headers,
+                    'x-goog-content-length-range': response.headers['x-goog-content-length-range'],
+                    'x-goog-hash': f'crc32c={checksum_bs4}'
+                }
+            )
+
+        if response.status_code != 200:
             raise Exception(f"Put file failed - {response.status_code}\n{response.text}")
         else:
-            print(file.uuid, "uploaded")
+            api.log(file.uuid, "uploaded")
 
         sync_event.finish_task()
 

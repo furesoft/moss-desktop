@@ -46,6 +46,7 @@ class Defaults:
     TOKEN_FILE_PATH = os.path.join(SCRIPT_DIR, 'token')
     CONFIG_FILE_PATH = pe.settings.config_file_path  # The GUI handles the path for this
     SYNC_FILE_PATH = os.path.join(SCRIPT_DIR, 'sync')
+    LOG_FILE = os.path.join(SCRIPT_DIR, 'moss.log')
 
     CUSTOM_FONT = os.path.join(FONT_DIR, 'Imperator.ttf')
     CUSTOM_FONT_BOLD = os.path.join(FONT_DIR, 'Imperator Bold.ttf')
