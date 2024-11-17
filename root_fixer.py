@@ -8,6 +8,8 @@ with open('config.json', 'r') as f:
     config = json.load(f)
 
 api = API(uri=config['uri'], discovery_uri=config['discovery_uri'])
+api.debug = True
+api.ignore_error_protection = True
 
 root = api.get_root()
 

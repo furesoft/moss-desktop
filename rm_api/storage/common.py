@@ -10,9 +10,13 @@ if TYPE_CHECKING:
 def get_document_storage_uri(api: 'API'):
     response = api.session.get(DOCUMENT_STORAGE_URL.format(api.discovery_uri))
     host = response.json().get("Host")
+    secure = 'https'
     if host == 'local.appspot.com':
-        host = api.uri.split("://")[1].split("/")[0]
-    root_response = api.session.get(f"https://{host}/sync/v3/root")
+        secure, root_host = api.uri.split('://')
+        root_host = root_host.split("/")[0]
+    else:
+        root_host = host
+    root_response = api.session.get(f"{secure}://{root_host}/sync/v3/root")
     if not root_response.ok:
         api.use_new_sync = True
         return None

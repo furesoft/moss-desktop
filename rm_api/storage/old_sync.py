@@ -7,9 +7,10 @@ from typing import TYPE_CHECKING, Union, List, Tuple
 from crc32c import crc32c
 from urllib3.exceptions import DecodeError
 import rm_api.models as models
+from rm_api.notifications.models import APIFatal
 from rm_api.storage.exceptions import NewSyncRequired
 from rm_api.storage.new_sync import get_documents_new_sync
-from rm_api.storage.v3 import make_storage_request, get_documents_using_root
+from rm_api.storage.v3 import make_storage_request, get_documents_using_root, check_file_exists
 
 if TYPE_CHECKING:
     from rm_api import API
@@ -25,6 +26,11 @@ def get_root(api: 'API'):
 def update_root(api: 'API', root: dict):
     data = json.dumps(root, indent=4).encode('utf-8')
     checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
+    print(root['hash'])
+    exists = check_file_exists(api, root['hash'], use_cache=False)
+    if not exists and not api.ignore_error_protection:
+        api.spread_event(APIFatal())
+        raise Exception("The root file attempted to be set was not on the server")
     response = api.session.put(
         SYNC_ROOT_URL.format(api.document_storage_uri),
         data=data,

@@ -183,8 +183,8 @@ class Content:
     version: int
 
     def __init__(self, content: dict, content_hash: str, show_debug: bool = False):
-        self.hash = content_hash
         self.__content = content
+        self.hash = content_hash
         self.usable = True
         self.c_pages = None
         self.content_file_pdf_check = False
@@ -356,6 +356,16 @@ class Content:
             Page.new_pdf_redirect(i, next(index))
             for i in range(page_count)
         ]
+
+    def __setattr__(self, key, value):
+        super().__setattr__(key, value)
+
+        # A dirty translation of the keys to content keys
+
+        if key not in self.__content:
+            return
+
+        self.__content[key] = value
 
 
 class Metadata:

@@ -12,6 +12,7 @@ from box import Box
 from colorama import Fore
 
 from rm_api.auth import FailedToRefreshToken
+from rm_api.notifications.models import APIFatal
 from .events import ResizeEvent
 
 Defaults = None
@@ -184,6 +185,7 @@ class GUI(pe.GameContext):
         self.original_screen_refresh_surface: pe.Surface = None
         self.fake_screen_refresh_surface: pe.Surface = None
         self.last_screen_count = 1
+        self.api.add_hook('GUI', self.handle_api_event)
         pe.display.set_icon(Defaults.APP_ICON)
 
     @property
@@ -233,6 +235,8 @@ class GUI(pe.GameContext):
         self.fake_screen_refresh_timer = time.time() - self.FAKE_SCREEN_REFRESH_TIME * 5
 
     def loop(self):
+        if not self.running:
+            return
         self.screens.queue[-1]()
 
     def save_config(self):
@@ -289,6 +293,12 @@ class GUI(pe.GameContext):
             self.running = False
         if pe.event.resize_check():
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
+
+    def handle_api_event(self, e):
+        if isinstance(e, APIFatal):
+            self.running = False
+            self.api.log("A FATAL API ERROR OCCURRED, CRASHING!")
+            raise AssertionError("A FATAL API ERROR OCCURRED, CRASHING!")
 
     @property
     def import_screen(self):

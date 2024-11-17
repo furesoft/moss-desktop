@@ -11,6 +11,9 @@ from typing import Dict, List
 
 import requests
 import colorama
+from httpx import HTTPTransport
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
@@ -34,7 +37,15 @@ class API:
 
     def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync',
                  uri: str = None, discovery_uri: str = None, author_id: str = None, log_file='rm_api.log'):
+        retry_strategy = Retry(
+            total=10,
+            backoff_factor=0.5
+        )
+        self.http_adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session = requests.Session()
+        self.session.mount("http://", self.http_adapter)
+        self.session.mount("https://", self.http_adapter)
+
         self.token_file_path = token_file_path
         if not author_id:
             self.author_id = make_uuid()
@@ -57,6 +68,7 @@ class API:
         self.documents = {}
         self._token = None
         self.debug = False
+        self.ignore_error_protection = False
         self.connected_to_notifications = False
         self.require_token = require_token
         if not self.uri.endswith("/"):
@@ -146,6 +158,7 @@ class API:
                 if not uri.endswith("/"):
                     uri += "/"
                 uri = f'https://{uri}'
+
             self.document_storage_uri = uri
 
     def upload(self, document: Document):
@@ -217,8 +230,8 @@ class API:
         self.spread_event(NewDocuments())
 
         # Figure out what files have changed
+        progress.total += sum(len(document.files) for document in documents)
         for document in documents:
-            progress.total += len(document.files)
             for file in document.files:
                 try:
                     exists = check_file_exists(self, file.hash, binary=True, use_cache=False)
@@ -242,10 +255,10 @@ class API:
             file.size = len(content_datas[file.uuid])
 
         # Make a new document file with the updated files for this document
-        document_file_content = ['3\n']
-        document_file_hash = sha256()
 
         for document, document_file in zip(documents, document_files):
+            document_file_content = ['3\n']
+            document_file_hash = sha256()
             for file in sorted(document.files, key=lambda file: file.uuid):
                 file.hash = make_hash(content_datas[file.uuid])
                 document_file_hash.update(bytes.fromhex(file.hash))

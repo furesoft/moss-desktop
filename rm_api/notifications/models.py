@@ -27,6 +27,13 @@ class NewDocuments(Notification):
     ...
 
 
+class APIFatal(Notification):
+    """
+    This signals the code should stop executing commands to the api instantly to prevent damage.
+    It is recommended to follow this event as if something went wrong, continuing might make it become worse!
+    """
+    ...
+
 class SyncRefresh(SyncCompleted):
     """
     Used when new files were synced by moss / moss doesn't pick up sync complete.
