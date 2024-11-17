@@ -287,6 +287,8 @@ class API:
         progress.done += 1  # Update done finally matching done/total
 
         for document in documents:
+            document.content_data.clear()
+            document.files_available = document.check_files_availability()
             document.provision = False
 
         self.spread_event(SyncRefresh())
