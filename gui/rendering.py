@@ -259,7 +259,7 @@ def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: '
     # Calculate the number of items to skip in the path, this results in the > > you see in the beginning
     while width > gui.width - (x + 200):
         skips += 1
-        if len(path_queue.queue) - skips == 0:
+        if len(path_queue.queue) - skips <= 0:
             # window is too small to render the path
             return
         width -= texts[f'path_{path_queue.queue[-skips]}'].rect.width
