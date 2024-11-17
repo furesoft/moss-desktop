@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import threading
+import time
 import uuid
 from hashlib import sha256
 from io import BytesIO
@@ -272,14 +273,18 @@ class API:
         content_datas[root_file.uuid] = root_file_content
 
         # Upload all the files that have changed
-        document_sync_operation = DocumentSyncProgress(document.uuid, progress)
-        self.spread_event(document_sync_operation)
-        for file in files_with_changes:
-            threading.Thread(target=put_file,
-                             args=(self, file, content_datas[file.uuid], document_sync_operation)).start()
+        document_operations = []
+        for document in documents:
+            document_sync_operation = DocumentSyncProgress(document.uuid, progress)
+            document_operations.append(document_sync_operation)
+            self.spread_event(document_sync_operation)
+            for file in files_with_changes:
+                threading.Thread(target=put_file,
+                                 args=(self, file, content_datas[file.uuid], document_sync_operation)).start()
 
         # Wait for operation to finish
-        while not document_sync_operation.finished:
+        while not all(operation.finished for operation in document_operations):
+            time.sleep(.1)
             pass
 
         # Update the root

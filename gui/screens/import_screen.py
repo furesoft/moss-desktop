@@ -24,6 +24,7 @@ class ImportScreen(pe.ChildContext):
 
     documents_to_upload: List['Document']
 
+
     def __init__(self, parent: 'GUI'):
         self.documents_to_upload = []
         self.folder = parent.main_menu.navigation_parent
