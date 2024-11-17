@@ -263,7 +263,10 @@ def get_documents_using_root(api: 'API', progress, root):
                 except:
                     continue
                 if metadata.type == 'CollectionType':
-                    tags = content.get('tags', ())
+                    if content is not None:
+                        tags = content.get('tags', ())
+                    else:
+                        tags = ()
                     api.document_collections[file.uuid] = models.DocumentCollection(
                         [models.Tag(tag) for tag in tags],
                         metadata, file.uuid
