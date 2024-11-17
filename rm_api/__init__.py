@@ -20,7 +20,8 @@ from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync, update_root
 from rm_api.storage.new_sync import get_root as get_root_new
 from rm_api.storage.old_sync import get_root as get_root_old
-from rm_api.storage.v3 import get_documents_using_root, get_file, get_file_contents, make_files_request, put_file
+from rm_api.storage.v3 import get_documents_using_root, get_file, get_file_contents, make_files_request, put_file, \
+    check_file_exists
 from rm_lines.blocks import write_blocks, blank_document
 
 colorama.init()
@@ -46,6 +47,7 @@ class API:
             os.makedirs(self.sync_file_path, exist_ok=True)
         self.document_storage_uri = None
         self.document_notifications_uri = None
+        self._upload_lock = threading.Lock()
         self._hook_list = {}  # Used for event hooks
         self._use_new_sync = False
         # noinspection PyTypeChecker
@@ -150,7 +152,8 @@ class API:
         self.spread_event(upload_event)
         try:
             document.ensure_download()
-            self._upload_document_contents(document, upload_event)
+            with self._upload_lock:
+                self._upload_document_contents([document], upload_event)
         finally:
             upload_event.finished = True
 
@@ -160,13 +163,14 @@ class API:
         try:
             for document in documents:
                 document.ensure_download()
-                self._upload_document_contents(document, upload_event)
+            with self._upload_lock:
+                self._upload_document_contents(documents, upload_event)
         except:
             print_exc()
         finally:
             upload_event.finished = True
 
-    def _upload_document_contents(self, document: Document, progress: FileSyncProgress):
+    def _upload_document_contents(self, documents: List[Document], progress: FileSyncProgress):
         # We need to upload the content, metadata, rm file, file list and update root
         # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
         # API tampering, so we wanna follow their upload cycle
@@ -182,60 +186,72 @@ class API:
             "generation": root['generation']
         }
 
-        document_file = File(
-            None,
-            document.uuid,
-            len(document.files), 0,
-            f"{document.uuid}.docSchema"
-        )
+        document_files = [
+            File(
+                None,
+                document.uuid,
+                len(document.files), 0,
+                f"{document.uuid}.docSchema"
+            )
+            for document in documents
+        ]
 
-        new_root_files = [document_file] + [
+        uuids = [document.uuid for document in documents]
+        new_root_files = document_files + [
             file
             for file in files
-            if file.uuid != document.uuid
+            if file.uuid not in uuids
         ]
 
         old_files = []
         files_with_changes = []
 
-        document.export()
+        for document in documents:
+            document.export()
 
         # Figure out what files have changed
-        for file in document.files:
-            try:
-                old_content = get_file_contents(self, file.hash, binary=True, use_cache=False)
-                if old_content != document.content_data[file.uuid]:
+        for document in documents:
+            progress.total += len(document.files)
+            for file in document.files:
+                try:
+                    exists = check_file_exists(self, file.hash, binary=True, use_cache=False)
+                    if not exists:
+                        files_with_changes.append(file)
+                    else:
+                        old_files.append(file)
+                except:
                     files_with_changes.append(file)
-                else:
-                    old_files.append(file)
-            except:
-                files_with_changes.append(file)
+                finally:
+                    progress.done += 1
 
         # Copy the content data so we can add more files to it
-        content_data = document.content_data.copy()
+        content_datas = {}
+        for document in documents:
+            content_datas.update(document.content_data.copy())
 
         # Update the hash for files that have changed
         for file in files_with_changes:
-            file.hash = make_hash(content_data[file.uuid])
-            file.size = len(content_data[file.uuid])
+            file.hash = make_hash(content_datas[file.uuid])
+            file.size = len(content_datas[file.uuid])
 
         # Make a new document file with the updated files for this document
         document_file_content = ['3\n']
         document_file_hash = sha256()
 
-        for file in sorted(document.files, key=lambda file: file.uuid):
-            file.hash = make_hash(content_data[file.uuid])
-            document_file_hash.update(bytes.fromhex(file.hash))
-            file.size = len(content_data[file.uuid])
-            document_file_content.append(file.to_line())
+        for document, document_file in zip(documents, document_files):
+            for file in sorted(document.files, key=lambda file: file.uuid):
+                file.hash = make_hash(content_datas[file.uuid])
+                document_file_hash.update(bytes.fromhex(file.hash))
+                file.size = len(content_datas[file.uuid])
+                document_file_content.append(file.to_line())
 
-        document_file_content = ''.join(document_file_content).encode()
-        document_file.hash = document_file_hash.hexdigest()
-        document_file.size = len(document_file_content)
+            document_file_content = ''.join(document_file_content).encode()
+            document_file.hash = document_file_hash.hexdigest()
+            document_file.size = len(document_file_content)
 
-        # Add the document file to the content_data
-        content_data[document_file.uuid] = document_file_content
-        files_with_changes.append(document_file)
+            # Add the document file to the content_data
+            content_datas[document_file.uuid] = document_file_content
+            files_with_changes.append(document_file)
 
         # Prepare the root file
         root_file_content = ['3\n']
@@ -247,13 +263,13 @@ class API:
         new_root['hash'] = root_file.hash
 
         files_with_changes.append(root_file)
-        content_data[root_file.uuid] = root_file_content
+        content_datas[root_file.uuid] = root_file_content
 
         # Upload all the files that have changed
         document_sync_operation = DocumentSyncProgress(document.uuid, progress)
         for file in files_with_changes:
             threading.Thread(target=put_file,
-                             args=(self, file, content_data[file.uuid], document_sync_operation)).start()
+                             args=(self, file, content_datas[file.uuid], document_sync_operation)).start()
 
         # Wait for operation to finish
         while not document_sync_operation.finished:
