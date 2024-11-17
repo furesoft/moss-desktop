@@ -476,6 +476,7 @@ class Document:
         self.content_data = {}
         self.files_available = self.check_files_availability()
         self.downloading = False
+        self.provision = False  # Used during sync to disable opening or exporting the file!!!
 
         if self.content.file_type not in self.KNOWN_FILE_TYPES and \
                 not self.content.file_type in self.unknown_file_types:

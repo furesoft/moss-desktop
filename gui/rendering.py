@@ -7,6 +7,7 @@ from gui.pp_helpers import FullTextPopup, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler
 from gui.screens.viewer import DocumentViewer
 from gui.screens.viewer.viewer import CannotRenderDocument
+from rm_api import DocumentSyncProgress
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -93,7 +94,8 @@ def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
     DocumentDebugPopup.create(gui, document, position)()
 
 
-def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
+def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
+                    document_sync_operation: DocumentSyncProgress = None):
     # Check if the document is being debugged and keep the debug menu open
 
     title_text = texts[document.uuid]
@@ -198,6 +200,19 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document'):
         )
 
         debug_text.display()
+
+    if document.provision:
+        progress_rect = rect.copy()
+        progress_rect.width -= gui.ratios.document_sync_progress_margin * 2
+        progress_rect.height = gui.ratios.document_sync_progress_height
+        progress_rect.midbottom = rect.midbottom
+        progress_rect.bottom -= gui.ratios.document_sync_progress_margin
+
+        pe.draw.rect(Defaults.LINE_GRAY_LIGHT, progress_rect, edge_rounding=gui.ratios.document_sync_progress_rounding)
+        # left = progress_rect.left
+        if document_sync_operation and document_sync_operation.total > 0:
+            progress_rect.width *= document_sync_operation.done / document_sync_operation.total
+        pe.draw.rect(pe.colors.black, progress_rect, edge_rounding=gui.ratios.document_sync_progress_rounding)
 
 
 def render_button_using_text(

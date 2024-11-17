@@ -22,6 +22,11 @@ class SyncCompleted(Notification):
         self.source_device_id = message['attributes'].get('sourceDeviceID')
 
 
+class NewDocuments(Notification):
+    """This event is issued when potential API.documents / API.document_collections changes occurred"""
+    ...
+
+
 class SyncRefresh(SyncCompleted):
     """
     Used when new files were synced by moss / moss doesn't pick up sync complete.

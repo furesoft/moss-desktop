@@ -14,7 +14,7 @@ import colorama
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
-from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress
+from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress, NewDocuments
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync, update_root
@@ -208,6 +208,12 @@ class API:
 
         for document in documents:
             document.export()
+            document.provision = True
+        self.documents.update({
+            document.uuid: document
+            for document in documents
+        })
+        self.spread_event(NewDocuments())
 
         # Figure out what files have changed
         for document in documents:
@@ -267,6 +273,7 @@ class API:
 
         # Upload all the files that have changed
         document_sync_operation = DocumentSyncProgress(document.uuid, progress)
+        self.spread_event(document_sync_operation)
         for file in files_with_changes:
             threading.Thread(target=put_file,
                              args=(self, file, content_datas[file.uuid], document_sync_operation)).start()
@@ -278,6 +285,10 @@ class API:
         # Update the root
         update_root(self, new_root)
         progress.done += 1  # Update done finally matching done/total
+
+        for document in documents:
+            document.provision = False
+
         self.spread_event(SyncRefresh())
 
     def check_for_document_notifications(self):

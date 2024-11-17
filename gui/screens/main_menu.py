@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Dict, List, Union
 import pygameextra as pe
 
 from gui.cloud_action_helper import import_pdf_to_cloud
-from gui.events import ResizeEvent, InternalSyncCompleted
+from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt
-from rm_api.notifications.models import SyncRefresh, FileSyncProgress
+from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
-from gui.rendering import render_button_using_text, render_document, render_collection, render_header, \
+from gui.rendering import render_document, render_collection, render_header, \
     draw_bottom_loading_bar, get_bottom_bar_rect
 
 if TYPE_CHECKING:
@@ -176,6 +176,8 @@ class MainMenu(pe.ChildContext):
         self.texts['my_files'].rect.topleft = (
             self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
 
+        self.document_sync_operations: Dict[str, DocumentSyncProgress] = {}
+
     @property
     def view_mode(self):
         return self.config.main_menu_view_mode
@@ -318,8 +320,14 @@ class MainMenu(pe.ChildContext):
                 self.ratios.main_menu_document_width,
                 self.ratios.main_menu_document_height
             )
-
-            render_document(self.parent_context, rect, self.texts, document)
+            if document.uuid in self.document_sync_operations:
+                document_sync_operation = self.document_sync_operations[document.uuid]
+                if document_sync_operation.finished:
+                    del self.document_sync_operations[document.uuid]
+                    document_sync_operation = None
+            else:
+                document_sync_operation = None
+            render_document(self.parent_context, rect, self.texts, document, document_sync_operation)
 
             x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
             if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.documents):
@@ -351,12 +359,14 @@ class MainMenu(pe.ChildContext):
         if isinstance(event, ResizeEvent):
             self.invalidate_cache()
             self.bar.handle_scales()
-        elif isinstance(event, InternalSyncCompleted):
+        elif isinstance(event, NewDocuments):
             self.get_items()
 
     def _non_critical_event_hook(self, event):
         if isinstance(event, FileSyncProgress):
             self.file_sync_operation = event
+        elif isinstance(event, DocumentSyncProgress):
+            self.document_sync_operations[event.document_uuid] = event
 
     def api_event_hook(self, event):
         self._non_critical_event_hook(event)

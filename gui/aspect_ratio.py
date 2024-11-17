@@ -66,6 +66,9 @@ class Ratios:
         self.main_menu_path_size = int(15.8 * scale)
         self.main_menu_bar_size = self.main_menu_path_size
         self.main_menu_bar_padding = int(20 * scale)
+        self.document_sync_progress_height = int(8 * scale)
+        self.document_sync_progress_margin = int(5 * scale)
+        self.document_sync_progress_rounding = int(5 * scale)
 
         # Document Viewer
         self.document_viewer_top_draggable_height = int(48 * scale)  # Accurate to device

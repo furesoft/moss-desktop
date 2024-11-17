@@ -79,6 +79,7 @@ class Defaults:
     TEXT_COLOR_H = (TEXT_COLOR[1], None)
     CODE_COLOR = ((120, 120, 120), None)
     LINE_GRAY = (88, 88, 88)
+    LINE_GRAY_LIGHT = (167, 167, 167)
     DOCUMENT_GRAY = (184, 184, 184)
     TRANSPARENT_COLOR = (0, 0, 0, 0)
     BUTTON_ACTIVE_COLOR = (0, 0, 0, 25)
