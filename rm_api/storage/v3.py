@@ -119,6 +119,7 @@ def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProg
             chunk = data[i:i + chunk_size]
             sync_event.done += len(chunk)  # Update progress
             yield chunk
+            api.log(f"Yielded {position}:{position+len(chunk)}  {content_length}  {len(chunk)}")
             position += len(chunk)
 
     with httpx.Client(http2=False, transport=HTTPTransport(retries=api.http_adapter.max_retries.total)) as request:
@@ -160,14 +161,14 @@ def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProg
                 api.log(format_exc())
                 return False
 
-        if response.status_code != 200:
-            api.log(f"Put file failed - {response.status_code}\n{response.text}")
-            return False
-        else:
-            api.log(file.uuid, "uploaded")
+    if response.status_code != 200:
+        api.log(f"Put file failed - {response.status_code}\n{response.text}")
+        return False
+    else:
+        api.log(file.uuid, "uploaded")
 
-        sync_event.finish_task()
-        return True
+    sync_event.finish_task()
+    return True
 
 
 def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
