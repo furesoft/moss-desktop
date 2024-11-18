@@ -147,7 +147,7 @@ def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProg
             sync_event.done -= position
 
             try:
-                response = api.session.put(
+                response = request.put(
                     response.headers['location'],
                     content=file_chunk_generator(),
                     headers={
