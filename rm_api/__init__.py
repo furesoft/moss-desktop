@@ -1,17 +1,16 @@
+import asyncio
 import json
 import logging
 import os
 import threading
 import time
-import uuid
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
-from io import BytesIO
 from traceback import print_exc
 from typing import Dict, List
 
 import requests
 import colorama
-from httpx import HTTPTransport
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
@@ -26,7 +25,6 @@ from rm_api.storage.new_sync import get_root as get_root_new
 from rm_api.storage.old_sync import get_root as get_root_old
 from rm_api.storage.v3 import get_documents_using_root, get_file, get_file_contents, make_files_request, put_file, \
     check_file_exists
-from rm_lines.blocks import write_blocks, blank_document
 
 colorama.init()
 
@@ -90,6 +88,7 @@ class API:
         logging.basicConfig(filename=self.log_file, level=logging.INFO,
                             format='%(asctime)s - %(message)s',
                             filemode='a')  # 'a' for append mode
+        self.loop = asyncio.get_event_loop()
 
     @property
     def use_new_sync(self):
@@ -286,19 +285,33 @@ class API:
         content_datas[root_file.uuid] = root_file_content
 
         # Upload all the files that have changed
-        document_operations = []
+        document_operations = {}
+
         for document in documents:
             document_sync_operation = DocumentSyncProgress(document.uuid, progress)
-            document_operations.append(document_sync_operation)
+            document_operations[document.uuid] = document_sync_operation
             self.spread_event(document_sync_operation)
+
+        futures = []
+        with ThreadPoolExecutor() as executor:
+            loop = asyncio.new_event_loop()  # Get the current event loop
             for file in files_with_changes:
-                threading.Thread(target=put_file,
-                                 args=(self, file, content_datas[file.uuid], document_sync_operation)).start()
+                if (document_uuid := file.uuid.split('/')[0].split('.')[0]) in document_operations:
+                    document_operation = document_operations[document_uuid]
+                else:
+                    document_operations[file.uuid] = DocumentSyncProgress(file.uuid, progress)
+                    document_operation = document_operations[file.uuid]
+
+                # This is where you use run_in_executor to call your async function in a separate thread
+                future = loop.run_in_executor(executor, put_file, self, file, content_datas[file.uuid],
+                                              document_operation)
+                futures.append(future)
+            executor.shutdown(wait=True)
+
 
         # Wait for operation to finish
-        while not all(operation.finished for operation in document_operations):
+        while not all(operation.finished for operation in document_operations.values()):
             time.sleep(.1)
-            pass
 
         # Update the root
         try:

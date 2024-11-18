@@ -1,9 +1,11 @@
+import asyncio
 import base64
 import json
 import os
 from hashlib import sha256
 from traceback import format_exc
 
+import aiohttp
 import httpx
 from colorama import Fore, Style
 from crc32c import crc32c
@@ -11,11 +13,13 @@ from functools import lru_cache
 from json import JSONDecodeError
 
 from httpx import HTTPTransport
+from urllib3 import PoolManager
 
 import rm_api.models as models
 from typing import TYPE_CHECKING, Union, Tuple, List
 
-from rm_api.notifications.models import DocumentSyncProgress
+from rm_api.notifications.models import DocumentSyncProgress, FileSyncProgress
+from rm_api.storage.common import ProgressFileAdapter
 from rm_api.storage.exceptions import NewSyncRequired
 
 FILES_URL = "{0}sync/v3/files/{1}"
@@ -107,68 +111,74 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
             return response.text
 
 
-def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
+async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
     checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
     content_length = len(data)
 
-    position = 0
+    upload_progress = FileSyncProgress()
+    upload_progress.total = content_length
 
-    def file_chunk_generator(chunk_size=int(4e+6)):
-        nonlocal sync_event, data, content_length, position
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i + chunk_size]
-            sync_event.done += len(chunk)  # Update progress
-            yield chunk
-            api.log(f"Yielded {position}:{position+len(chunk)}  {content_length}  {len(chunk)}")
-            position += len(chunk)
+    sync_event.total += content_length
+    sync_event.add_task()
 
-    with httpx.Client(http2=False, transport=HTTPTransport(retries=api.http_adapter.max_retries.total)) as request:
-        sync_event.total += content_length
-        sync_event.add_task()
-
+    async with aiohttp.ClientSession() as session:
         # Try uploading through remarkable
         try:
-            response = request.put(
-                FILES_URL.format(api.document_storage_uri, file.hash),
-                content=file_chunk_generator(),
-                headers=(headers := {
-                    **api.session.headers,
-                    'content-length': str(content_length),
-                    'content-type': 'application/octet-stream',
-                    'rm-filename': file.rm_filename,
-                    'x-goog-hash': f'crc32c={checksum_bs4}'
-                })
-            )
+            async with session.put(
+                    FILES_URL.format(api.document_storage_uri, file.hash),
+                    data=ProgressFileAdapter(sync_event, upload_progress, data),
+                    headers=(headers := {
+                        **api.session.headers,
+                        'content-length': str(content_length),
+                        'content-type': 'application/octet-stream',
+                        'rm-filename': file.rm_filename,
+                        'x-goog-hash': f'crc32c={checksum_bs4}'
+                    }),
+                    allow_redirects=False
+            ) as response:
+                await response.read()
         except:
             api.log(format_exc())
             return False
 
-        if response.status_code == 302:
+        if response.status == 302:
             # Reset progress, start uploading through google instead
-            sync_event.done -= position
+            sync_event.done -= upload_progress.done
+            upload_progress.done = 0
 
             try:
-                response = request.put(
-                    response.headers['location'],
-                    content=file_chunk_generator(),
-                    headers={
-                        **headers,
-                        'x-goog-content-length-range': response.headers['x-goog-content-length-range'],
-                        'x-goog-hash': f'crc32c={checksum_bs4}'
-                    }
-                )
+                api.log("upload 2")
+                async with session.put(
+                        response.headers['location'],
+                        data=ProgressFileAdapter(sync_event, upload_progress, data),
+                        headers={
+                            **headers,
+                            'x-goog-content-length-range': response.headers['x-goog-content-length-range'],
+                            'x-goog-hash': f'crc32c={checksum_bs4}'
+                        }
+                ) as response:
+                    await response.read()
             except:
                 api.log(format_exc())
                 return False
 
-    if response.status_code != 200:
-        api.log(f"Put file failed - {response.status_code}\n{response.text}")
+    if response.status != 200:
+        api.log(f"Put file failed - {response.status}\n{await response.text()}")
         return False
     else:
         api.log(file.uuid, "uploaded")
 
     sync_event.finish_task()
     return True
+
+
+def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(put_file_async(api, file, data, sync_event))
+    finally:
+        loop.close()
 
 
 def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
