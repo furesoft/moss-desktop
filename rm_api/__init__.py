@@ -83,6 +83,7 @@ class API:
             self.token = token
 
         self.log_file = log_file
+        self.log_lock = threading.Lock()
 
         # Set up logging configuration
         logging.basicConfig(filename=self.log_file, level=logging.INFO,
@@ -344,6 +345,7 @@ class API:
             self.document_notifications_uri = uri
 
     def log(self, *args):
-        if self.debug:
-            print(*args)
-        logging.info(' '.join(map(str, args)))
+        with self.log_lock:
+            if self.debug:
+                print(*args)
+            logging.info(' '.join(map(str, args)))
