@@ -1,13 +1,9 @@
 import json
 import threading
 import time
-from io import BytesIO
 
 from slashr import SlashR
-from rm_api import API, get_file, update_root, put_file, make_files_request, Document, FileSyncProgress
-from rm_api.models import now_time, File, make_hash
-from rm_lines import tree_to_svg, rm_bytes_to_svg
-from rm_lines.blocks import read_blocks
+from rm_api import API, Document
 
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -40,8 +36,8 @@ meows = set()
 for document in api.documents.values():
     meows.add(document.metadata.visible_name)
 
-with open('large.pdf', 'rb') as f:
-    large = f.read()
+with open('assets/data/light.pdf', 'rb') as f:
+    light = f.read()
 
 docs = []
 for i in range(50):
@@ -49,26 +45,6 @@ for i in range(50):
     print(name)
     if name in meows:
         continue
-    docs.append(Document.new_pdf(api, name, large, '161d5d4a-c5a1-428c-91d8-d29401348fb5'))
+    docs.append(Document.new_pdf(api, name, light))
 
-done = False
-ev: FileSyncProgress = None
-
-
-def subscribed(e):
-    global ev
-    if isinstance(e, FileSyncProgress):
-        ev = e
-
-
-api.add_hook('sub', subscribed)
-threading.Thread(target=api.upload_many_documents, args=(docs,), daemon=True).start()
-
-while not ev:
-    pass
-with SlashR(False) as sr:
-    while not ev.finished:
-        sr.print(f'{ev.done} / {ev.total}')
-        time.sleep(.1)
-
-time.sleep(10)
+api.upload_many_documents(docs)

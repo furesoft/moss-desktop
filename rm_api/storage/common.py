@@ -48,5 +48,10 @@ class ProgressFileAdapter(IOBase):
         self.document_sync.done += len(chunk)
         return chunk
 
+    def reset(self):
+        self.document_sync.done -= self.file_sync.done
+        self.file_sync.done = 0
+
+
     def __len__(self):
         return self.file_sync.total

@@ -3,7 +3,7 @@ import base64
 import json
 import os
 from hashlib import sha256
-from traceback import format_exc
+from traceback import format_exc, print_exc
 
 import aiohttp
 import httpx
@@ -13,7 +13,7 @@ from functools import lru_cache
 from json import JSONDecodeError
 
 from httpx import HTTPTransport
-from urllib3 import PoolManager
+from urllib3 import PoolManager, Retry
 
 import rm_api.models as models
 from typing import TYPE_CHECKING, Union, Tuple, List
@@ -111,6 +111,42 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
             return response.text
 
 
+async def fetch_with_retries(session: aiohttp.ClientSession, url: str, method: str, retry_strategy: Retry,
+                             data_adapter: ProgressFileAdapter,
+                             **kwargs):
+    attempt = 0
+    retries = retry_strategy.total
+    backoff_factor = retry_strategy.backoff_factor
+    retry_statuses = retry_strategy.status_forcelist
+
+    while attempt < retries:
+        try:
+            async with session.request(
+                    method, url,
+                    data=data_adapter,
+                    **kwargs
+            ) as response:
+                await response.read()
+                if response.status in retry_statuses:
+                    raise aiohttp.ClientResponseError(
+                        request_info=response.request_info,
+                        history=response.history,
+                        status=response.status,
+                        message=f"HTTP error with status code {response.status}"
+                    )
+                else:
+                    await response.read()
+            return response
+        except (aiohttp.ClientResponseError, asyncio.TimeoutError) as e:
+            attempt += 1
+            if attempt < retries:
+                wait_time = backoff_factor * (2 ** (attempt - 1))
+                data_adapter.reset()
+                await asyncio.sleep(wait_time)
+            else:
+                raise e
+
+
 async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
     checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
     content_length = len(data)
@@ -121,43 +157,48 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
     sync_event.total += content_length
     sync_event.add_task()
 
+    data_adapter = ProgressFileAdapter(sync_event, upload_progress, data)
+
     async with aiohttp.ClientSession() as session:
         # Try uploading through remarkable
         try:
-            async with session.put(
-                    FILES_URL.format(api.document_storage_uri, file.hash),
-                    data=ProgressFileAdapter(sync_event, upload_progress, data),
-                    headers=(headers := {
-                        **api.session.headers,
-                        'content-length': str(content_length),
-                        'content-type': 'application/octet-stream',
-                        'rm-filename': file.rm_filename,
-                        'x-goog-hash': f'crc32c={checksum_bs4}'
-                    }),
-                    allow_redirects=False
-            ) as response:
-                await response.read()
+            response = await fetch_with_retries(
+                session,
+                FILES_URL.format(api.document_storage_uri, file.hash),
+                'PUT',
+                api.retry_strategy,
+                data_adapter,
+                headers=(headers := {
+                    **api.session.headers,
+                    'content-length': str(content_length),
+                    'content-type': 'application/octet-stream',
+                    'rm-filename': file.rm_filename,
+                    'x-goog-hash': f'crc32c={checksum_bs4}'
+                }),
+                allow_redirects=False
+            )
         except:
             api.log(format_exc())
             return False
 
         if response.status == 302:
             # Reset progress, start uploading through google instead
-            sync_event.done -= upload_progress.done
-            upload_progress.done = 0
+            data_adapter.reset()
 
             try:
-                api.log("upload 2")
-                async with session.put(
-                        response.headers['location'],
-                        data=ProgressFileAdapter(sync_event, upload_progress, data),
-                        headers={
-                            **headers,
-                            'x-goog-content-length-range': response.headers['x-goog-content-length-range'],
-                            'x-goog-hash': f'crc32c={checksum_bs4}'
-                        }
-                ) as response:
-                    await response.read()
+                api.log("Google signed url was provided by the API, uploading to that now.")
+                response = await fetch_with_retries(
+                    session,
+                    response.headers['location'],
+                    'PUT',
+                    api.retry_strategy,
+                    data_adapter,
+                    headers={
+                        **headers,
+                        'x-goog-content-length-range': response.headers['x-goog-content-length-range'],
+                        'x-goog-hash': f'crc32c={checksum_bs4}'
+                    }
+                )
             except:
                 api.log(format_exc())
                 return False

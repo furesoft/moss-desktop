@@ -35,14 +35,15 @@ class API:
 
     def __init__(self, require_token: bool = True, token_file_path: str = 'token', sync_file_path: str = 'sync',
                  uri: str = None, discovery_uri: str = None, author_id: str = None, log_file='rm_api.log'):
-        retry_strategy = Retry(
+        self.retry_strategy = Retry(
             total=10,
-            backoff_factor=0.5
+            backoff_factor=0.5,
+            status_forcelist=(429,)
         )
-        self.http_adapter = HTTPAdapter(max_retries=retry_strategy)
+        http_adapter = HTTPAdapter(max_retries=self.retry_strategy)
         self.session = requests.Session()
-        self.session.mount("http://", self.http_adapter)
-        self.session.mount("https://", self.http_adapter)
+        self.session.mount("http://", http_adapter)
+        self.session.mount("https://", http_adapter)
 
         self.token_file_path = token_file_path
         if not author_id:

@@ -72,7 +72,7 @@ class TopBar(pe.ChildContext):
             buttons.append((
                 pe.RectButton(
                     rect,
-                    Defaults.TRANSPARENT_COLOR if disabled else (0, 0, 0, 0),
+                    Defaults.TRANSPARENT_COLOR,
                     Defaults.BUTTON_ACTIVE_COLOR,
                     action=getattr(self, button['action']) if button['action'] else None,
                     disabled=disabled
