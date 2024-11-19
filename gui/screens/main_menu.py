@@ -290,7 +290,6 @@ class MainMenu(pe.ChildContext):
     def refresh(self):
         self.api.spread_event(SyncRefresh())
 
-
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
                      (self.width, self.ratios.main_menu_top_height), self.ratios.pixel(2))
@@ -403,4 +402,3 @@ class MainMenu(pe.ChildContext):
         padded.size = (self.ratios.main_menu_top_height,) * 2
         padded.topright = (self.width, 0)
         self.resync_rect.center = padded.center
-
