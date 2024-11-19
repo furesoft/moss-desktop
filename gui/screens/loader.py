@@ -42,6 +42,7 @@ class Loader(pe.ChildContext, Logo):
         'export': os.path.join(Defaults.ICON_DIR, 'export.svg'),
         'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
+        'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
         # Data files

@@ -148,7 +148,15 @@ class MainMenu(pe.ChildContext):
         'last_modified': lambda item: item.metadata.last_modified,
     }
 
+    HEADER_TEXTS = {
+        'my_files': "My files",
+        'trash': "Trash"
+    }
+
     file_sync_operation: Union[None, FileSyncProgress]
+
+    resync_icon: pe.Image
+    resync_rect: pe.Rect
 
     def __init__(self, parent: 'GUI'):
         self.navigation_parent = parent.config.last_opened_folder
@@ -170,13 +178,14 @@ class MainMenu(pe.ChildContext):
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
         self.get_items()
-
-        self.texts['my_files'] = pe.Text("My files", Defaults.MAIN_MENU_FONT, self.ratios.main_menu_my_files_size,
-                                         (0, 0), Defaults.TEXT_COLOR)
-        self.texts['my_files'].rect.topleft = (
-            self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
+        for key, text in self.HEADER_TEXTS.items():
+            self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_FONT, self.ratios.main_menu_my_files_size,
+                                      (0, 0), Defaults.TEXT_COLOR)
+            self.texts[key].rect.topleft = (
+                self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
 
         self.document_sync_operations: Dict[str, DocumentSyncProgress] = {}
+        self.rect_calculations()
 
     @property
     def view_mode(self):
@@ -281,11 +290,19 @@ class MainMenu(pe.ChildContext):
     def refresh(self):
         self.api.spread_event(SyncRefresh())
 
+
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
                      (self.width, self.ratios.main_menu_top_height), self.ratios.pixel(2))
 
         render_header(self.parent_context, self.texts, self.set_parent, self.path_queue)
+
+        self.resync_icon.display(self.resync_rect.topleft)
+        pe.button.rect(
+            self.ratios.pad_button_rect(self.resync_rect),
+            Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+            action=self.refresh
+        )
 
         x = self.ratios.main_menu_x_padding
         y = self.texts['my_files'].rect.bottom + self.ratios.main_menu_my_files_folder_padding
@@ -333,9 +350,6 @@ class MainMenu(pe.ChildContext):
             if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.documents):
                 x = self.ratios.main_menu_x_padding
                 y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
-        if self.config.debug:
-            pe.button.rect((0, 0, self.ratios.main_menu_top_height, self.ratios.main_menu_top_height), (0, 0, 0, 20),
-                           (255, 0, 0, 50), action=self.refresh)
 
     def post_loop(self):
         # Draw progress bar for file sync operations
@@ -374,8 +388,19 @@ class MainMenu(pe.ChildContext):
             self._critical_event_hook(event)
 
     def invalidate_cache(self):
-        my_files_text = self.texts['my_files']
+        header_texts = {key: text for key, text in self.texts.items() if key in self.HEADER_TEXTS}
         self.texts.clear()
-        self.texts['my_files'] = my_files_text
+        self.texts.update(header_texts)
         self.get_items()
+        self.rect_calculations()
         get_bottom_bar_rect.cache_clear()
+
+    def rect_calculations(self):
+        # Handle sync refresh button rect
+        self.resync_icon = self.icons['rotate']
+        self.resync_rect = pe.Rect(0, 0, *self.resync_icon.size)
+        padded = self.resync_rect.copy()
+        padded.size = (self.ratios.main_menu_top_height,) * 2
+        padded.topright = (self.width, 0)
+        self.resync_rect.center = padded.center
+
