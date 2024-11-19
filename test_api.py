@@ -40,11 +40,11 @@ with open('assets/data/light.pdf', 'rb') as f:
     light = f.read()
 
 docs = []
-for i in range(50):
+for i in range(1500):
     name = f"this is a very accurate test ;3 [{i}]"
     print(name)
     if name in meows:
         continue
-    docs.append(Document.new_pdf(api, name, light))
+    docs.append(Document.new_pdf(api, name, light, parent='ea917dde-cbab-431b-b355-58968d899835'))
 
 api.upload_many_documents(docs)
