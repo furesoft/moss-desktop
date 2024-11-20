@@ -36,6 +36,7 @@ AUTHOR = "RedTTG"
 APP_NAME = "Moss"
 INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
+# pe.settings.raise_error_for_button_without_name = True
 
 
 class ConfigDict(TypedDict):

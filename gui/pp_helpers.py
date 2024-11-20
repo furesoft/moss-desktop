@@ -29,9 +29,9 @@ class FullTextPopup(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
     EXISTING = {}
 
-    def __init__(self, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset=None):
+    def __init__(self, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None):
         self.text = text
-        self.offset = offset
+        self.offset = pe.display.display_reference.pos
 
         # Set the position of the text
         if referral_text is not None:
@@ -42,9 +42,9 @@ class FullTextPopup(pe.ChildContext):
         # Make sure the text is inside the screen
         screen_rect = pe.Rect(0, 0, *parent.size)
         screen_rect.scale_by_ip(.98, .98)
-        if offset:
-            self.text.rect.x += offset[0]
-            self.text.rect.y += offset[1]
+        if self.offset:
+            self.text.rect.x += self.offset[0]
+            self.text.rect.y += self.offset[1]
         self.text.rect.clamp_ip(screen_rect)
 
         self.used_at = time.time()
@@ -62,15 +62,15 @@ class FullTextPopup(pe.ChildContext):
         self.used_at = time.time()
 
     @classmethod
-    def create(cls, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset=None):
+    def create(cls, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None):
         if cls.EXISTING.get(id(text)) is None:
-            cls.EXISTING[id(text)] = cls(parent, text, referral_text, offset)
+            cls.EXISTING[id(text)] = cls(parent, text, referral_text)
             return cls.EXISTING[id(text)]
         if time.time() - cls.EXISTING[id(text)].used_at < .05:
             return cls.EXISTING[id(text)]
         else:
             del cls.EXISTING[id(text)]
-            return cls.create(parent, text, referral_text, offset)
+            return cls.create(parent, text, referral_text)
 
 
 class DocumentDebugPopup(pe.ChildContext):
@@ -81,10 +81,14 @@ class DocumentDebugPopup(pe.ChildContext):
 
     def __init__(self, parent: 'GUI', document: 'Document', position):
         self.document = document
+        self.offset = pe.display.display_reference.pos
         self.position = position
         self.used_at = time.time()
         self.popup_rect = pe.Rect(*position, parent.ratios.main_menu_document_width,
                                   parent.ratios.main_menu_document_height)
+        if self.offset:
+            self.popup_rect.x += self.offset[0]
+            self.popup_rect.y += self.offset[1]
         self.popup_rect.clamp_ip(pe.Rect(0, 0, *parent.size))
         self.button_actions = {
             'Extract files': self.extract_files,

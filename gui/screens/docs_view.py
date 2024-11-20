@@ -17,6 +17,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
     def __init__(self, gui: 'GUI', area):
         self.AREA = area
         self.texts: Dict[str, pe.Text] = {}
+        self.x_padding = 0
         super().__init__(gui)
 
     def handle_texts(self):
@@ -67,7 +68,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         return 'list'
 
     def loop(self):
-        x = 0
+        x = self.gui.ratios.main_menu_x_padding
         y = 0
 
         # Rendering the folders
@@ -91,7 +92,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         else:
             y = self.gui.ratios.main_menu_my_files_only_documents_padding
 
-        x = 0
+        x = self.x_padding
 
         # Rendering the documents
         for i, document in enumerate(self.gui.main_menu.get_sorted_documents()):
@@ -111,5 +112,5 @@ class DocumentTreeViewer(ScrollableView, ABC):
 
             x += self.gui.ratios.main_menu_document_width + self.gui.ratios.main_menu_document_padding
             if x + self.gui.ratios.main_menu_document_width > self.width and i + 1 < len(self.documents):
-                x = self.gui.ratios.main_menu_x_padding
+                x = self.x_padding
                 y += self.gui.ratios.main_menu_document_height + self.gui.ratios.main_menu_document_height_distance

@@ -143,7 +143,24 @@ class MainMenuDocView(DocumentTreeViewer):
 
     def __init__(self, gui: 'GUI'):
         # TODO: adjust size to main menu
-        super().__init__(gui, (0, 100, 500, 500))
+        self.gui = gui
+        pos, size = self.area_within_main_menu
+        super().__init__(gui, (*pos, *size))
+
+    def update_size(self):
+        pos, size = self.area_within_main_menu
+        self.position = pos
+        self.resize(size)
+
+    @property
+    def area_within_main_menu(self):
+        return (pos := (
+            0,
+            self.gui.main_menu.texts['my_files'].rect.bottom + self.gui.ratios.main_menu_top_padding,
+        )), (
+            self.gui.width,
+            self.gui.height - pos[1]
+        )
 
     @property
     def documents(self):
@@ -201,13 +218,14 @@ class MainMenu(pe.ChildContext):
         self.bar = TopBar(self)
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
-        self.doc_view = MainMenuDocView(parent)
-        self.get_items()
         for key, text in self.HEADER_TEXTS.items():
             self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_FONT, self.ratios.main_menu_my_files_size,
                                       (0, 0), Defaults.TEXT_COLOR)
             self.texts[key].rect.topleft = (
                 self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
+
+        self.doc_view = MainMenuDocView(parent)
+        self.get_items()
 
         self.document_sync_operations: Dict[str, DocumentSyncProgress] = {}
         self.rect_calculations()
@@ -325,6 +343,7 @@ class MainMenu(pe.ChildContext):
         if isinstance(event, ResizeEvent):
             self.invalidate_cache()
             self.bar.handle_scales()
+            self.doc_view.update_size()
         elif isinstance(event, NewDocuments):
             self.get_items()
 

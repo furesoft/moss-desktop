@@ -16,12 +16,12 @@ if TYPE_CHECKING:
     from queue import Queue
 
 
-def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect, offset):
+def render_full_collection_title(gui: 'GUI', texts, collection_uuid: str, rect):
     pe.draw.rect(Defaults.OUTLINE_COLOR, rect, gui.ratios.outline)
     text = texts[collection_uuid]
     text_full = texts[collection_uuid + '_full']
     if text.text != text_full.text:
-        FullTextPopup.create(gui, text_full, text, offset)()
+        FullTextPopup.create(gui, text_full, text)()
 
 
 def render_full_text(gui: 'GUI', text: pe.Text):
@@ -61,7 +61,7 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=collection.uuid + '_title_hover',
         hover_draw_action=render_full_collection_title,
-        hover_draw_data=(gui, texts, collection.uuid, rect, pe.display.display_reference.pos),
+        hover_draw_data=(gui, texts, collection.uuid, rect),
         action=callback, data=collection.uuid,
         rect=rect
     )
@@ -74,11 +74,11 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
     # )
 
 
-def render_full_document_title(gui: 'GUI', texts, document_uuid: str, offset):
+def render_full_document_title(gui: 'GUI', texts, document_uuid: str):
     text = texts[document_uuid]
     text_full = texts[document_uuid + '_full']
     if text.text != text_full.text:
-        FullTextPopup.create(gui, text_full, text, offset)()
+        FullTextPopup.create(gui, text_full, text)()
 
 
 def open_document(gui: 'GUI', document_uuid: str):
@@ -120,7 +120,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=document.uuid + '_title_hover',
         hover_draw_action=render_full_document_title,
-        hover_draw_data=(gui, texts, document.uuid, pe.display.display_reference.pos),
+        hover_draw_data=(gui, texts, document.uuid),
         action=action,
         data=data,
         disabled=disabled
