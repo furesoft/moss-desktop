@@ -43,8 +43,9 @@ class FullTextPopup(pe.ChildContext):
         # Make sure the text is inside the screen
         screen_rect = pe.Rect(0, 0, *parent.size)
         screen_rect.scale_by_ip(.98, .98)
-        self.text.rect.x += offset[0]
-        self.text.rect.y += offset[1]
+        if offset:
+            self.text.rect.x += offset[0]
+            self.text.rect.y += offset[1]
         self.text.rect.clamp_ip(screen_rect)
 
         self.used_at = time.time()
