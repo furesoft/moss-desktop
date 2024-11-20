@@ -8,6 +8,7 @@ import pygameextra as pe
 from gui.cloud_action_helper import import_pdf_to_cloud
 from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt
+from gui.screens.docs_view import DocumentTreeViewer
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 
 from gui.defaults import Defaults
@@ -135,6 +136,28 @@ class TopBar(pe.ChildContext):
         ))
 
 
+class MainMenuDocView(DocumentTreeViewer):
+    BACKGROUND = (*pe.colors.aqua, 10)
+
+    main_menu: 'MainMenu'
+
+    def __init__(self, gui: 'GUI'):
+        # TODO: adjust size to main menu
+        super().__init__(gui, (0, 100, 500, 500))
+
+    @property
+    def documents(self):
+        return self.gui.main_menu.documents
+
+    @property
+    def document_collections(self):
+        return self.gui.main_menu.document_collections
+
+    @property
+    def mode(self):
+        return self.gui.config.main_menu_view_mode
+
+
 class MainMenu(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
 
@@ -157,6 +180,7 @@ class MainMenu(pe.ChildContext):
 
     resync_icon: pe.Image
     resync_rect: pe.Rect
+    doc_view: MainMenuDocView
 
     def __init__(self, parent: 'GUI'):
         self.navigation_parent = parent.config.last_opened_folder
@@ -177,6 +201,7 @@ class MainMenu(pe.ChildContext):
         self.bar = TopBar(self)
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
+        self.doc_view = MainMenuDocView(parent)
         self.get_items()
         for key, text in self.HEADER_TEXTS.items():
             self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_FONT, self.ratios.main_menu_my_files_size,
@@ -213,34 +238,6 @@ class MainMenu(pe.ChildContext):
             if item.parent == self.navigation_parent
         }
 
-        # Preparing the document collection texts
-        for uuid, document_collection in document_collections.items():
-            if self.texts.get(uuid) is None or self.texts[
-                uuid + '_full'
-            ].text != document_collection.metadata.visible_name:
-                if self.view_mode == 'list':
-                    shortened_text = shorten_folder_by_size(document_collection.metadata.visible_name, self.width)
-                else:
-                    shortened_text = shorten_folder(document_collection.metadata.visible_name)
-                self.texts[uuid] = pe.Text(shortened_text,
-                                           Defaults.FOLDER_FONT,
-                                           self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
-                self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
-                                                     Defaults.FOLDER_FONT,
-                                                     self.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
-
-        # Preparing the document texts
-        for uuid, document in documents.items():
-            if self.texts.get(uuid) is None or self.texts[uuid + '_full'].text != document.metadata.visible_name:
-                self.texts[uuid] = pe.Text(shorten_document(document.metadata.visible_name),
-                                           Defaults.DOCUMENT_TITLE_FONT,
-                                           self.ratios.main_menu_document_title_size, (0, 0),
-                                           Defaults.DOCUMENT_TITLE_COLOR)
-                self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name,
-                                                     Defaults.DOCUMENT_TITLE_FONT,
-                                                     self.ratios.main_menu_document_title_size, (0, 0),
-                                                     Defaults.DOCUMENT_TITLE_COLOR)
-
         # Preparing the path queue and the path texts
         self.path_queue.queue.clear()
         if self.navigation_parent is not None:
@@ -265,6 +262,7 @@ class MainMenu(pe.ChildContext):
                     )
 
                 parent = document_collections[parent].parent
+        self.doc_view.handle_texts()
 
     def pre_loop(self):
         if 'screenshot' in self.icons:
@@ -303,52 +301,7 @@ class MainMenu(pe.ChildContext):
             action=self.refresh
         )
 
-        x = self.ratios.main_menu_x_padding
-        y = self.texts['my_files'].rect.bottom + self.ratios.main_menu_my_files_folder_padding
-
-        # Rendering the folders
-        document_collection_width = \
-            self.ratios.main_menu_document_width if self.view_mode == 'grid' else self.width - x * 2
-        for i, document_collection in enumerate(self.get_sorted_document_collections()):
-            render_collection(self.parent_context, document_collection, self.texts,
-                              self.set_parent, x, y, document_collection_width)
-
-            if self.view_mode == 'grid':
-                x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
-                if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.document_collections):
-                    x = self.ratios.main_menu_x_padding
-                    y += self.ratios.main_menu_folder_height_distance
-            else:
-                y += self.ratios.main_menu_folder_height_distance
-
-        # Resetting the x and y for the documents
-        if len(self.document_collections) > 0:
-            y += self.ratios.main_menu_folder_height_last_distance
-        else:
-            y = self.texts['my_files'].rect.bottom + self.ratios.main_menu_my_files_only_documents_padding
-
-        x = self.ratios.main_menu_x_padding
-
-        # Rendering the documents
-        for i, document in enumerate(self.get_sorted_documents()):
-            rect = pe.Rect(
-                x, y,
-                self.ratios.main_menu_document_width,
-                self.ratios.main_menu_document_height
-            )
-            if document.uuid in self.document_sync_operations:
-                document_sync_operation = self.document_sync_operations[document.uuid]
-                if document_sync_operation.finished:
-                    del self.document_sync_operations[document.uuid]
-                    document_sync_operation = None
-            else:
-                document_sync_operation = None
-            render_document(self.parent_context, rect, self.texts, document, document_sync_operation)
-
-            x += self.ratios.main_menu_document_width + self.ratios.main_menu_document_padding
-            if x + self.ratios.main_menu_document_width > self.width and i + 1 < len(self.documents):
-                x = self.ratios.main_menu_x_padding
-                y += self.ratios.main_menu_document_height + self.ratios.main_menu_document_height_distance
+        self.doc_view()
 
     def post_loop(self):
         # Draw progress bar for file sync operations

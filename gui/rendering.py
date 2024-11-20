@@ -28,7 +28,7 @@ def render_full_text(gui: 'GUI', text: pe.Text):
     FullTextPopup.create(gui, text, text)()
 
 
-def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: pe.Text, callback, x, y, width):
+def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[str, pe.Text], callback, x, y, width):
     icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
     icon.display((x, y))
     text = texts[collection.uuid]
@@ -98,7 +98,9 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
                     document_sync_operation: DocumentSyncProgress = None):
     # Check if the document is being debugged and keep the debug menu open
 
-    title_text = texts[document.uuid]
+    title_text = texts.get(document.uuid)
+    if not title_text:
+        return
 
     title_text.rect.topleft = rect.bottomleft
     title_text.rect.top += gui.ratios.main_menu_document_title_height_margin

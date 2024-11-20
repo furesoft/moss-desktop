@@ -14,6 +14,7 @@ from colorama import Fore
 from rm_api.auth import FailedToRefreshToken
 from rm_api.notifications.models import APIFatal
 from .events import ResizeEvent
+from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES
 
 Defaults = None
 
@@ -35,10 +36,6 @@ AUTHOR = "RedTTG"
 APP_NAME = "Moss"
 INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
-
-MAIN_MENU_MODES = Literal['grid', 'list', 'compressed']
-PDF_RENDER_MODES = Literal['cef', 'none']
-NOTEBOOK_RENDER_MODES = Literal['rm_lines_svg_inker']
 
 
 class ConfigDict(TypedDict):
