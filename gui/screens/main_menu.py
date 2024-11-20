@@ -235,9 +235,8 @@ class MainMenu(pe.ChildContext):
         return self.config.main_menu_view_mode
 
     def __call__(self, *args, **kwargs):
-        with self.call_lock:
-            super().__call__(*args, **kwargs)
-            self.bar()
+        super().__call__(*args, **kwargs)
+        self.bar()
 
     def get_items(self):
         # Copy the document collections and documents incase they change
