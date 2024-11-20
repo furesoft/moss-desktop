@@ -245,7 +245,7 @@ def render_button_using_text(
 
 
 def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: 'Queue'):
-    render_button_using_text(gui, texts['my_files'], action=callback)
+    render_button_using_text(gui, texts['my_files'], action=callback, name='main_menu.my_files')
 
     x = texts['my_files'].rect.right + gui.ratios.main_menu_path_padding
     y = texts['my_files'].rect.centery
@@ -281,7 +281,7 @@ def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: '
         # Draw the text only if it's not skipped
         if i >= skips:
             texts[text_key].rect.midleft = (x, y)
-            render_button_using_text(gui, texts[text_key], action=callback, data=item)
+            render_button_using_text(gui, texts[text_key], action=callback, data=item, name=f'main_menu.path={item}')
             x += texts[text_key].rect.width
 
 

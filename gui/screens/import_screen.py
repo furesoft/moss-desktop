@@ -24,7 +24,6 @@ class ImportScreen(pe.ChildContext):
 
     documents_to_upload: List['Document']
 
-
     def __init__(self, parent: 'GUI'):
         self.documents_to_upload = []
         self.folder = parent.main_menu.navigation_parent
@@ -67,12 +66,12 @@ class ImportScreen(pe.ChildContext):
         self.title.display()
 
         render_button_using_text(self.parent_context, self.texts['cancel'], outline=self.ratios.outline,
-                                 action=self.close)
+                                 action=self.close, name='import_screen.cancel')
         render_button_using_text(self.parent_context, self.texts['full'], outline=self.ratios.outline,
-                                 action=self.full_import)
+                                 action=self.full_import, name='import_screen.full_sync')
         light_import_rect = render_button_using_text(self.parent_context, self.texts['light'],
                                                      outline=self.ratios.outline,
-                                                     action=self.light_import)
+                                                     action=self.light_import, name='import_screen.light_sync')
         info_icon = self.icons['info']
         info_rect = pe.Rect(0, 0, *info_icon.size)
         info_rect.center = light_import_rect.topright
@@ -80,7 +79,8 @@ class ImportScreen(pe.ChildContext):
             info_rect,
             self.BACKGROUND, self.BACKGROUND,
             hover_draw_action=render_full_text,
-            hover_draw_data=(self.parent_context, self.texts['info_text'])
+            hover_draw_data=(self.parent_context, self.texts['info_text']),
+            name='import_screen.light_sync > info_button'
         )
         info_icon.display(info_rect.topleft)
 

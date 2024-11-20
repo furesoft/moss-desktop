@@ -76,7 +76,8 @@ class TopBar(pe.ChildContext):
                     Defaults.TRANSPARENT_COLOR,
                     Defaults.BUTTON_ACTIVE_COLOR,
                     action=getattr(self, button['action']) if button['action'] else None,
-                    disabled=disabled
+                    disabled=disabled,
+                    name=f'main_menu.top_bar.button_{i}'
                 )
             ))
             width += buttons[-1].area.width
@@ -316,7 +317,7 @@ class MainMenu(pe.ChildContext):
         pe.button.rect(
             self.ratios.pad_button_rect(self.resync_rect),
             Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
-            action=self.refresh
+            action=self.refresh, name='main_menu.refresh'
         )
 
         self.doc_view()

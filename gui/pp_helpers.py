@@ -118,7 +118,8 @@ class DocumentDebugPopup(pe.ChildContext):
                 (x, y, self.popup_rect.width, h),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=action,
-                text=self.texts[item]
+                text=self.texts[item],
+                name=f'document_debug_popup<{id(self)}>.button.{item}'
             )
             y += h
 
