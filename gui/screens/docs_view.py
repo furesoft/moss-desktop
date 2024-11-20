@@ -17,7 +17,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
     def __init__(self, gui: 'GUI', area):
         self.AREA = area
         self.texts: Dict[str, pe.Text] = {}
-        self.x_padding = 0
+        self.x_padding_collections = 0
+        self.x_padding_documents = 0
         self.last_width = None
         self.scale = 1
         super().__init__(gui)
@@ -70,17 +71,36 @@ class DocumentTreeViewer(ScrollableView, ABC):
         return 'list'
 
     def pre_loop(self):
-        if self.last_width:
-            self.x_padding = (self.width - self.last_width) / 2
-            self.last_width = None
-        self.x_padding = max(self.gui.ratios.main_menu_x_padding, self.x_padding)
+        area_of_widths = self.width / (
+                self.document_width + self.gui.ratios.main_menu_document_padding
+        ) - self.gui.ratios.main_menu_document_padding / self.width
+        area_of_widths = int(area_of_widths)
+
+        width = area_of_widths * self.document_width
+        width += self.gui.ratios.main_menu_document_padding * (area_of_widths - 1)
+
+        padding = (self.width - width) / 2
+
+        if len(self.document_collections) < area_of_widths:
+            self.x_padding_collections = self.gui.ratios.main_menu_x_padding
+        else:
+            self.x_padding_collections = padding
+
+        if len(self.documents) < area_of_widths:
+            self.x_padding_documents = self.gui.ratios.main_menu_x_padding
+        else:
+            self.x_padding_documents = padding
+
+
         super().pre_loop()
 
     def loop(self):
         if self.mode == 'grid':
-            x = self.gui.ratios.main_menu_x_padding
+            collections_x = self.x_padding_collections
         else:
-            x = self.x_padding
+            collections_x = self.gui.ratios.main_menu_x_padding
+
+        x = collections_x
 
         y = self.gui.ratios.main_menu_top_padding / 2
 
@@ -95,7 +115,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
             if self.mode == 'grid':
                 x += self.document_width + self.gui.ratios.main_menu_document_padding
                 if x + self.document_width > self.width and i + 1 < len(self.document_collections):
-                    x = self.gui.ratios.main_menu_x_padding
+                    x = collections_x
                     y += self.gui.ratios.main_menu_folder_height_distance
             else:
                 y += self.gui.ratios.main_menu_folder_height_distance
@@ -106,7 +126,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         else:
             y = self.gui.ratios.main_menu_my_files_only_documents_padding
 
-        x = self.x_padding
+        x = self.x_padding_documents
 
         # Rendering the documents
         for i, document in enumerate(self.gui.main_menu.get_sorted_documents(self.documents.values())):
@@ -126,7 +146,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
 
             x += self.document_width + self.gui.ratios.main_menu_document_padding
             if x + self.document_width > self.width and i + 1 < len(self.documents):
-                x = self.x_padding
+                x = self.x_padding_documents
                 y += self.document_height + self.gui.ratios.main_menu_document_height_distance
 
     @property

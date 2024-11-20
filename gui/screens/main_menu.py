@@ -145,7 +145,6 @@ class MainMenuDocView(DocumentTreeViewer):
         self.gui = gui
         pos, size = self.area_within_main_menu
         super().__init__(gui, (*pos, *size))
-        self.BACKGROUND = pe.colors.lightgray
 
     def update_size(self):
         pos, size = self.area_within_main_menu
