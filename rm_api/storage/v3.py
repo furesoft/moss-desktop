@@ -298,7 +298,6 @@ def get_documents_using_root(api: 'API', progress, root):
                         if (parent_document_collection := api.document_collections.get(
                                 old_document_collection.parent)) is not None:
                             parent_document_collection.has_items = True
-                        else:
                             document_collections_with_items.add(old_document_collection.parent)
                         continue
                 elif (old_document := api.documents.get(file.uuid)) is not None:
