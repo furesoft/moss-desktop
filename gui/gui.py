@@ -272,12 +272,19 @@ class GUI(pe.GameContext):
             self.running = False
             return
 
-        if self.config.debug:
-            for button in self.buttons:
-                pe.draw.rect((*pe.colors.red, 50), button.area, 2)
-
         if self.doing_fake_screen_refresh:
             self.fake_screen_refresh()
+            
+
+    def end_loop(self):
+        if self.config.debug:
+            for button in self.buttons:
+                rect = pe.Rect(*button.area)
+                if button.display_reference.pos:
+                    rect.x += button.display_reference.pos[0]
+                    rect.y += button.display_reference.pos[1]
+                pe.draw.rect((*pe.colors.red, 50), rect, 2)
+        super().end_loop()
 
     @property
     def center(self):
