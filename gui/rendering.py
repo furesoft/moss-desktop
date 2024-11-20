@@ -74,11 +74,11 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
     # )
 
 
-def render_full_document_title(gui: 'GUI', texts, document_uuid: str):
+def render_full_document_title(gui: 'GUI', texts, document_uuid: str, offset):
     text = texts[document_uuid]
     text_full = texts[document_uuid + '_full']
     if text.text != text_full.text:
-        FullTextPopup.create(gui, text_full, text)()
+        FullTextPopup.create(gui, text_full, text, offset)()
 
 
 def open_document(gui: 'GUI', document_uuid: str):
@@ -120,7 +120,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=document.uuid + '_title_hover',
         hover_draw_action=render_full_document_title,
-        hover_draw_data=(gui, texts, document.uuid),
+        hover_draw_data=(gui, texts, document.uuid, pe.display.display_reference.pos),
         action=action,
         data=data,
         disabled=disabled

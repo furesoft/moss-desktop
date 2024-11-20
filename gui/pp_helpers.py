@@ -30,8 +30,9 @@ class FullTextPopup(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
     EXISTING = {}
 
-    def __init__(self, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None):
+    def __init__(self, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset = None):
         self.text = text
+        self.offset = offset
 
         # Set the position of the text
         if referral_text is not None:
@@ -42,6 +43,8 @@ class FullTextPopup(pe.ChildContext):
         # Make sure the text is inside the screen
         screen_rect = pe.Rect(0, 0, *parent.size)
         screen_rect.scale_by_ip(.98, .98)
+        self.text.rect.x += offset[0]
+        self.text.rect.y += offset[1]
         self.text.rect.clamp_ip(screen_rect)
 
         self.used_at = time.time()
@@ -59,15 +62,15 @@ class FullTextPopup(pe.ChildContext):
         self.used_at = time.time()
 
     @classmethod
-    def create(cls, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None):
+    def create(cls, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset = None):
         if cls.EXISTING.get(id(text)) is None:
-            cls.EXISTING[id(text)] = cls(parent, text, referral_text)
+            cls.EXISTING[id(text)] = cls(parent, text, referral_text, offset)
             return cls.EXISTING[id(text)]
         if time.time() - cls.EXISTING[id(text)].used_at < .05:
             return cls.EXISTING[id(text)]
         else:
             del cls.EXISTING[id(text)]
-            return cls.create(parent, text, referral_text)
+            return cls.create(parent, text, referral_text, offset)
 
 
 class DocumentDebugPopup(pe.ChildContext):
