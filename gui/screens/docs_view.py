@@ -18,6 +18,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
         self.AREA = area
         self.texts: Dict[str, pe.Text] = {}
         self.x_padding = 0
+        self.last_width = None
+        self.scale = 1
         super().__init__(gui)
 
     def handle_texts(self):
@@ -55,32 +57,44 @@ class DocumentTreeViewer(ScrollableView, ABC):
     @property
     @abstractmethod
     def documents(self):
-        return []
+        return {}
 
     @property
     @abstractmethod
     def document_collections(self):
-        return []
+        return {}
 
     @property
     @abstractmethod
     def mode(self) -> MAIN_MENU_MODES:
         return 'list'
 
+    def pre_loop(self):
+        if self.last_width:
+            self.x_padding = (self.width - self.last_width) / 2
+            self.last_width = None
+        self.x_padding = max(self.gui.ratios.main_menu_x_padding, self.x_padding)
+        super().pre_loop()
+
     def loop(self):
-        x = self.gui.ratios.main_menu_x_padding
-        y = 0
+        if self.mode == 'grid':
+            x = self.gui.ratios.main_menu_x_padding
+        else:
+            x = self.x_padding
+
+        y = self.gui.ratios.main_menu_top_padding / 2
 
         # Rendering the folders
         document_collection_width = \
-            self.gui.ratios.main_menu_document_width if self.mode == 'grid' else self.width - x * 2
-        for i, document_collection in enumerate(self.gui.main_menu.get_sorted_document_collections()):
+            self.document_width if self.mode == 'grid' else self.width - self.gui.ratios.main_menu_x_padding * 2
+        for i, document_collection in enumerate(
+                self.gui.main_menu.get_sorted_document_collections(self.document_collections.values())):
             render_collection(self.gui, document_collection, self.texts,
                               self.gui.main_menu.set_parent, x, y, document_collection_width)
 
             if self.mode == 'grid':
-                x += self.gui.ratios.main_menu_document_width + self.gui.ratios.main_menu_document_padding
-                if x + self.gui.ratios.main_menu_document_width > self.width and i + 1 < len(self.document_collections):
+                x += self.document_width + self.gui.ratios.main_menu_document_padding
+                if x + self.document_width > self.width and i + 1 < len(self.document_collections):
                     x = self.gui.ratios.main_menu_x_padding
                     y += self.gui.ratios.main_menu_folder_height_distance
             else:
@@ -95,11 +109,11 @@ class DocumentTreeViewer(ScrollableView, ABC):
         x = self.x_padding
 
         # Rendering the documents
-        for i, document in enumerate(self.gui.main_menu.get_sorted_documents()):
+        for i, document in enumerate(self.gui.main_menu.get_sorted_documents(self.documents.values())):
             rect = pe.Rect(
                 x, y,
-                self.gui.ratios.main_menu_document_width,
-                self.gui.ratios.main_menu_document_height
+                self.document_width,
+                self.document_height
             )
             if document.uuid in self.gui.main_menu.document_sync_operations:
                 document_sync_operation = self.gui.main_menu.document_sync_operations[document.uuid]
@@ -110,7 +124,15 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 document_sync_operation = None
             render_document(self.gui, rect, self.texts, document, document_sync_operation)
 
-            x += self.gui.ratios.main_menu_document_width + self.gui.ratios.main_menu_document_padding
-            if x + self.gui.ratios.main_menu_document_width > self.width and i + 1 < len(self.documents):
+            x += self.document_width + self.gui.ratios.main_menu_document_padding
+            if x + self.document_width > self.width and i + 1 < len(self.documents):
                 x = self.x_padding
-                y += self.gui.ratios.main_menu_document_height + self.gui.ratios.main_menu_document_height_distance
+                y += self.document_height + self.gui.ratios.main_menu_document_height_distance
+
+    @property
+    def document_width(self):
+        return self.gui.ratios.main_menu_document_width * self.scale
+
+    @property
+    def document_height(self):
+        return self.gui.ratios.main_menu_document_height * self.scale

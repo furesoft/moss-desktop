@@ -8,10 +8,9 @@ if TYPE_CHECKING:
 
 
 class ScrollableView(pe.Context, ABC):
-    BACKGROUND = pe.colors.red
-
     def __init__(self, gui: 'GUI'):
         self.gui = gui
+        self.BACKGROUND = self.gui.BACKGROUND
         super().__init__()
 
     # TODO: provide properties to help with scroll

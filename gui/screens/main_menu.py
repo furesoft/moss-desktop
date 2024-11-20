@@ -19,7 +19,7 @@ from gui.rendering import render_document, render_collection, render_header, \
 if TYPE_CHECKING:
     from gui import GUI
     from gui.aspect_ratio import Ratios
-    from rm_api import API
+    from rm_api import API, Document
     from gui.screens.loader import Loader
 
 
@@ -138,8 +138,6 @@ class TopBar(pe.ChildContext):
 
 
 class MainMenuDocView(DocumentTreeViewer):
-    BACKGROUND = (*pe.colors.aqua, 10)
-
     main_menu: 'MainMenu'
 
     def __init__(self, gui: 'GUI'):
@@ -147,6 +145,7 @@ class MainMenuDocView(DocumentTreeViewer):
         self.gui = gui
         pos, size = self.area_within_main_menu
         super().__init__(gui, (*pos, *size))
+        self.BACKGROUND = pe.colors.lightgray
 
     def update_size(self):
         pos, size = self.area_within_main_menu
@@ -295,11 +294,12 @@ class MainMenu(pe.ChildContext):
         self.get_items()
         self.quick_refresh()
 
-    def get_sorted_document_collections(self):
-        return sorted(self.document_collections.values(), key=lambda item: item.metadata.visible_name)
+    @staticmethod
+    def get_sorted_document_collections(old_document_collections) -> sorted:
+        return sorted(old_document_collections, key=lambda item: item.metadata.visible_name)
 
-    def get_sorted_documents(self):
-        documents = sorted(self.documents.values(), key=self.SORTING_FUNCTIONS[self.current_sorting_mode])
+    def get_sorted_documents(self, original_documents_list: List['Document']) -> Union[List['Document'], reversed]:
+        documents = sorted(original_documents_list, key=self.SORTING_FUNCTIONS[self.current_sorting_mode])
         if self.current_sorting_reverse:
             return reversed(documents)
         return documents
