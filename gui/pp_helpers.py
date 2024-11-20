@@ -19,7 +19,6 @@ import rm_api.models as models
 from rm_api.storage.v3 import get_file_contents, get_file, make_files_request
 from rm_lines import rm_bytes_to_svg
 
-
 if TYPE_CHECKING:
     from rm_api.models import Document
     from gui.aspect_ratio import Ratios
@@ -30,7 +29,7 @@ class FullTextPopup(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
     EXISTING = {}
 
-    def __init__(self, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset = None):
+    def __init__(self, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset=None):
         self.text = text
         self.offset = offset
 
@@ -63,7 +62,7 @@ class FullTextPopup(pe.ChildContext):
         self.used_at = time.time()
 
     @classmethod
-    def create(cls, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset = None):
+    def create(cls, parent: 'GUI', text: pe.Text, referral_text: pe.Text = None, offset=None):
         if cls.EXISTING.get(id(text)) is None:
             cls.EXISTING[id(text)] = cls(parent, text, referral_text, offset)
             return cls.EXISTING[id(text)]
@@ -205,7 +204,8 @@ class DocumentDebugPopup(pe.ChildContext):
         i = 0
         files = [file for file in self.document.files if file.uuid.endswith('.rm')]
         try:
-            files.sort(key=lambda file: self.document.content.c_pages.get_index_from_uuid(file.uuid.split('/')[-1].split('.')[0]))
+            files.sort(key=lambda file: self.document.content.c_pages.get_index_from_uuid(
+                file.uuid.split('/')[-1].split('.')[0]))
         except Exception as e:
             print_exc()
             pass

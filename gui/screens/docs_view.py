@@ -67,7 +67,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         return 'list'
 
     def loop(self):
-        x = self.gui.ratios.main_menu_x_padding
+        x = 0
         y = 0
 
         # Rendering the folders
@@ -91,7 +91,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         else:
             y = self.gui.ratios.main_menu_my_files_only_documents_padding
 
-        x = self.gui.ratios.main_menu_x_padding
+        x = 0
 
         # Rendering the documents
         for i, document in enumerate(self.gui.main_menu.get_sorted_documents()):
