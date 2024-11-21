@@ -3,7 +3,7 @@
 Code originally from https://github.com/lschwetlick/maxio through
 https://github.com/chemag/maxio .
 """
-
+import io
 import logging
 import string
 from pathlib import Path
@@ -50,15 +50,16 @@ SVG_HEADER = """<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" height="{height}" width="{width}" viewBox="{viewbox}">\n
 """
 
+
 class SvgWriter:
     def __init__(self):
-        self._output = []
+        self._output = io.StringIO()
 
     def write(self, text):
-        self._output.append(text)
+        self._output.write(text)
 
     def format(self, **kwargs):
-        return "".join(self._output).format(**kwargs)
+        return self._output.getvalue().format(**kwargs)
 
 
 def read_template_svg(template_path: Path) -> str:
@@ -161,7 +162,7 @@ def draw_stroke(item: Line, output, track_xy: DocumentSizeTracker):
             output.write('points="')
             if last_xpos != -1.:
                 # Join to previous segment
-                output.write(a := f'{track_xy.x(last_xpos):.3f},{track_xy.y(last_ypos,):.3f} ')
+                output.write(a := f'{track_xy.x(last_xpos):.3f},{track_xy.y(last_ypos, ):.3f} ')
         # store the last position
         last_xpos = xpos
         last_ypos = ypos
@@ -211,7 +212,8 @@ def draw_text(text: Union[Text, TextDocument], output, anchor_pos, track_xy: Doc
         cls = fmt.name.lower()
         if line:
             output.write(f'        <!-- Text line char_id: {ids[0]} -->\n')
-            output.write(f'        <text x="{track_xy.x(pos_x)}" y="{track_xy.y(pos_y)}" class="{cls}">{line.strip()}</text>\n')
+            output.write(
+                f'        <text x="{track_xy.x(pos_x)}" y="{track_xy.y(pos_y)}" class="{cls}">{line.strip()}</text>\n')
 
         # Save y-coordinates of potential anchors
         for k in ids:
