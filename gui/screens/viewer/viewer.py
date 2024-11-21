@@ -7,6 +7,7 @@ from colorama import Fore
 
 from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
 from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+from .renderers.pdf.pymupdf import PDF_PyMuPDF_Viewer
 from ...events import ResizeEvent
 
 try:
@@ -159,10 +160,16 @@ class DocumentRenderer(pe.ChildContext):
             if self.config.pdf_render_mode == 'cef' and CEFpygame:
                 self.loading += 1
                 self.renderer = PDF_CEF_Viewer(self)
+            elif self.config.pdf_render_mode == 'pymupdf':
+                self.loading += 1
+                self.renderer = PDF_PyMuPDF_Viewer(self)
             elif self.config.pdf_render_mode == 'none':
                 self.error = 'Could not render PDF'
+            elif self.config.pdf_render_mode == 'retry':
+                self.error = 'Could not render PDF. Check your configuration'
             else:
                 self.error = 'Could not render PDF. Make sure you have a compatible PDF renderer'
+
         elif self.document.content.file_type == 'notebook':
             pass
         else:

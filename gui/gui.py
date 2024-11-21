@@ -22,6 +22,10 @@ try:
     from CEF4pygame import CEFpygame
 except Exception:
     CEFpygame = None
+try:
+    import fitz
+except Exception:
+    fitz = None
 
 from rm_api import API
 from .aspect_ratio import Ratios
@@ -127,9 +131,14 @@ def load_config() -> ConfigType:
             print("Config file created. You can edit it manually if you want.")
     if config['pdf_render_mode'] not in PDF_RENDER_MODES.__args__:
         raise ValueError(f"Invalid pdf_render_mode: {config['pdf_render_mode']}")
+    if config['pdf_render_mode'] == 'retry':
+        config['pdf_render_mode'] = 'cef'
     if config['pdf_render_mode'] == 'cef' and CEFpygame is None:
         print(f"{Fore.YELLOW}Cef is not installed or is not compatible with your python version.{Fore.RESET}")
-        config['pdf_render_mode'] = 'none'
+        config['pdf_render_mode'] = 'pymupdf'
+    if config['pdf_render_mode'] == 'pymupdf' and not fitz:
+        print(f"{Fore.YELLOW}PyMuPDF is not installed or is not compatible with your python version.{Fore.RESET}")
+        config['pdf_render_mode'] = 'retry'
     return Box(config)
 
 
