@@ -21,6 +21,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         self.x_padding_collections = 0
         self.x_padding_documents = 0
         self.last_width = None
+        self._scale = self.gui.config.doc_view_scale
         super().__init__(gui)
 
     def handle_texts(self):
@@ -174,7 +175,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 else:
                     document_sync_operation = None
                 render_document(self.gui, rect, self.texts, document, document_sync_operation,
-                                self.gui.config.doc_view_scale)
+                                self.scale)
 
             x += self.document_width + self.gui.ratios.main_menu_document_padding
             if x + self.document_width > self.width and i + 1 < len(self.documents):
@@ -185,11 +186,11 @@ class DocumentTreeViewer(ScrollableView, ABC):
 
     @property
     def document_width(self):
-        return self.gui.ratios.main_menu_document_width * self.gui.config.doc_view_scale
+        return self.gui.ratios.main_menu_document_width * self.scale
 
     @property
     def document_height(self):
-        return self.gui.ratios.main_menu_document_height * self.gui.config.doc_view_scale
+        return self.gui.ratios.main_menu_document_height * self.scale
 
     def handle_event(self, event):
         super().handle_event(event)
@@ -199,8 +200,18 @@ class DocumentTreeViewer(ScrollableView, ABC):
         # Handle scrolling to change the scale
         if event.type == pe.pygame.MOUSEWHEEL:
             if event.y > 0:
-                self.gui.config.doc_view_scale += 0.1
+                self.scale += 0.1
             else:
-                self.gui.config.doc_view_scale -= 0.1
-            self.gui.config.doc_view_scale = max(0.7, min(3., self.gui.config.doc_view_scale))
-            self.gui.dirty_config = True
+                self.scale -= 0.1
+            self.scale = max(0.7, min(3., self.scale))
+            self.handle_texts()
+
+    @property
+    def scale(self):
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        self._scale = value
+        self.gui.config.doc_view_scale = value
+        self.gui.dirty_config = True

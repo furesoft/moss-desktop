@@ -138,7 +138,6 @@ class MainMenuDocView(DocumentTreeViewer):
     main_menu: 'MainMenu'
 
     def __init__(self, gui: 'GUI'):
-        # TODO: adjust size to main menu
         self.gui = gui
         pos, size = self.area_within_main_menu
         super().__init__(gui, (*pos, *size))
