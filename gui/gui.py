@@ -52,6 +52,7 @@ class ConfigDict(TypedDict):
     last_opened_folder: Union[None, str]
     last_prompt_directory: Union[None, str]
     scale: Number
+    doc_view_scale: Number
     main_menu_view_mode: MAIN_MENU_MODES
     format_raw_exports: bool
     add_ext_to_raw_exports: bool
@@ -73,6 +74,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'last_opened_folder': None,
     'last_prompt_directory': None,
     'scale': .9,
+    'doc_view_scale': 1,
     'main_menu_view_mode': 'grid',
     'format_raw_exports': True,
     'add_ext_to_raw_exports': True,
