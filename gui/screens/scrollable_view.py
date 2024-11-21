@@ -34,3 +34,15 @@ class ScrollableView(pe.Context, ABC):
         self._top = int((1 - self.T * self.gui.delta_time) * self._top + self.T * self.gui.delta_time * self.active_top)
 
         return self._top
+
+    def post_loop(self):
+        for button in self.gui.button_manager.buttons_with_names.values():
+            if button.display_reference == self.surface:
+                button_rect = pe.Rect(*button.area)
+                button_rect_topleft = button_rect.topleft
+                button_rect.clamp_ip(pe.Rect(0, 0, *self.size))
+                button_rect.size = tuple(
+                    max(0, size - (new - old))
+                    for size, new, old in zip(button_rect.size, button_rect.topleft, button_rect_topleft)
+                )
+                button.area = tuple(button_rect)
