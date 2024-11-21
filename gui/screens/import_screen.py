@@ -26,6 +26,7 @@ class ImportScreen(pe.ChildContext):
 
     def __init__(self, parent: 'GUI'):
         self.documents_to_upload = []
+        self.expected_documents = 0
         self.folder = parent.main_menu.navigation_parent
         super().__init__(parent)
         parent.import_screen = self
@@ -62,17 +63,24 @@ class ImportScreen(pe.ChildContext):
         assert isinstance(document, Document)
         self.documents_to_upload.append(document)
 
+    def predefine_item(self):
+        self.expected_documents += 1
+
     def loop(self):
-        print(len(self.documents_to_upload))
         self.title.display()
 
+        not_ready = len(self.documents_to_upload) < self.expected_documents
+
         render_button_using_text(self.parent_context, self.texts['cancel'], outline=self.ratios.outline,
-                                 action=self.close, name='import_screen.cancel')
+                                 action=self.close, name='import_screen.cancel',
+                                 disabled=(0, 0, 0, 50) if not_ready else False)
         render_button_using_text(self.parent_context, self.texts['full'], outline=self.ratios.outline,
-                                 action=self.full_import, name='import_screen.full_sync')
+                                 action=self.full_import, name='import_screen.full_sync',
+                                 disabled=(0, 0, 0, 50) if not_ready else False)
         light_import_rect = render_button_using_text(self.parent_context, self.texts['light'],
                                                      outline=self.ratios.outline,
-                                                     action=self.light_import, name='import_screen.light_sync')
+                                                     action=self.light_import, name='import_screen.light_sync',
+                                                     disabled=(0, 0, 0, 50) if not_ready else False)
         info_icon = self.icons['info']
         info_rect = pe.Rect(0, 0, *info_icon.size)
         info_rect.center = light_import_rect.topright

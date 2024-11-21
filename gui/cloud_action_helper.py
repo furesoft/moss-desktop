@@ -16,6 +16,8 @@ def import_pdf_to_cloud(gui: 'GUI', file_path):
     parent = gui.main_menu.navigation_parent
     name = os.path.basename(file_path).rsplit('.', 1)[0]  # remove .pdf from the end
 
+    gui.import_screen.predefine_item()
+
     document = Document.new_pdf(gui.api, name, pdf_data, parent)
 
     gui.import_screen.add_item(document)
