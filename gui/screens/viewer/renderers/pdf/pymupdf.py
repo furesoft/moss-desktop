@@ -33,22 +33,32 @@ class PDF_PyMuPDF_Viewer(AbstractRenderer):
     def load(self):
         if not self.pdf_raw:
             return
-
         self.pdf = fitz.open(stream=self.pdf_raw, filetype='pdf')
         self.document_renderer.loading -= 1
 
     def render(self, page_uuid: str):
         if not self.pdf:
             return
-        page_index = self.document_renderer.current_page_index
+        page = self.document.content.c_pages.get_page_from_uuid(page_uuid)
+        if not page.redirect:
+            return
+
+        page_index = page.redirect.value
         image = self.get_page(page_index)
 
         pe.display.blit(image, (0, 0))
 
     @lru_cache()
     def get_page(self, page):
+        pdf_page = self.pdf[page]
+        scale_x = self.width / pdf_page.rect.width
+        scale_y = self.height / pdf_page.rect.height
+
+        # Create a matrix for scaling
+        matrix = fitz.Matrix(scale_x, scale_y)
+
         # noinspection PyUnresolvedReferences
-        pix = self.pdf[page].get_pixmap()
+        pix = pdf_page.get_pixmap(matrix=matrix)
         mode = "RGBA" if pix.alpha else "RGB"
         # noinspection PyTypeChecker
         image = pe.Surface(surface=pe.pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode))
