@@ -15,6 +15,7 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from rm_api.auth import get_token, refresh_token
+from rm_api.metadata_database_handler import MetadataDatabaseHandler
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
 from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress, NewDocuments
@@ -85,6 +86,7 @@ class API:
 
         self.log_file = log_file
         self.log_lock = threading.Lock()
+        self.metadata_db = MetadataDatabaseHandler()
 
         # Set up logging configuration
         logging.basicConfig(filename=self.log_file, level=logging.INFO,

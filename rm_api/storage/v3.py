@@ -59,8 +59,11 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
 
 
 @lru_cache
-def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True) -> \
-        Union[str, None, dict, bool, bytes]:
+def make_files_request(
+        api: 'API',
+        method, file, data: dict = None,
+        binary: bool = False, use_cache: bool = True, use_metadata_cache: bool = False
+    ) -> Union[str, None, dict, bool, bytes]:
     if method == 'HEAD':
         method = 'GET'
         head = True
@@ -70,19 +73,31 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
         location = os.path.join(api.sync_file_path, file)
     else:
         location = None
-    if use_cache and location and os.path.exists(location):
-        if head:
-            return True
-        if binary:
-            with open(location, 'rb') as f:
-                return f.read()
-        else:
-            with open(location, 'r', encoding=DEFAULT_ENCODING) as f:
-                data = f.read()
-            try:
-                return json.loads(data)
-            except JSONDecodeError:
-                return data
+    if use_cache and location:
+        if use_metadata_cache and api.metadata_db.check_hash(file):
+            if head:
+                return True
+            if binary:
+                return api.metadata_db.get_hash(file)
+            else:
+                data = api.metadata_db.get_hash(file).decode(DEFAULT_ENCODING)
+                try:
+                    return json.loads(data)
+                except JSONDecodeError:
+                    return data
+        elif os.path.exists(location):
+            if head:
+                return True
+            if binary:
+                with open(location, 'rb') as f:
+                    return f.read()
+            else:
+                with open(location, 'r', encoding=DEFAULT_ENCODING) as f:
+                    data = f.read()
+                try:
+                    return json.loads(data)
+                except JSONDecodeError:
+                    return data
     response = api.session.request(
         method,
         FILES_URL.format(api.document_storage_uri, file),
@@ -98,11 +113,16 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
         raise Exception(f"Failed to make files request - {response.status_code}\n{response.text}")
     if binary:
         if location:
-            with open(location, "wb") as f:
-                f.write(response.content)
+            if use_metadata_cache:
+                api.metadata_db.set_hash(file, response.content)
+            else:
+                with open(location, "wb") as f:
+                    f.write(response.content)
         return response.content
     else:
         if location:
+            if use_metadata_cache:
+                api.metadata_db.set_hash(file, response.text.encode(DEFAULT_ENCODING))
             with open(location, "w", encoding=DEFAULT_ENCODING) as f:
                 f.write(response.text)
         try:
@@ -227,7 +247,7 @@ def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProg
 
 
 def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
-    res = make_files_request(api, "GET", file, use_cache=use_cache)
+    res = make_files_request(api, "GET", file, use_cache=use_cache, use_metadata_cache=True)
     if isinstance(res, int):
         return res, []
     version, *lines = res.splitlines()
@@ -236,8 +256,8 @@ def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tup
     return version, [models.File.from_line(line) for line in lines]
 
 
-def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
-    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache)
+def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = True, use_metadata_cache: bool = False) -> Union[str, None, dict]:
+    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache, use_metadata_cache=use_metadata_cache)
 
 
 def check_file_exists(api: 'API', file, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
@@ -287,7 +307,7 @@ def get_documents_using_root(api: 'API', progress, root):
         for item in file_content:
             if item.uuid == f'{file.uuid}.content':
                 try:
-                    content = get_file_contents(api, item.hash)
+                    content = get_file_contents(api, item.hash, use_metadata_cache=True)
                 except:
                     break
                 if not isinstance(content, dict):
@@ -314,7 +334,7 @@ def get_documents_using_root(api: 'API', progress, root):
                         document_collections_with_items.add(old_document.parent)
                         continue
                 try:
-                    metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
+                    metadata = models.Metadata(get_file_contents(api, item.hash, use_metadata_cache=True), item.hash)
                 except:
                     continue
                 if metadata.type == 'CollectionType':
