@@ -142,7 +142,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
                     document_sync_operation = None
             else:
                 document_sync_operation = None
-            render_document(self.gui, rect, self.texts, document, document_sync_operation)
+            render_document(self.gui, rect, self.texts, document, document_sync_operation, self.scale)
 
             x += self.document_width + self.gui.ratios.main_menu_document_padding
             if x + self.document_width > self.width and i + 1 < len(self.documents):
@@ -156,3 +156,15 @@ class DocumentTreeViewer(ScrollableView, ABC):
     @property
     def document_height(self):
         return self.gui.ratios.main_menu_document_height * self.scale
+
+    def handle_event(self, event):
+        if not self.gui.ctrl_hold:
+            return
+
+        # Handle scrolling to change the scale
+        if event.type == pe.pygame.MOUSEWHEEL:
+            if event.y > 0:
+                self.scale += 0.1
+            else:
+                self.scale -= 0.1
+            self.scale = max(0.1, min(3., self.scale))

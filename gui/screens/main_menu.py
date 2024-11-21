@@ -373,3 +373,6 @@ class MainMenu(pe.ChildContext):
         padded.size = (self.ratios.main_menu_top_height,) * 2
         padded.topright = (self.width, 0)
         self.resync_rect.center = padded.center
+
+    def handle_event(self, event):
+        self.doc_view.handle_event(event)

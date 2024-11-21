@@ -95,7 +95,7 @@ def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
 
 
 def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
-                    document_sync_operation: DocumentSyncProgress = None):
+                    document_sync_operation: DocumentSyncProgress = None, scale=1):
     # Check if the document is being debugged and keep the debug menu open
 
     title_text = texts.get(document.uuid)
@@ -129,7 +129,8 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     # Render the notebook icon
     preview = PreviewHandler.get_preview(document, rect.size)
     if not preview:
-        notebook_large = gui.icons['notebook_large']
+        notebook_large: pe.Image = gui.icons['notebook_large'].copy()
+        notebook_large.resize(tuple(v*scale for v in notebook_large.size))
         notebook_large_rect = pe.Rect(0, 0, *notebook_large.size)
         notebook_large_rect.center = rect.center
         notebook_large.display(notebook_large_rect.topleft)

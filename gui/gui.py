@@ -165,6 +165,7 @@ class GUI(pe.GameContext):
         self.ratios = Ratios(self.config.scale)
         self.icons = {}
         self.data = {}
+        self.ctrl_hold = False
         self._import_screen: Union[ImportScreen, None] = None
         self.main_menu: Union['MainMenu', None] = None
         if self.api.token:
@@ -292,6 +293,10 @@ class GUI(pe.GameContext):
         return self.width // 2, self.height // 2
 
     def handle_event(self, e: pe.event.Event):
+        if pe.event.key_DOWN(pe.K_LCTRL) or pe.event.key_DOWN(pe.K_RCTRL):
+            self.ctrl_hold = True
+        elif pe.event.key_UP(pe.K_LCTRL) or pe.event.key_UP(pe.K_RCTRL):
+            self.ctrl_hold = False
         if self.screens.queue[-1].handle_event != self.handle_event:
             self.screens.queue[-1].handle_event(e)
         if pe.event.quit_check():
