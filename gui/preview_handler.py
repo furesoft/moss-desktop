@@ -1,3 +1,4 @@
+import os.path
 import threading
 from traceback import print_exc
 from typing import Dict, Tuple, List, Union
@@ -58,11 +59,19 @@ class PreviewHandler:
         except:
             page_id = 'index-error'
         document_id = document.uuid
+        loading_task = f'{document_id}.{page_id}'
+        location = os.path.join(Defaults.THUMB_FILE_PATH, f'{loading_task}.png')
         if preview := cls.CACHED_PREVIEW.get(document_id):
             if preview[0] == page_id:
+                if os.path.isdir(Defaults.THUMB_FILE_PATH):
+                    if preview[1] and not os.path.exists(location):
+                        preview[1].surface.save_to_file(location)
                 return preview[1]
         # If the preview is not cached, load it
-        loading_task = f'{document_id}/{page_id}'
+        if os.path.exists(location):
+            image = pe.Image(location)
+            cls.CACHED_PREVIEW[document_id] = (page_id, image)
+
 
         # Prevent multiple of the same task
         if loading_task in cls.PREVIEW_LOAD_TASKS:
@@ -111,7 +120,7 @@ class PreviewHandler:
                     pdf_page = pdf[page.redirect.value]
 
                     scale_x = Defaults.PDF_PREVIEW_SIZE[0] / pdf_page.rect.width
-                    scale_y = Defaults.PDF_PREVIEW_SIZE[0] / pdf_page.rect.height
+                    scale_y = Defaults.PDF_PREVIEW_SIZE[1] / pdf_page.rect.height
                     matrix = fitz.Matrix(scale_x, scale_y)
 
                     # noinspection PyUnresolvedReferences
@@ -139,6 +148,7 @@ class PreviewHandler:
             image = Notebook_rM_Lines_Renderer.generate_expanded_notebook_from_rm(document.metadata, rm_bytes,
                                                                                   use_lock=cls.PYGAME_THREAD_LOCK).get_frame_from_initial(
                 0, 0)
+            image.resize(Defaults.PDF_PREVIEW_SIZE)
         else:
             image = None
 

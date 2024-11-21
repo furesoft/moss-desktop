@@ -3,6 +3,7 @@ import json
 import os
 import time
 from numbers import Number
+from os import makedirs
 from typing import TypedDict, Literal, Union, TYPE_CHECKING
 
 import appdirs
@@ -197,6 +198,7 @@ class GUI(pe.GameContext):
         self.last_screen_count = 1
         self.api.add_hook('GUI', self.handle_api_event)
         pe.display.set_icon(Defaults.APP_ICON)
+        makedirs(Defaults.THUMB_FILE_PATH, exist_ok=True)
 
     @property
     def api_kwargs(self):
