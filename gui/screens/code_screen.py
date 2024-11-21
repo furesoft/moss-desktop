@@ -163,14 +163,16 @@ class CodeScreen(pe.ChildContext):
                 self.ratios.pad_button_rect(self.website_info.rect),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=webbrowser.open,
-                data=("https://my.remarkable.com/#desktop", 0, True)
+                data=("https://my.remarkable.com/#desktop", 0, True),
+                name = 'code_screen.webopen<rm>'
             )
         else:
             pe.button.rect(
                 self.ratios.pad_button_rect(self.website_info.rect),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=webbrowser.open,
-                data=(self.config.uri, 0, True)
+                data=(self.config.uri, 0, True),
+                name='code_screen.webopen<custom>'
             )
 
         x = self.width // 2 - self.underscore.rect.width * (self.CODE_LENGTH / 2)
