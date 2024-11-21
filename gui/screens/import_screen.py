@@ -1,4 +1,7 @@
+import datetime
 import threading
+import time
+from datetime import timedelta
 from typing import Dict, TYPE_CHECKING, List
 
 import pygameextra as pe
@@ -6,7 +9,8 @@ from gui.aspect_ratio import Ratios
 from gui.defaults import Defaults
 from gui.rendering import render_button_using_text, render_full_text
 from gui.screens.docs_view import DocumentTreeViewer
-from rm_api import Document
+from gui.screens.viewer import DocumentViewer
+from rm_api import Document, make_uuid
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -40,7 +44,10 @@ class ImportScreenDocView(DocumentTreeViewer):
 
     @property
     def documents(self):
-        return {document.uuid: document for document in self.import_screen.documents_to_upload}
+        return {
+            **{document.uuid: document for document in self.import_screen.documents_to_upload},
+            **{dummy_document.uuid: dummy_document for dummy_document in self.import_screen.dummy_documents}
+        }
 
     @property
     def document_collections(self):
@@ -62,9 +69,11 @@ class ImportScreen(pe.ChildContext):
     import_screen: 'ImportScreen'
 
     documents_to_upload: List['Document']
+    dummy_documents: List['Document']
 
     def __init__(self, parent: 'GUI'):
         self.documents_to_upload = []
+        self.dummy_documents = []
         self.expected_documents = 0
         self.folder = parent.main_menu.navigation_parent
         self.uploading_light = False
@@ -106,9 +115,18 @@ class ImportScreen(pe.ChildContext):
         self.documents_to_upload.append(document)
         document.provision = True  # Ensure that the document is in provisioning mode
         self.doc_view.handle_texts()
+        DocumentViewer.PROBLEMATIC_DOCUMENTS.remove(self.dummy_documents[0].uuid)
+        del self.dummy_documents[0]
 
-    def predefine_item(self):
-        self.expected_documents += 1
+    def predefine_item(self, items: int = 1):
+        self.expected_documents += items
+        for _ in range(items):
+            # This makes a dummy document that will be placed first and will have a problematic marker
+            self.dummy_documents.append(Document.new_notebook(self.api, ''))
+            self.dummy_documents[-1].provision = True
+            self.dummy_documents[-1].metadata.last_modified += timedelta(weeks=10).total_seconds()
+            DocumentViewer.PROBLEMATIC_DOCUMENTS.add(self.dummy_documents[-1].uuid)
+
 
     def loop(self):
         self.title.display()

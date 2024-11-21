@@ -40,6 +40,12 @@ def make_hash(data: Union[str, bytes, FileHandle]):
     return sha256(data).hexdigest()
 
 
+def try_to_load_int(rm_value: str):
+    if not rm_value:
+        return 0
+    else:
+        return int(rm_value)
+
 class File:
     def __init__(self, file_hash, file_uuid, content_count, file_size, rm_filename=None):
         self.hash = file_hash
@@ -378,8 +384,8 @@ class Metadata:
         self.type = metadata['type']
         self.parent = metadata['parent'] or None
         self.pinned = metadata['pinned']  # Pinned is equivalent to starred
-        self.created_time = metadata.get('createdTime')
-        self.last_modified = metadata['lastModified']
+        self.created_time = try_to_load_int(metadata.get('createdTime'))
+        self.last_modified = try_to_load_int(metadata['lastModified'])
         self.visible_name = metadata['visibleName']
         self.metadata_modified = metadata.get('metadatamodified', False)
         self.modified = metadata.get('modified', False)
@@ -387,7 +393,7 @@ class Metadata:
         self.version = metadata.get('version')
 
         if self.type == 'DocumentType':
-            self.last_opened = metadata['lastOpened']
+            self.last_opened = try_to_load_int(metadata['lastOpened'])
             self.last_opened_page = metadata.get('lastOpenedPage', 0)
 
     @classmethod
@@ -415,14 +421,17 @@ class Metadata:
         # A dirty translation of the keys to metadata keys
         if key == 'created_time':
             key = 'createdTime'
+            value = str(value)
         if key == 'last_modified':
             key = 'lastModified'
+            value = str(value)
         if key == 'visible_name':
             key = 'visibleName'
         if key == 'metadata_modified':
             key = 'metadatamodified'
         if key == 'last_opened':
             key = 'lastOpened'
+            value = str(value)
         if key == 'last_opened_page':
             key = 'lastOpenedPage'
 
