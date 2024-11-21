@@ -35,6 +35,7 @@ def get_document_notifications_uri(api: 'API'):
         host = api.uri.split("://")[1].split("/")[0]
     return host
 
+
 class FileHandle:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -48,19 +49,26 @@ class FileHandle:
         if not self.file_handle:
             self.file_handle = open(self.file_path, 'rb')
 
-
-    def read(self, size = None):
+    def read(self, size=None):
         self.open()
         return self.file_handle.read(size)
 
     def readinto(self, b):
         self.open()
         return self.file_handle.readinto(b)
-    
+
     def reset(self):
         if self.file_handle:
             self.file_handle.seek(0)
-    
+
+    def seek(self, offset, whence=0):
+        self.open()
+        return self.file_handle.seek(offset, whence)
+
+    def tell(self):
+        self.open()
+        return self.file_handle.tell()
+
     def close(self):
         if self.file_handle:
             self.file_handle.close()
@@ -68,7 +76,7 @@ class FileHandle:
 
     def __len__(self):
         return self.file_size
-    
+
     def hash(self):
         if self._hash:
             return self._hash
@@ -83,24 +91,22 @@ class FileHandle:
             self.checksum = crc32c(data, self.checksum)
         self._hash = hasher.hexdigest()
         return self._hash
-    
+
     def crc32c(self):
         if self.checksum:
             return self.checksum
         else:
             self.hash()
             return self.checksum
-        
+
     def __copy__(self):
         self.close()
-        obj =  self.__class__(self.file_path)
+        obj = self.__class__(self.file_path)
         obj._hash = self._hash
         obj.checksum = self.checksum
 
     def __deepcopy__(self, memo: dict = None):
         return self.__copy__()
-        
-
 
 
 class ProgressFileAdapter(IOBase):
@@ -129,7 +135,6 @@ class ProgressFileAdapter(IOBase):
         self.file_sync.done = 0
         if isinstance(self.data, FileHandle):
             self.data.reset()
-
 
     def __len__(self):
         return self.file_sync.total

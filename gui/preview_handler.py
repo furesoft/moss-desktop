@@ -7,7 +7,9 @@ import pygameextra as pe
 from gui.defaults import Defaults
 from gui.screens.viewer.renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
 from rm_api import Document
-from rm_api.storage.v3 import get_file_contents
+from rm_api.models import Page
+from rm_api.storage.common import FileHandle
+from rm_api.storage.v3 import get_file_contents, check_file_exists
 
 try:
     import fitz
@@ -30,6 +32,7 @@ class PreviewHandler:
         try:
             image = cls._get_preview(document)
         except:
+            print_exc()
             image = None
         if image is None:
             return None
@@ -47,10 +50,13 @@ class PreviewHandler:
 
     @classmethod
     def _get_preview(cls, document: Document) -> MAY_CONTAIN_A_IMAGE:
-        if document.content.cover_page_number == -1:
-            page_id = document.content.c_pages.last_opened.value
-        else:
-            page_id = document.content.c_pages.pages[0].id
+        try:
+            if document.content.cover_page_number == -1:
+                page_id = document.content.c_pages.last_opened.value
+            else:
+                page_id = document.content.c_pages.pages[0].id
+        except:
+            page_id = 'index-error'
         document_id = document.uuid
         if preview := cls.CACHED_PREVIEW.get(document_id):
             if preview[0] == page_id:
@@ -83,17 +89,24 @@ class PreviewHandler:
         base_img: pe.Surface = None
 
         if document.content.file_type == 'pdf':
-            page = document.content.c_pages.get_page_from_uuid(page_id)
+            if page_id == 'index-error':
+                page = Page.new_pdf_redirect(0, 'index-error', 'index-error')
+            else:
+                page = document.content.c_pages.get_page_from_uuid(page_id)
+
             if page and page.redirect:
                 pdf_file = document.files_available.get(file_uuid := f'{document.uuid}.pdf')
 
                 document.load_files_from_cache()
 
                 if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and fitz:
-                    pdf = fitz.open(
-                        stream=stream,
-                        filetype='pdf'
-                    )
+                    if isinstance(stream, FileHandle):
+                        pdf = fitz.open(stream.file_path, filetype='pdf')
+                    else:
+                        pdf = fitz.open(
+                            stream=stream,
+                            filetype='pdf'
+                        )
 
                     pdf_page = pdf[page.redirect.value]
 
@@ -119,7 +132,7 @@ class PreviewHandler:
                         break
         else:
             file_hash = file.hash
-        if file_hash:
+        if file_hash and check_file_exists(document.api, file_hash):
             rm_bytes = get_file_contents(document.api, file_hash, binary=True)
             if not rm_bytes:
                 raise Exception('Page content unavailable to construct preview')
