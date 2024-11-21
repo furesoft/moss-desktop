@@ -67,6 +67,7 @@ class ImportScreen(pe.ChildContext):
         self.documents_to_upload = []
         self.expected_documents = 0
         self.folder = parent.main_menu.navigation_parent
+        self.uploading_light = False
         super().__init__(parent)
         parent.import_screen = self
         self.title = pe.Text("Import", Defaults.MAIN_MENU_FONT, self.ratios.import_screen_title_size,
@@ -114,7 +115,7 @@ class ImportScreen(pe.ChildContext):
 
         self.doc_view()
 
-        not_ready = len(self.documents_to_upload) < self.expected_documents
+        not_ready = self.uploading_light or len(self.documents_to_upload) < self.expected_documents
 
         render_button_using_text(self.parent_context, self.texts['cancel'], outline=self.ratios.outline,
                                  action=self.close, name='import_screen.cancel',
@@ -151,7 +152,17 @@ class ImportScreen(pe.ChildContext):
         self.close()
 
     def light_import(self):
+        if self.uploading_light:
+            return
+        self.uploading_light = True
+        threading.Thread(
+            target=self._light_import,
+            daemon=True
+        ).start()
+
+    def _light_import(self):
         self.api.upload_many_documents(self.convert_light())
+        self.uploading_light = False
 
     def convert_light(self):
         light_documents = []
