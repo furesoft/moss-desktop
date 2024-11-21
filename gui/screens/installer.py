@@ -89,7 +89,8 @@ class Installer(pe.ChildContext, Logo):
                 self.cancel_button_rect,
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=self.cancel,
-                text=self.cancel_text
+                text=self.cancel_text,
+                name='installer.cancel'
             )
             can_install = self.check_can_install()
             pe.button.rect(
@@ -99,6 +100,7 @@ class Installer(pe.ChildContext, Logo):
                 action=self.install,
                 text=self.install_text if not Defaults.INSTALLED else self.reinstall_text,
                 disabled=not can_install,
+                name='installer.install'
             )
             self.draw_button_outline(self.cancel_button_rect)
             self.draw_button_outline(self.install_button_rect)
@@ -107,7 +109,8 @@ class Installer(pe.ChildContext, Logo):
                 self.install_button_rect,
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=self.launch,
-                text=self.launch_text
+                text=self.launch_text,
+                name='installer.launch'
             )
             self.draw_button_outline(self.install_button_rect)
 
