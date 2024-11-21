@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from math import ceil
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Literal, Dict
@@ -80,16 +81,44 @@ class DocumentTreeViewer(ScrollableView, ABC):
 
         padding = (self.width - width) / 2
 
+        collections_rows = 1
+        documents_rows = 1
+
+
+        if len(self.document_collections) == 0:
+            collections_rows = 0
         if len(self.document_collections) < area_of_widths:
             self.x_padding_collections = self.gui.ratios.main_menu_x_padding
         else:
             self.x_padding_collections = padding
+            if self.mode == 'grid':
+                collections_rows = ceil(len(self.document_collections) / area_of_widths)
+            else:
+                collections_rows = len(self.document_collections)
 
+        if len(self.documents) == 0:
+            documents_rows = 0
         if len(self.documents) < area_of_widths:
             self.x_padding_documents = self.gui.ratios.main_menu_x_padding
         else:
             self.x_padding_documents = padding
+            documents_rows = ceil(len(self.documents) / area_of_widths)
 
+        y = 0
+
+
+        # Collections
+        y += self.gui.ratios.main_menu_folder_height_distance * collections_rows
+        if len(self.document_collections) > 0:
+            y -= self.gui.ratios.main_menu_folder_height_distance - self.gui.ratios.main_menu_folder_height_last_distance
+
+        # Documents
+        y += (self.document_height + self.gui.ratios.main_menu_document_height_distance) * documents_rows
+
+        if len(self.documents) > 0:
+            y -= self.gui.ratios.main_menu_document_title_height_margin
+
+        self.bottom = y
 
         super().pre_loop()
 
@@ -102,6 +131,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         x = collections_x
 
         y = self.gui.ratios.main_menu_top_padding / 2
+        y += self.top
 
         # Rendering the folders
         document_collection_width = \
@@ -123,7 +153,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         if len(self.document_collections) > 0:
             y += self.gui.ratios.main_menu_folder_height_last_distance
         else:
-            y = self.gui.ratios.main_menu_my_files_only_documents_padding
+            y = 0
 
         x = self.x_padding_documents
 
@@ -147,6 +177,10 @@ class DocumentTreeViewer(ScrollableView, ABC):
             if x + self.document_width > self.width and i + 1 < len(self.documents):
                 x = self.x_padding_documents
                 y += self.document_height + self.gui.ratios.main_menu_document_height_distance
+
+    def post_loop(self):
+        pe.draw.line(pe.colors.pink, (0, 0), (0, self.bottom), 5)
+        return super().post_loop()
 
     @property
     def document_width(self):

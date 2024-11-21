@@ -47,7 +47,6 @@ class Ratios:
         self.main_menu_my_files_folder_padding = int(28 * scale)
         self.main_menu_path_padding = int(0 * scale)
         self.main_menu_path_first_padding = int(5 * scale)
-        self.main_menu_my_files_only_documents_padding = int(26 * scale)
         self.main_menu_folder_padding = int(6 * scale)
         self.main_menu_folder_margin_x = int(12 * scale)
         self.main_menu_folder_margin_y = int(20 * scale)

@@ -11,6 +11,8 @@ class ScrollableView(pe.Context, ABC):
     def __init__(self, gui: 'GUI'):
         self.gui = gui
         self.BACKGROUND = self.gui.BACKGROUND
+        self.top = 0
+        self.bottom = 0
         super().__init__()
 
     # TODO: provide properties to help with scroll
