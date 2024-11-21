@@ -59,7 +59,7 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
 
 
 @lru_cache
-def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True) -> \
+def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True, enforce_cache: bool = False) -> \
         Union[str, None, dict, bool, bytes]:
     if method == 'HEAD':
         method = 'GET'
@@ -83,6 +83,9 @@ def make_files_request(api: 'API', method, file, data: dict = None, binary: bool
                 return json.loads(data)
             except JSONDecodeError:
                 return data
+    if enforce_cache:
+        # Checked cache and it wasn't there
+        return None
     response = api.session.request(
         method,
         FILES_URL.format(api.document_storage_uri, file),
@@ -236,11 +239,11 @@ def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tup
     return version, [models.File.from_line(line) for line in lines]
 
 
-def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
-    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache)
+def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = True, enforce_cache: bool = False):
+    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache, enforce_cache= enforce_cache)
 
 
-def check_file_exists(api: 'API', file, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
+def check_file_exists(api: 'API', file, binary: bool = False, use_cache: bool = True):
     return make_files_request(api, "HEAD", file, binary=binary, use_cache=use_cache)
 
 

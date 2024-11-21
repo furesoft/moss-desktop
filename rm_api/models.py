@@ -536,7 +536,21 @@ class Document:
         for file in self.files:
             if file.uuid not in self.content_files:
                 continue
-            self.content_data[file.uuid] = get_file_contents(self.api, file.hash, binary=True)
+            data = get_file_contents(self.api, file.hash, binary=True)
+            if data:
+                self.content_data[file.uuid] = data
+
+    def unload_files(self):
+        del self.content_data
+        self.content_data = {}
+
+    def load_files_from_cache(self):
+        for file in self.files:
+            if file.uuid not in self.content_files:
+                continue
+            data = get_file_contents(self.api, file.hash, binary=True, enforce_cache=True)
+            if data:
+                self.content_data[file.uuid] = data
 
     def ensure_download_and_callback(self, callback):
         if not self.available:

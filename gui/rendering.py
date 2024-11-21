@@ -109,14 +109,14 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     title_text.rect.top += gui.ratios.main_menu_document_title_height_margin
 
     action = document.ensure_download_and_callback
-    data = lambda: open_document(gui, document.uuid)
+    data = lambda: PreviewHandler.clear_for(document.uuid, lambda: open_document(gui, document.uuid))
     disabled = document.downloading
 
     # Start downloading the document if it's not available and not downloading
     # If the config specifies to download everything, download everything
     # In this case it will only download it when it shows up on the screen
     if gui.config.download_everything and not document.available and not document.downloading:
-        document.ensure_download_and_callback(lambda: None)
+        document.ensure_download_and_callback(lambda: PreviewHandler.clear_for(document.uuid))
 
     render_button_using_text(
         gui, title_text,

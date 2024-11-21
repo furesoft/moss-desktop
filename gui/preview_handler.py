@@ -4,9 +4,15 @@ from typing import Dict, Tuple, List, Union
 
 import pygameextra as pe
 
+from gui.defaults import Defaults
 from gui.screens.viewer.renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
 from rm_api import Document
 from rm_api.storage.v3 import get_file_contents
+
+try:
+    import fitz
+except ImportError:
+    fitz = None
 
 MAY_CONTAIN_A_IMAGE = Union[None, pe.Image]
 
@@ -65,37 +71,77 @@ class PreviewHandler:
         try:
             cls._handle_loading_task(document, page_id)
         except:
+            print_exc()
             cls.CACHED_PREVIEW[document.uuid] = (page_id, None)
         finally:
             cls.PREVIEW_LOAD_TASKS.remove(loading_task)
 
     @classmethod
     def _handle_loading_task(cls, document: Document, page_id: str):
-        if not document.available and not pe.settings.config.download_last_opened_page_to_make_preview:
-            # Wait for the document to be available
-            return
-        
         file = document.files_available.get(file_uuid := f'{document.uuid}/{page_id}.rm')
 
+        base_img: pe.Surface = None
+
+        if document.content.file_type == 'pdf':
+            page = document.content.c_pages.get_page_from_uuid(page_id)
+            if page and page.redirect:
+                pdf_file = document.files_available.get(file_uuid := f'{document.uuid}.pdf')
+
+                document.load_files_from_cache()
+
+                if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and fitz:
+                    pdf = fitz.open(
+                        stream=stream,
+                        filetype='pdf'
+                    )
+
+                    pdf_page = pdf[page.redirect.value]
+
+                    scale_x = Defaults.PDF_PREVIEW_SIZE[0] / pdf_page.rect.width
+                    scale_y = Defaults.PDF_PREVIEW_SIZE[0] / pdf_page.rect.height
+                    matrix = fitz.Matrix(scale_x, scale_y)
+
+                    # noinspection PyUnresolvedReferences
+                    pix = pdf_page.get_pixmap(matrix=matrix)
+                    mode = "RGBA" if pix.alpha else "RGB"
+                    # noinspection PyTypeChecker
+                    base_img = pe.Surface(
+                        surface=pe.pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode))
+
+        document.unload_files()
+
+        file_hash = None
         if not file:
             if pe.settings.config.download_last_opened_page_to_make_preview:
                 for file in document.files:
                     if file.uuid == file_uuid:
                         file_hash = file.hash
                         break
-                else:
-                    raise Exception('Could not get the file to construct preview')
-            else:
-                raise Exception('The file is not available to construct preview')
         else:
             file_hash = file.hash
-        
-        rm_bytes = get_file_contents(document.api, file_hash, binary=True)
-        if not rm_bytes:
-            raise Exception('Page content unavailable to construct preview')
-        image = Notebook_rM_Lines_Renderer.generate_expanded_notebook_from_rm(document.metadata, rm_bytes, use_lock=cls.PYGAME_THREAD_LOCK).get_frame_from_initial(0, 0)
+        if file_hash:
+            rm_bytes = get_file_contents(document.api, file_hash, binary=True)
+            if not rm_bytes:
+                raise Exception('Page content unavailable to construct preview')
+            image = Notebook_rM_Lines_Renderer.generate_expanded_notebook_from_rm(document.metadata, rm_bytes,
+                                                                                  use_lock=cls.PYGAME_THREAD_LOCK).get_frame_from_initial(
+                0, 0)
+        else:
+            image = None
+
+        if base_img:
+            if image:
+                base_img.stamp(image.surface)
+                image.surface = base_img
+            else:
+                image = pe.Image(base_img)
 
         cls.CACHED_PREVIEW[document.uuid] = (page_id, image)
         if cls.CACHED_RESIZES.get(document.uuid):
             del cls.CACHED_RESIZES[document.uuid]
 
+    @classmethod
+    def clear_for(cls, document_uuid: str, callback=None):
+        cls.CACHED_PREVIEW.pop(document_uuid, None)
+        if callback:
+            callback()
