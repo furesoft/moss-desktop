@@ -5,11 +5,50 @@ import pygameextra as pe
 from gui.aspect_ratio import Ratios
 from gui.defaults import Defaults
 from gui.rendering import render_button_using_text, render_full_text
+from gui.screens.docs_view import DocumentTreeViewer
 from rm_api import Document
 
 if TYPE_CHECKING:
     from gui import GUI
     from rm_api import API
+
+
+class ImportScreenDocView(DocumentTreeViewer):
+    BACKGROUND = pe.colors.red
+    import_screen: 'ImportScreen'
+
+    def __init__(self, gui: 'GUI', import_screen: 'ImportScreen'):
+        self.gui = gui
+        self.import_screen = import_screen
+        pos, size = self.area_within_import_screen
+        super().__init__(gui, (*pos, *size))
+
+    def update_size(self):
+        pos, size = self.area_within_import_screen
+        self.position = pos
+        self.resize(size)
+
+    @property
+    def area_within_import_screen(self):
+        return (pos := (
+            0,
+            self.import_screen.title.rect.bottom + self.gui.ratios.main_menu_top_padding,
+        )), (
+            self.gui.width,
+            self.gui.height - pos[1] - self.gui.ratios.import_screen_button_margin
+        )
+
+    @property
+    def documents(self):
+        return {document.uuid: document for document in self.import_screen.documents_to_upload}
+
+    @property
+    def document_collections(self):
+        return {}
+
+    @property
+    def mode(self):
+        return self.gui.config.main_menu_view_mode
 
 
 class ImportScreen(pe.ChildContext):
@@ -59,15 +98,21 @@ class ImportScreen(pe.ChildContext):
             text.position = text.rect.center
             right = text.rect.left - self.ratios.import_screen_button_margin
 
+        self.doc_view = ImportScreenDocView(self.parent_context, self)
+
     def add_item(self, document: 'Document'):
         assert isinstance(document, Document)
         self.documents_to_upload.append(document)
+        document.provision = True  # Ensure that the document is in provisioning mode
+        self.doc_view.handle_texts()
 
     def predefine_item(self):
         self.expected_documents += 1
 
     def loop(self):
         self.title.display()
+
+        self.doc_view()
 
         not_ready = len(self.documents_to_upload) < self.expected_documents
 

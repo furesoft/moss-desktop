@@ -84,6 +84,9 @@ def render_full_document_title(gui: 'GUI', texts, document_uuid: str):
 def open_document(gui: 'GUI', document_uuid: str):
     if document_uuid in DocumentViewer.PROBLEMATIC_DOCUMENTS:
         return
+    document = gui.api.documents.get(document_uuid)
+    if not document or document.provision:
+        return
     try:
         gui.screens.put(DocumentViewer(gui, document_uuid))
     except CannotRenderDocument:
@@ -123,7 +126,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         hover_draw_data=(gui, texts, document.uuid),
         action=action,
         data=data,
-        disabled=disabled
+        disabled=document.provision or disabled
     )
 
     # Render the notebook icon
@@ -172,7 +175,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         name=document.uuid,
         action=action,
         data=data,
-        disabled=disabled
+        disabled=document.provision or disabled
     )
     if gui.config.debug and (popup := DocumentDebugPopup.EXISTING.get(id(document))) is not None:
         open_document_debug_menu(gui, document, rect.topleft)
@@ -204,7 +207,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
 
         debug_text.display()
 
-    if document.provision:
+    if document.provision and document_sync_operation:
         progress_rect = rect.copy()
         progress_rect.width -= gui.ratios.document_sync_progress_margin * 2
         progress_rect.height = gui.ratios.document_sync_progress_height
