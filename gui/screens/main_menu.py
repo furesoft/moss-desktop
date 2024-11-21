@@ -5,16 +5,15 @@ from typing import TYPE_CHECKING, Dict, List, Union
 
 import pygameextra as pe
 
-from gui.cloud_action_helper import import_pdf_to_cloud
+from gui.cloud_action_helper import import_files_to_cloud
 from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt
+from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 
 from gui.defaults import Defaults
-from gui.helpers import shorten_path, shorten_folder, shorten_document, shorten_folder_by_size
-from gui.rendering import render_document, render_collection, render_header, \
-    draw_bottom_loading_bar, get_bottom_bar_rect
+from gui.helpers import shorten_path
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -132,9 +131,7 @@ class TopBar(pe.ChildContext):
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
     def import_action(self):
-        import_prompt(lambda pdf_path: import_pdf_to_cloud(
-            self, pdf_path
-        ))
+        import_prompt(lambda file_paths: import_files_to_cloud(self, file_paths))
 
 
 class MainMenuDocView(DocumentTreeViewer):

@@ -42,9 +42,10 @@ def open_file(title: str, types_text: str, *filetypes):
                 root = make_tk()
                 filetypes_with_default = [(types_text, filetypes)]
                 config = get_config()
-                file_name = filedialog.askopenfilename(
+                file_names = filedialog.askopenfilenames(
                     parent=root,
                     title=title,
+                    
                     filetypes=filetypes_with_default,
                     initialdir=config.last_prompt_directory if config.last_prompt_directory and os.path.isdir(
                         config.last_prompt_directory) else None
@@ -52,14 +53,14 @@ def open_file(title: str, types_text: str, *filetypes):
                 root.destroy()
                 tk_lock = False
 
-                if not file_name:
+                if not file_names:
                     return
 
-                if os.path.isdir(directory := os.path.dirname(file_name)):
+                if os.path.isdir(directory := os.path.dirname(file_names[0])):
                     config.last_prompt_directory = directory
                     pe.settings.game_context.dirty_config = True
 
-                return func(file_name, *args, **kwargs) if file_name else None
+                return func(file_names, *args, **kwargs)
 
             threading.Thread(target=prompt_file).start()
 
@@ -100,3 +101,4 @@ def import_prompt(file_path, callback):
 def export_prompt(file_path, document: 'Document', callback):
     # TODO: formats need work
     callback(file_path)
+    

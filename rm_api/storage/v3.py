@@ -19,7 +19,7 @@ import rm_api.models as models
 from typing import TYPE_CHECKING, Union, Tuple, List
 
 from rm_api.notifications.models import DocumentSyncProgress, FileSyncProgress
-from rm_api.storage.common import ProgressFileAdapter
+from rm_api.storage.common import FileHandle, ProgressFileAdapter
 from rm_api.storage.exceptions import NewSyncRequired
 
 FILES_URL = "{0}sync/v3/files/{1}"
@@ -148,7 +148,11 @@ async def fetch_with_retries(session: aiohttp.ClientSession, url: str, method: s
 
 
 async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
-    checksum_bs4 = base64.b64encode(crc32c(data).to_bytes(4, 'big')).decode('utf-8')
+    if isinstance(data, FileHandle):
+        crc_result = data.crc32c()
+    else:
+        crc_result = crc32c(data)
+    checksum_bs4 = base64.b64encode(crc_result.to_bytes(4, 'big')).decode('utf-8')
     content_length = len(data)
 
     upload_progress = FileSyncProgress()

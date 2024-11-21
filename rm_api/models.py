@@ -15,6 +15,7 @@ from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple, Dic
 from colorama import Fore
 
 from rm_api.helpers import get_pdf_page_count
+from rm_api.storage.common import FileHandle
 from rm_api.storage.v3 import get_file_contents
 from rm_api.templates import BLANK_TEMPLATE
 from rm_lines.blocks import write_blocks, blank_document
@@ -31,7 +32,9 @@ def make_uuid():
     return str(uuid.uuid4())
 
 
-def make_hash(data: Union[str, bytes]):
+def make_hash(data: Union[str, bytes, FileHandle]):
+    if isinstance(data, FileHandle):
+        return data.hash()
     if isinstance(data, str):
         return sha256(data.encode()).hexdigest()
     return sha256(data).hexdigest()

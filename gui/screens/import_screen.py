@@ -63,6 +63,7 @@ class ImportScreen(pe.ChildContext):
         self.documents_to_upload.append(document)
 
     def loop(self):
+        print(len(self.documents_to_upload))
         self.title.display()
 
         render_button_using_text(self.parent_context, self.texts['cancel'], outline=self.ratios.outline,
