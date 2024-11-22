@@ -104,7 +104,7 @@ class PreviewHandler:
                 page = document.content.c_pages.get_page_from_uuid(page_id)
 
             if page and page.redirect:
-                pdf_file = document.files_available.get(file_uuid := f'{document.uuid}.pdf')
+                pdf_file = document.files_available.get(f'{document.uuid}.pdf')
 
                 document.load_files_from_cache()
 
