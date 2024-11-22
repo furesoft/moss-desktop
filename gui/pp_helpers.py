@@ -18,6 +18,7 @@ from rm_api.storage.v3 import get_file_contents
 from rm_lines import rm_bytes_to_svg
 
 if TYPE_CHECKING:
+    from rm_api.models import Document
     from gui.aspect_ratio import Ratios
     from gui import GUI
 
@@ -71,11 +72,6 @@ class DocumentDebugPopup(pe.ChildContext):
     EXISTING = {}
 
     ratios: 'Ratios'
-    TEXTS = [
-        "Extract files",
-        "Render pages",
-        "Close"
-    ]
 
     def __init__(self, parent: 'GUI', document: 'Document', position):
         self.document = document
@@ -85,18 +81,19 @@ class DocumentDebugPopup(pe.ChildContext):
                                   parent.ratios.main_menu_document_height)
         self.popup_rect.clamp_ip(pe.Rect(0, 0, *parent.size))
         self.button_actions = {
-            'extract': self.extract_files,
-            'render': self.render_pages,
-            'close': self.close
+            'Extract files': self.extract_files,
+            'Render pages': self.render_pages,
+            'Render important': lambda: self.render_pages(True),
+            'Close': self.close
         }
-        self.texts = [
-            pe.Text(
+        self.texts = {
+            text: pe.Text(
                 text,
                 Defaults.DEBUG_FONT, parent.ratios.debug_text_size,
                 colors=Defaults.TEXT_COLOR_H
             )
-            for text in self.TEXTS
-        ]
+            for text in self.button_actions.keys()
+        }
         super().__init__(parent)
 
     def pre_loop(self):
@@ -106,15 +103,12 @@ class DocumentDebugPopup(pe.ChildContext):
         x = self.popup_rect.left
         y = self.popup_rect.top
         h = self.popup_rect.height // len(self.button_actions)
-        for (item, action), text in zip(
-                self.button_actions.items(),
-                self.texts
-        ):
+        for item, action in self.button_actions.items():
             pe.button.rect(
                 (x, y, self.popup_rect.width, h),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=action,
-                text=text
+                text=self.texts[item]
             )
             y += h
 
@@ -144,11 +138,18 @@ class DocumentDebugPopup(pe.ChildContext):
         return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent),
                             self.document.uuid)
 
-    def clean_extract_location(self):
-        if os.path.isdir(self.extract_location):
-            shutil.rmtree(self.extract_location, ignore_errors=True)
-        os.makedirs(self.extract_location, exist_ok=True)
-        with open(os.path.join(self.extract_location, f'$ {self.clean_filename(self.document.metadata.visible_name)}'), 'w') as f:
+    @property
+    @lru_cache
+    def important_extract_location(self):
+        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', 'important')
+
+    def clean_extract_location(self, location=None):
+        location = location or self.extract_location
+        if os.path.isdir(location):
+            shutil.rmtree(location, ignore_errors=True)
+        os.makedirs(location, exist_ok=True)
+        with open(os.path.join(location, f'$ {self.clean_filename(self.document.metadata.visible_name)}'),
+                  'w') as f:
             f.write('\n'.join((file.uuid for file in self.document.files)))
 
     def clean_file_uuid(self, file):
@@ -170,14 +171,23 @@ class DocumentDebugPopup(pe.ChildContext):
             with open(file_path, 'wb') as f:
                 f.write(data)
 
-    def render_pages(self):
-        self.clean_extract_location()
+    def render_pages(self, important: bool = False):
+        if important:
+            location = self.important_extract_location
+        else:
+            location = self.extract_location
+        self.clean_extract_location(location)
+        i = 0
+        files = [file for file in self.document.files if file.uuid.endswith('.rm')]
+        try:
+            files.sort(key=lambda file: self.document.content.c_pages.get_index_from_uuid(file.uuid.split('/')[-1].split('.')[0]))
+        except Exception as e:
+            print_exc()
+            pass
 
-        for file in self.document.files:
-            if not file.uuid.endswith('.rm'):
-                continue
+        for file in files:
             data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
-            file_path = os.path.join(self.extract_location, self.clean_file_uuid(file))+'.svg'
+            file_path = os.path.join(location, f'{i:>03} {self.clean_file_uuid(file)}.svg')
 
             # Render and save
             try:
@@ -186,7 +196,7 @@ class DocumentDebugPopup(pe.ChildContext):
                     f.write(svg)
             except Exception as e:
                 print_exc()
-                pass
+            i += 1
 
 
 class DraggablePuller(pe.ChildContext):

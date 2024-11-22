@@ -5,6 +5,7 @@ on:
       - action-testing
     paths:
       - '**/*.py'
+      - '.github/workflows/build.yaml'
 
 env:
   APP_NAME: "Moss Desktop"
@@ -14,7 +15,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ windows-latest ]#, ubuntu-latest ] #, macos-latest ]
+#        os: [ windows-latest, ubuntu-latest, macos-latest ]
+        os: [ windows-latest, ubuntu-latest ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,17 +26,18 @@ jobs:
         with:
           python-version: '3.9'
           cache: 'pip'
-          cache-dependency-path: requirements-${{ runner.os }}.txt
+          cache-dependency-path: requirements*.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
           pip install -r requirements-${{ runner.os }}.txt
 
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: main
+          nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
           script-name: moss.py
           standalone: true
           onefile: true

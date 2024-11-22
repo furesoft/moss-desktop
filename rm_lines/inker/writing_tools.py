@@ -7,8 +7,6 @@ https://github.com/chemag/maxio .
 import logging
 import math
 
-_logger = logging.getLogger(__name__)
-
 # color_id to RGB conversion
 # 1. we use "color_id" for a unique, proprietary ID for colors,
 #   (see scene_stream.py):
@@ -32,7 +30,7 @@ remarkable_palette = {
     # GRAY_OVERLAP = 8
     8: [125, 125, 125],
 }
-MAGIC_PENCIL_SIZE = 44.6
+MAGIC_PENCIL_SIZE = 44.6 * 2.3
 
 
 class Pen:
@@ -144,7 +142,7 @@ class Ballpoint(Pen):
         segment_width = (0.5 + pressure / 100) + (1 * width / 4) - 0.5 * ((speed / 4) / 50)
         segment_width *= 2
         intensity = self.get_intensity(speed, pressure)
-        return segment_width * (1 if self.alternate == 0 else intensity)
+        return segment_width * (1 if self.alternate == 0 else intensity) * 2.3
 
     def get_intensity(self, speed, pressure):
         return self.cutoff((0.1 * - ((speed / 4) / 35)) + (1.2 * pressure / 255) + 0.5)
@@ -176,7 +174,7 @@ class Marker(Pen):
         self.name = "Marker"
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
-        segment_width = 1.4 * ((width / 4) - 0.4 * self.direction_to_tilt(direction)) + (0.1 * last_width)
+        segment_width = 3.36 * ((width / 4) - 0.4 * self.direction_to_tilt(direction)) + (0.1 * last_width)
         return segment_width
 
 
@@ -228,7 +226,7 @@ class Brush(Pen):
         self.name = "Brush"
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
-        segment_width = 0.7 * (
+        segment_width = 1.68 * (
                     ((1 + (1.4 * pressure / 255)) * (width / 4)) - (0.5 * self.direction_to_tilt(direction)) - (
                         (speed / 4) / 50))  # + (0.2 * last_width)
         return segment_width
@@ -252,7 +250,7 @@ class Highlighter(Pen):
         self.stroke_linecap = "square"
         self.base_opacity = 0.25
         self.stroke_opacity = 0.15
-        self.base_width = self.base_width * 4.5
+        self.base_width = self.base_width * 10
         self.name = "Highlighter"
 
 
@@ -279,6 +277,6 @@ class Caligraphy(Pen):
         self.name = "Calligraphy"
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
-        segment_width = 0.9 * (((1 + pressure / 255) * (width / 4)) - 0.3 * self.direction_to_tilt(direction)) + (
+        segment_width = 2.16 * (((1 + pressure / 255) * (width / 4)) - 0.3 * self.direction_to_tilt(direction)) + (
                     0.1 * last_width)
         return segment_width

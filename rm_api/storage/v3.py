@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 DEFAULT_ENCODING = 'utf-8'
 
+
 def make_storage_request(api: 'API', method, request, data: dict = None) -> Union[str, None, dict]:
     response = api.session.request(
         method,
@@ -33,8 +34,10 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
     except JSONDecodeError:
         return response.text
 
+
 @lru_cache
-def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True) -> Union[str, None, dict]:
+def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True) -> \
+Union[str, None, dict]:
     if api.sync_file_path:
         location = os.path.join(api.sync_file_path, file)
     else:
@@ -86,6 +89,7 @@ def get_documents_using_root(api: 'API', progress, root):
     _, files = get_file(api, root)
     deleted_document_collections_list = set(api.document_collections.keys())
     deleted_documents_list = set(api.documents.keys())
+    document_collections_with_items = set()
 
     total = len(files)
 
@@ -96,15 +100,26 @@ def get_documents_using_root(api: 'API', progress, root):
             if item.uuid == f'{file.uuid}.content':
                 content = get_file_contents(api, item.hash)
             if item.uuid == f'{file.uuid}.metadata':
-                if api.document_collections.get(file.uuid) is not None:
+                if (old_document_collection := api.document_collections.get(file.uuid)) is not None:
                     if api.document_collections[file.uuid].metadata.hash == item.hash:
                         if file.uuid in deleted_document_collections_list:
                             deleted_document_collections_list.remove(file.uuid)
+                        if old_document_collection.uuid not in document_collections_with_items:
+                            old_document_collection.has_items = False
+                        if (parent_document_collection := api.document_collections.get(
+                                old_document_collection.parent)) is not None:
+                            parent_document_collection.has_items = True
+                        else:
+                            document_collections_with_items.add(old_document_collection.parent)
                         continue
-                elif api.documents.get(file.uuid) is not None:
+                elif (old_document := api.documents.get(file.uuid)) is not None:
                     if api.documents[file.uuid].metadata.hash == item.hash:
                         if file.uuid in deleted_documents_list:
                             deleted_documents_list.remove(file.uuid)
+                        if (parent_document_collection := api.document_collections.get(
+                                old_document.parent)) is not None:
+                            parent_document_collection.has_items = True
+                        document_collections_with_items.add(old_document.parent)
                         continue
                 metadata = models.Metadata(get_file_contents(api, item.hash), item.hash)
                 if metadata.type == 'CollectionType':
@@ -112,10 +127,24 @@ def get_documents_using_root(api: 'API', progress, root):
                         [models.Tag(tag) for tag in content['tags']],
                         metadata, file.uuid
                     )
+
+                    if file.uuid in document_collections_with_items:
+                        api.document_collections[file.uuid].has_items = True
+
+                    if (parent_document_collection := api.document_collections.get(
+                            api.document_collections[file.uuid].parent)) is not None:
+                        parent_document_collection.has_items = True
+                    document_collections_with_items.add(api.document_collections[file.uuid].parent)
+
                     if file.uuid in deleted_document_collections_list:
                         deleted_document_collections_list.remove(file.uuid)
                 elif metadata.type == 'DocumentType':
-                    api.documents[file.uuid] = models.Document(api, models.Content(content, item.hash, api.debug), metadata, file_content, file.uuid)
+                    api.documents[file.uuid] = models.Document(api, models.Content(content, item.hash, api.debug),
+                                                               metadata, file_content, file.uuid)
+                    if (parent_document_collection := api.document_collections.get(
+                            api.documents[file.uuid].parent)) is not None:
+                        parent_document_collection.has_items = True
+                    document_collections_with_items.add(api.documents[file.uuid].parent)
                     if file.uuid in deleted_documents_list:
                         deleted_documents_list.remove(file.uuid)
         progress(i + 1, total)

@@ -7,6 +7,7 @@ from colorama import Fore
 
 from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
 from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+from ...events import ResizeEvent
 
 try:
     import CEF4pygame
@@ -223,6 +224,7 @@ class DocumentViewer(pe.ChildContext):
     screens: 'Queue'
     icons: Dict[str, pe.Image]
     PROBLEMATIC_DOCUMENTS = set()
+    EVENT_HOOK = 'document_viewer_resize_check'
 
     def __init__(self, parent: 'GUI', document_uuid: str):
         top_rect = pe.Rect(
@@ -243,6 +245,7 @@ class DocumentViewer(pe.ChildContext):
             self.PROBLEMATIC_DOCUMENTS.add(document_uuid)
             raise CannotRenderDocument(self.document)
         super().__init__(parent)
+        self.api.add_hook(self.EVENT_HOOK, self.resize_check_hook)
 
     def loop(self):
         self.document_renderer()
@@ -251,8 +254,14 @@ class DocumentViewer(pe.ChildContext):
     def handle_event(self, event):
         self.document_renderer.handle_event(event)
 
+    def resize_check_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.top_puller.rect.width = event.new_size[0]
+            self.top_puller.draggable.area = (event.new_size[0], self.top_puller.draggable.area[1])
+
     def close(self):
         self.document_renderer.close()
+        self.api.remove_hook(self.EVENT_HOOK)
         del self.screens.queue[-1]
 
     def draw_close_indicator(self):

@@ -1,11 +1,14 @@
+import os.path
 import threading
 import time
+import webbrowser
 from queue import Queue
 
 import pygameextra as pe
 from pyperclip import paste as pyperclip_paste
 from typing import TYPE_CHECKING
 
+from gui.events import ResizeEvent
 from rm_api.auth import FailedToGetToken
 from gui.defaults import Defaults
 from gui.screens.loader import Loader, APP_NAME
@@ -19,6 +22,7 @@ class CodeScreen(pe.ChildContext):
     CODE_LENGTH = 8
     BACKSPACE_DELETE_DELAY = 0.3  # Initial backspace delay
     BACKSPACE_DELETE_SPEED = 0.05  # After initial backspace delay
+    EVENT_HOOK_NAME = 'code_screen_resize_check'
 
     parent_context: 'GUI'
     screens: Queue[pe.ChildContext]
@@ -38,10 +42,7 @@ class CodeScreen(pe.ChildContext):
         self.logo = pe.Text(
             APP_NAME,
             Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
-            (
-                self.width // 2,
-                self.height // 2 - (self.underscore.rect.height + self.ratios.code_screen_header_padding // 2)
-            ),
+            self.logo_position,
             Defaults.TEXT_COLOR_T
         )
         self.code_info = pe.Text(
@@ -49,10 +50,14 @@ class CodeScreen(pe.ChildContext):
             Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
             colors=Defaults.TEXT_COLOR_T
         )
-        self.code_info.rect.midtop = self.logo.rect.midbottom
-        self.code_info.rect.y += self.ratios.code_screen_header_padding // 2
-        self.underscore.rect.top = self.logo.rect.bottom + self.ratios.code_screen_header_padding
-        self.underscore_red.rect.top = self.underscore.rect.top
+        self.website_info = pe.Text(
+            self.config.uri.replace('https://', '').replace('http://', ''),
+            Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
+            colors=Defaults.TEXT_COLOR_LINK if self.connecting_to_real_remarkable() else Defaults.TEXT_COLOR_T
+        )
+        self.share_icon = pe.Image(os.path.join(Defaults.ICON_DIR, 'share.svg'))
+        self.update_code_text_positions()
+        self.api.add_hook(self.EVENT_HOOK_NAME, self.resize_check_hook)
         self.code = []
         self.code_text = []
         self.code_failed = False
@@ -61,6 +66,26 @@ class CodeScreen(pe.ChildContext):
         self.hold_backspace_timer = None
         self.ctrl_hold = False
 
+    @property
+    def logo_position(self):
+        return (
+            self.width // 2,
+            self.height // 2 - (self.underscore.rect.height + self.ratios.code_screen_header_padding // 2)
+        )
+
+    def update_code_text_positions(self):
+        self.code_info.rect.midtop = self.logo.rect.midbottom
+        self.code_info.rect.top += self.ratios.code_screen_header_padding // 2
+        self.website_info.rect.centerx = self.code_info.rect.centerx
+        self.underscore.rect.top = self.logo.rect.bottom + self.ratios.code_screen_header_padding
+        self.underscore_red.rect.top = self.underscore.rect.top
+        self.website_info.rect.bottom = self.underscore.rect.bottom + self.ratios.code_screen_header_padding
+
+    def resize_check_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.logo.rect.center = self.logo_position
+            self.update_code_text_positions()
+
     def add_character(self, char: str):
         if len(self.code) == self.CODE_LENGTH:
             return
@@ -68,7 +93,7 @@ class CodeScreen(pe.ChildContext):
         self.code_text.append(pe.Text(
             char,
             Defaults.CODE_FONT, self.ratios.loader_logo_text_size,
-            colors=Defaults.TEXT_COLOR_T
+            colors=Defaults.TEXT_COLOR_CODE
         ))
         if len(self.code) == self.CODE_LENGTH:
             self.check_code()
@@ -98,7 +123,6 @@ class CodeScreen(pe.ChildContext):
             elif event.key == pe.pygame.K_LCTRL or event.key == pe.pygame.K_RCTRL:
                 self.ctrl_hold = False
 
-
     def check_code(self):
         self.checking_code = True
         threading.Thread(target=self.check_code_thread, daemon=True).start()
@@ -107,6 +131,7 @@ class CodeScreen(pe.ChildContext):
         try:
             self.api.get_token("".join(self.code))
             self.screens.put(Loader(self.parent_context))
+            self.api.remove_hook(self.EVENT_HOOK_NAME)
             del self.screens.queue[0]
         except FailedToGetToken:
             self.code_failed = True
@@ -123,9 +148,32 @@ class CodeScreen(pe.ChildContext):
             del self.code[-1]
             del self.code_text[-1]
 
+    def connecting_to_real_remarkable(self):
+        return 'remarkable.com' in self.config.uri
+
     def loop(self):
         self.logo.display()
         self.code_info.display()
+        self.website_info.display()
+        if self.connecting_to_real_remarkable():
+            self.share_icon.display((
+                self.website_info.rect.right + self.ratios.code_screen_spacing,
+                self.website_info.rect.top + self.share_icon.height // 5
+            ))
+            pe.button.rect(
+                self.ratios.pad_button_rect(self.website_info.rect),
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=webbrowser.open,
+                data=("https://my.remarkable.com/#desktop", 0, True)
+            )
+        else:
+            pe.button.rect(
+                self.ratios.pad_button_rect(self.website_info.rect),
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=webbrowser.open,
+                data=(self.config.uri, 0, True)
+            )
+
         x = self.width // 2 - self.underscore.rect.width * (self.CODE_LENGTH / 2)
         x -= self.ratios.code_screen_spacing * (self.CODE_LENGTH - 1) / 2
 
