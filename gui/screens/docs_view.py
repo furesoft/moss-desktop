@@ -5,7 +5,7 @@ import pygameextra as pe
 from typing import TYPE_CHECKING, Literal, Dict
 
 from gui.defaults import Defaults
-from gui.helpers import shorten_folder_by_size, shorten_folder, shorten_document
+from gui.helpers import dynamic_text
 from gui.literals import MAIN_MENU_MODES
 from gui.rendering import render_document, render_collection
 from gui.screens.scrollable_view import ScrollableView
@@ -29,31 +29,25 @@ class DocumentTreeViewer(ScrollableView, ABC):
         documents = dict(self.documents)
 
         # Preparing the document collection texts
+        font_details = (Defaults.FOLDER_FONT, self.gui.ratios.main_menu_label_size)
         for uuid, document_collection in document_collections.items():
             if self.texts.get(uuid) is None or self.texts[
                 uuid + '_full'
             ].text != document_collection.metadata.visible_name:
-                if self.mode == 'list':
-                    shortened_text = shorten_folder_by_size(document_collection.metadata.visible_name, self.width)
-                else:
-                    shortened_text = shorten_folder(document_collection.metadata.visible_name)
-                self.texts[uuid] = pe.Text(shortened_text,
-                                           Defaults.FOLDER_FONT,
-                                           self.gui.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
+                shortened_text = dynamic_text(document_collection.metadata.visible_name, *font_details, self.document_width if self.mode == 'grid' else self.width)
+                self.texts[uuid] = pe.Text(shortened_text, *font_details, (0, 0), Defaults.TEXT_COLOR)
                 self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
-                                                     Defaults.FOLDER_FONT,
-                                                     self.gui.ratios.main_menu_label_size, (0, 0), Defaults.TEXT_COLOR)
+                                                     *font_details, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
+        font_details = (Defaults.DOCUMENT_TITLE_FONT, self.gui.ratios.main_menu_document_title_size)
         for uuid, document in documents.items():
             if self.texts.get(uuid) is None or self.texts[uuid + '_full'].text != document.metadata.visible_name:
-                self.texts[uuid] = pe.Text(shorten_document(document.metadata.visible_name),
-                                           Defaults.DOCUMENT_TITLE_FONT,
-                                           self.gui.ratios.main_menu_document_title_size, (0, 0),
+                shortened_text = dynamic_text(document.metadata.visible_name, *font_details, self.document_width if self.mode == 'grid' else self.width)
+                self.texts[uuid] = pe.Text(shortened_text, *font_details
+                                           , (0, 0),
                                            Defaults.DOCUMENT_TITLE_COLOR)
-                self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name,
-                                                     Defaults.DOCUMENT_TITLE_FONT,
-                                                     self.gui.ratios.main_menu_document_title_size, (0, 0),
+                self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name, *font_details, (0, 0),
                                                      Defaults.DOCUMENT_TITLE_COLOR)
 
     @property
@@ -75,7 +69,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         area_of_widths = self.width / (
                 self.document_width + self.gui.ratios.main_menu_document_padding
         ) - self.gui.ratios.main_menu_document_padding / self.width
-        area_of_widths = int(area_of_widths)
+        area_of_widths = max(1, int(area_of_widths))
 
         width = area_of_widths * self.document_width
         width += self.gui.ratios.main_menu_document_padding * (area_of_widths - 1)
@@ -204,6 +198,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
             else:
                 self.scale -= 0.1
             self.scale = max(0.7, min(3., self.scale))
+            self.texts.clear()
             self.handle_texts()
 
     @property
