@@ -71,6 +71,7 @@ class PreviewHandler:
         if os.path.exists(location):
             image = pe.Image(location)
             cls.CACHED_PREVIEW[document_id] = (page_id, image)
+            return cls._get_preview(document)
 
 
         # Prevent multiple of the same task
