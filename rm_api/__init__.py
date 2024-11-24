@@ -295,7 +295,7 @@ class API:
             self.spread_event(document_sync_operation)
 
         futures = []
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             loop = asyncio.new_event_loop()  # Get the current event loop
             for file in files_with_changes:
                 if (document_uuid := file.uuid.split('/')[0].split('.')[0]) in document_operations:
