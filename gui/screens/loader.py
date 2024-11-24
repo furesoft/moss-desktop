@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 from traceback import print_exc
 
 import pygameextra as pe
@@ -34,6 +35,8 @@ class Loader(pe.ChildContext, Logo):
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
         'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
+        'cloud_synced': os.path.join(Defaults.ICON_DIR, 'cloud_synced.svg'),
+        'cloud_synced_inverted': os.path.join(Defaults.ICON_DIR, 'cloud_synced_inverted.svg'),
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
         'notebook_add': os.path.join(Defaults.ICON_DIR, 'notebook_add.svg'),
@@ -62,6 +65,7 @@ class Loader(pe.ChildContext, Logo):
         self.items_loaded = 0
         self.files_loaded = 0
         self.loading_feedback = 0  # Used by main menu to know if enough changes have been made since last checked
+        self.loading_complete_marker = 0  # A timestamp of last sync completion
         self.files_to_load: Union[int, None] = None
         self.last_progress = 0
         self.current_progress = 0
@@ -100,11 +104,13 @@ class Loader(pe.ChildContext, Logo):
             self.files_to_load = to_load
 
         self.loading_feedback = 0
+        self.loading_complete_marker = 0
         self.api.get_documents(progress)
         self.files_to_load = None
         if not self.current_progress:
             self.current_progress = 1
         self.api.spread_event(NewDocuments())
+        self.loading_complete_marker = time.time()
 
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)

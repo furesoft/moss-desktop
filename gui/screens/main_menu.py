@@ -1,3 +1,4 @@
+import time
 from functools import lru_cache
 from queue import Queue
 from threading import Lock
@@ -333,6 +334,8 @@ class MainMenu(pe.ChildContext):
         elif loader.loading_feedback:
             self.get_items()
             loader.loading_feedback = 0
+        elif time.time() - loader.loading_complete_marker < 1:  # For 1 second after loading is complete
+            draw_bottom_loading_bar(self.parent_context, 1, 1, finish=True)
 
     def _critical_event_hook(self, event):
         if isinstance(event, ResizeEvent):

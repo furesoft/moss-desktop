@@ -302,7 +302,7 @@ def draw_bottom_bar(gui: 'GUI'):
     )
 
 
-def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int):
+def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, finish: bool = False):
     draw_bottom_bar(gui)
     bottom_bar_rect = get_bottom_bar_rect(gui)
     loading_bar_rect = pe.Rect(0, 0, gui.ratios.bottom_loading_bar_width, gui.ratios.bottom_loading_bar_height)
@@ -318,8 +318,15 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int):
     pe.draw.rect(pe.colors.white, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
     # Make and show text of current / total
-    text = pe.Text(f"{current} / {total}", Defaults.MAIN_MENU_PROGRESS_FONT, gui.ratios.bottom_bar_size,
-                   colors=Defaults.TEXT_COLOR_H)
-    text.rect.midright = loading_bar_rect.midleft
-    text.rect.right -= gui.ratios.bottom_loading_bar_padding
-    text.display()
+    if not finish:
+        text = pe.Text(f"{current} / {total}", Defaults.MAIN_MENU_PROGRESS_FONT, gui.ratios.bottom_bar_size,
+                       colors=Defaults.TEXT_COLOR_H)
+        text.rect.midright = loading_bar_rect.midleft
+        text.rect.right -= gui.ratios.bottom_loading_bar_padding
+        text.display()
+    else:
+        icon: pe.Image = gui.icons['cloud_synced_inverted']
+        icon_rect = pe.Rect(0, 0, *icon.size)
+        icon_rect.midright = loading_bar_rect.midleft
+        icon_rect.right -= gui.ratios.bottom_loading_bar_padding
+        icon.display(icon_rect.topleft)
