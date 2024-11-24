@@ -229,6 +229,7 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
 
 
 def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProgress):
+    api.spread_event(sync_event)
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:

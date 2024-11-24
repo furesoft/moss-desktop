@@ -292,7 +292,6 @@ class API:
         for document in documents:
             document_sync_operation = DocumentSyncProgress(document.uuid, progress)
             document_operations[document.uuid] = document_sync_operation
-            self.spread_event(document_sync_operation)
 
         futures = []
         with ThreadPoolExecutor(max_workers=4) as executor:
