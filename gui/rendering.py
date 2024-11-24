@@ -214,6 +214,8 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         progress_rect.midbottom = rect.midbottom
         progress_rect.bottom -= gui.ratios.document_sync_progress_margin
 
+        outline_width = gui.ratios.pixel(3)
+        pe.draw.rect(Defaults.BACKGROUND, progress_rect.inflate(outline_width, outline_width), edge_rounding=gui.ratios.document_sync_progress_rounding)
         pe.draw.rect(Defaults.LINE_GRAY_LIGHT, progress_rect, edge_rounding=gui.ratios.document_sync_progress_rounding)
         # left = progress_rect.left
         if document_sync_operation and document_sync_operation.total > 0:
