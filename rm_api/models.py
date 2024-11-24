@@ -46,6 +46,7 @@ def try_to_load_int(rm_value: str):
     else:
         return int(rm_value)
 
+
 class File:
     def __init__(self, file_hash, file_uuid, content_count, file_size, rm_filename=None):
         self.hash = file_hash
@@ -697,5 +698,7 @@ class Document:
         pdf_file_info.content_count = len(pdf_data)
 
         document.content_data[pdf_uuid] = pdf_data
+
+        document.files_available = document.check_files_availability()
 
         return document

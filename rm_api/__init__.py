@@ -38,7 +38,7 @@ class API:
         self.retry_strategy = Retry(
             total=10,
             backoff_factor=0.5,
-            status_forcelist=(429,)
+            status_forcelist=(429, 503)
         )
         http_adapter = HTTPAdapter(max_retries=self.retry_strategy)
         self.session = requests.Session()

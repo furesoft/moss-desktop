@@ -114,6 +114,8 @@ class ProgressFileAdapter(IOBase):
         self.document_sync = document_sync
         self.file_sync = file_sync
         self.data = data
+        if isinstance(data, FileHandle):
+            data.reset()
 
     def read(self, size=-1):
         if size < 0:

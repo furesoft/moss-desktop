@@ -64,7 +64,7 @@ class PreviewHandler:
         if preview := cls.CACHED_PREVIEW.get(document_id):
             if preview[0] == page_id:
                 if os.path.isdir(Defaults.THUMB_FILE_PATH):
-                    if preview[1] and not os.path.exists(location):
+                    if not document.provision and preview[1] and not os.path.exists(location):
                         preview[1].surface.save_to_file(location)
                 return preview[1]
         # If the preview is not cached, load it
@@ -130,7 +130,8 @@ class PreviewHandler:
                     base_img = pe.Surface(
                         surface=pe.pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode))
 
-        document.unload_files()
+        if not document.provision:
+            document.unload_files()
 
         file_hash = None
         if not file:

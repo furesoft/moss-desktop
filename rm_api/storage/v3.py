@@ -165,6 +165,7 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
     sync_event.add_task()
 
     data_adapter = ProgressFileAdapter(sync_event, upload_progress, data)
+    google = False
 
     async with aiohttp.ClientSession() as session:
         # Try uploading through remarkable
@@ -189,6 +190,7 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
             return False
 
         if response.status == 302:
+            google = True
             # Reset progress, start uploading through google instead
             data_adapter.reset()
 
@@ -209,9 +211,15 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
             except:
                 api.log(format_exc())
                 return False
+    if response.status == 400:
+        if '<Code>ExpiredToken</Code>' in response.text():
+            sync_event.total -= content_length
+            sync_event.finish_task()
+            # Try again
+            return await put_file_async(api, file, data, sync_event)
 
     if response.status != 200:
-        api.log(f"Put file failed - {response.status}\n{await response.text()}")
+        api.log(f"Put file failed google: {google} -> {response.status}\n{await response.text()}")
         return False
     else:
         api.log(file.uuid, "uploaded")
