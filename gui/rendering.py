@@ -312,7 +312,8 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int):
     # Draw the loading bar background
     pe.draw.rect(Defaults.LINE_GRAY, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
-    loading_bar_rect.width = int(loading_bar_rect.width * current / total)
+    if total > 0:
+        loading_bar_rect.width = int(loading_bar_rect.width * current / total)
 
     pe.draw.rect(pe.colors.white, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
