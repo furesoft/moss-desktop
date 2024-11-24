@@ -212,10 +212,11 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
                 api.log(format_exc())
                 return False
     if response.status == 400:
-        if '<Code>ExpiredToken</Code>' in response.text():
+        if '<Code>ExpiredToken</Code>' in await response.text():
             sync_event.total -= content_length
             sync_event.finish_task()
             # Try again
+            api.log("Put file timed out, this is okay, trying again...")
             return await put_file_async(api, file, data, sync_event)
 
     if response.status != 200:
