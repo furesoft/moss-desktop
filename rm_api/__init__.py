@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 import threading
@@ -37,7 +36,7 @@ class API:
                  uri: str = None, discovery_uri: str = None, author_id: str = None, log_file='rm_api.log'):
         self.retry_strategy = Retry(
             total=10,
-            backoff_factor=0.5,
+            backoff_factor=2,
             status_forcelist=(429, 503)
         )
         http_adapter = HTTPAdapter(max_retries=self.retry_strategy)
@@ -308,7 +307,6 @@ class API:
                                               document_operation)
                 futures.append(future)
             executor.shutdown(wait=True)
-
 
         # Wait for operation to finish
         while not all(operation.finished for operation in document_operations.values()):

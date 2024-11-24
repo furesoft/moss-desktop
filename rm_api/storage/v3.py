@@ -7,6 +7,7 @@ from traceback import format_exc, print_exc
 
 import aiohttp
 import httpx
+from aiohttp import ClientTimeout
 from colorama import Fore, Style
 from crc32c import crc32c
 from functools import lru_cache
@@ -165,9 +166,10 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
     sync_event.add_task()
 
     data_adapter = ProgressFileAdapter(sync_event, upload_progress, data)
+    timeout = ClientTimeout(total=3600)  # One hour timeout limit
     google = False
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         # Try uploading through remarkable
         try:
             response = await fetch_with_retries(
@@ -213,7 +215,7 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
                 return False
     if response.status == 400:
         if '<Code>ExpiredToken</Code>' in await response.text():
-            sync_event.total -= content_length
+            data_adapter.reset()
             sync_event.finish_task()
             # Try again
             api.log("Put file timed out, this is okay, trying again...")
