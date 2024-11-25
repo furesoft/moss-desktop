@@ -111,7 +111,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         if len(self.documents) > 0:
             y -= self.gui.ratios.main_menu_document_title_height_margin * 2
 
-        self.bottom = y
+        self.bottom = y + self.gui.ratios.bottom_bar_height
 
         super().pre_loop()
 
