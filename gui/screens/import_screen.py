@@ -7,6 +7,7 @@ from typing import Dict, TYPE_CHECKING, List
 import pygameextra as pe
 from gui.aspect_ratio import Ratios
 from gui.defaults import Defaults
+from gui.events import ResizeEvent
 from gui.rendering import render_button_using_text, render_full_text
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.viewer import DocumentViewer
@@ -71,6 +72,8 @@ class ImportScreen(pe.ChildContext):
     documents_to_upload: List['Document']
     dummy_documents: List['Document']
 
+    EVENT_HOOK_NAME = 'import_screen_resize_check<{0}>'
+
     def __init__(self, parent: 'GUI'):
         self.documents_to_upload = []
         self.dummy_documents = []
@@ -100,6 +103,17 @@ class ImportScreen(pe.ChildContext):
             }.items()
         }
 
+        self.calculate_texts()
+
+        self.doc_view = ImportScreenDocView(self.parent_context, self)
+        self.api.add_hook(self.EVENT_HOOK_NAME.format(id(self)), self.resize_check_hook)
+
+    def resize_check_hook(self, event):
+        if isinstance(event, ResizeEvent):
+            self.calculate_texts()
+            self.doc_view.update_size()
+
+    def calculate_texts(self):
         right = self.width - self.ratios.import_screen_button_margin
         for text in self.texts.values():
             text.rect.height = max(text.rect.height, self.ratios.import_screen_button_size)
@@ -107,8 +121,6 @@ class ImportScreen(pe.ChildContext):
             text.rect.right = right
             text.position = text.rect.center
             right = text.rect.left - self.ratios.import_screen_button_margin
-
-        self.doc_view = ImportScreenDocView(self.parent_context, self)
 
     def add_item(self, document: 'Document'):
         assert isinstance(document, Document)
@@ -159,6 +171,7 @@ class ImportScreen(pe.ChildContext):
 
     def close(self):
         self.parent_context.import_screen = None
+        self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
         del self.screens.queue[-1]
 
     def full_import(self):
