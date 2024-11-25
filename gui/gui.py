@@ -315,6 +315,8 @@ class GUI(pe.GameContext):
             self.ctrl_hold = False
         if pe.event.resize_check():
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
+        if self.screens.queue[-1].handle_event != self.handle_event:
+            self.screens.queue[-1].handle_event(e)
         super().handle_event(e)
 
     def quit_check(self):
