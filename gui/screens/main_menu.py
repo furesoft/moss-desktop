@@ -75,7 +75,13 @@ class TopBar(pe.ChildContext):
                     rect,
                     Defaults.TRANSPARENT_COLOR,
                     Defaults.BUTTON_ACTIVE_COLOR,
-                    action=getattr(self, button['action']) if button['action'] else None,
+                    action_set={
+                        'l_click': {
+                            'action': getattr(self, button['action']) if button['action'] else None
+                        },
+                        'hover_draw': None,
+                        'hover': None
+                    },
                     disabled=disabled,
                     name=f'main_menu.top_bar.button_{i}'
                 )
