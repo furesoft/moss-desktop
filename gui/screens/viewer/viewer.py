@@ -270,6 +270,7 @@ class DocumentViewer(pe.ChildContext):
     def close(self):
         self.document_renderer.close()
         self.api.remove_hook(self.EVENT_HOOK.format(id(self)))
+        self.document.unload_files()
         del self.screens.queue[-1]
 
     def draw_close_indicator(self):

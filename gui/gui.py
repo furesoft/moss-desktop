@@ -1,6 +1,7 @@
 import atexit
 import json
 import os
+import sys
 import time
 from numbers import Number
 from os import makedirs
@@ -299,6 +300,8 @@ class GUI(pe.GameContext):
                     rect.x += button.display_reference.pos[0]
                     rect.y += button.display_reference.pos[1]
                 pe.draw.rect((*pe.colors.red, 50), rect, 2)
+        # A little memory leak check
+        # print(sum(sys.getsizeof(document.content_data) for document in self.api.documents.values()))
         super().end_loop()
 
     @property
