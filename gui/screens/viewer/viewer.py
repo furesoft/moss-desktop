@@ -231,7 +231,7 @@ class DocumentViewer(pe.ChildContext):
     screens: 'Queue'
     icons: Dict[str, pe.Image]
     PROBLEMATIC_DOCUMENTS = set()
-    EVENT_HOOK = 'document_viewer_resize_check<{0}>'
+    EVENT_HOOK_NAME = 'document_viewer_resize_check<{0}>'
 
     def __init__(self, parent: 'GUI', document_uuid: str):
         top_rect = pe.Rect(
@@ -253,7 +253,7 @@ class DocumentViewer(pe.ChildContext):
             self.PROBLEMATIC_DOCUMENTS.add(document_uuid)
             raise CannotRenderDocument(self.document)
         super().__init__(parent)
-        self.api.add_hook(self.EVENT_HOOK.format(id(self)), self.resize_check_hook)
+        self.api.add_hook(self.EVENT_HOOK_NAME.format(id(self)), self.resize_check_hook)
 
     def loop(self):
         self.document_renderer()
@@ -269,7 +269,7 @@ class DocumentViewer(pe.ChildContext):
 
     def close(self):
         self.document_renderer.close()
-        self.api.remove_hook(self.EVENT_HOOK.format(id(self)))
+        self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
         self.document.unload_files()
         del self.screens.queue[-1]
 
