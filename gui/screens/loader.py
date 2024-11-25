@@ -6,7 +6,7 @@ from traceback import print_exc
 import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
-from gui.helpers import Logo
+from gui.screens.mixins import LogoMixin
 from rm_api.notifications.models import SyncCompleted, NewDocuments
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
@@ -24,7 +24,7 @@ class ReusedIcon:
         self.scale = scale
 
 
-class Loader(pe.ChildContext, Logo):
+class Loader(pe.ChildContext, LogoMixin):
     TO_LOAD = {
         # Icons and Images
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),

@@ -82,14 +82,17 @@ class Ratios:
         self.import_screen_button_padding = int(20 * scale)
         self.import_screen_button_margin = int(20 * scale) + self.import_screen_button_padding
         self.import_screen_button_size = int(18 * scale)
-        self.import_screen_title_size = int(30 * scale)
-        self.import_screen_title_padding = int(25 * scale)
-        self.import_screen_margin = int(8 * scale)
 
         # Name Field Screen
         self.field_screen_title_size = int(30 * scale)
         self.field_screen_input_height = int(40 * scale)
         self.field_screen_input_size = int(20 * scale)
+        self.field_screen_input_padding = int(30 * scale)
+
+        # Titled Mixin
+        self.titled_mixin_title_size = int(30 * scale)
+        self.titled_mixin_title_padding = int(25 * scale)
+        self.titled_mixin_margin = int(8 * scale)
 
     def pixel(self, value):
         return max(1, int(value * self.scale))

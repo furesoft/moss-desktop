@@ -9,7 +9,7 @@ import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
 from gui.events import ResizeEvent
-from gui.helpers import Logo
+from gui.screens.mixins import LogoMixin
 
 if os.name == 'nt':
     import winshell
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from rm_api import API
 
 
-class Installer(pe.ChildContext, Logo):
+class Installer(pe.ChildContext, LogoMixin):
     LAYER = pe.AFTER_LOOP_LAYER
     icons: Dict[str, pe.Image]
     api: 'API'

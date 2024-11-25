@@ -138,7 +138,7 @@ class TopBar(pe.ChildContext):
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
     def create_notebook(self):
-        NameFieldScreen(self.parent_context, "New Notebook", "", print, None)
+        NameFieldScreen(self.parent_context, "New Notebook", "", print, None, empty_ok=True)
 
     def import_action(self):
         import_prompt(lambda file_paths: import_files_to_cloud(self.parent_context, file_paths))

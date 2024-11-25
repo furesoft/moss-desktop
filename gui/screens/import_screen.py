@@ -10,6 +10,7 @@ from gui.defaults import Defaults
 from gui.events import ResizeEvent
 from gui.rendering import render_button_using_text, render_full_text
 from gui.screens.docs_view import DocumentTreeViewer
+from gui.screens.mixins import ButtonReadyMixin, TitledMixin
 from gui.screens.viewer import DocumentViewer
 from rm_api import Document, make_uuid
 
@@ -37,7 +38,7 @@ class ImportScreenDocView(DocumentTreeViewer):
     def area_within_import_screen(self):
         return (pos := (
             0,
-            self.import_screen.title.rect.bottom + self.gui.ratios.main_menu_top_padding,
+            self.import_screen.title_bottom,
         )), (
             self.gui.width,
             self.gui.height - pos[1] - self.gui.ratios.import_screen_button_margin
@@ -59,7 +60,7 @@ class ImportScreenDocView(DocumentTreeViewer):
         return self.gui.config.main_menu_view_mode
 
 
-class ImportScreen(pe.ChildContext):
+class ImportScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
     LAYER = pe.AFTER_LOOP_LAYER
 
     # definitions from GUI
@@ -74,6 +75,14 @@ class ImportScreen(pe.ChildContext):
 
     EVENT_HOOK_NAME = 'import_screen_resize_check<{0}>'
 
+    BUTTON_TEXTS = {
+        **ButtonReadyMixin.BUTTON_TEXTS,
+        'full': "Full Sync",
+        'light': "Light Sync",
+        'info_text': "Syncs a dummy so that you can archive it,\nbefore syncing the full document"
+    }
+    TITLE = "Import Documents"
+
     def __init__(self, parent: 'GUI'):
         self.documents_to_upload = []
         self.dummy_documents = []
@@ -82,28 +91,8 @@ class ImportScreen(pe.ChildContext):
         self.uploading_light = False
         super().__init__(parent)
         parent.import_screen = self
-        self.title = pe.Text("Import", Defaults.MAIN_MENU_FONT, self.ratios.import_screen_title_size,
-                             colors=Defaults.TEXT_COLOR)
-
-        self.title.rect.topleft = (
-            self.ratios.import_screen_title_padding,
-            self.ratios.import_screen_title_padding
-        )
-
-        self.texts: Dict[str, pe.Text] = {
-            key: pe.Text(
-                text,
-                Defaults.BUTTON_FONT, self.ratios.import_screen_button_size,
-                colors=Defaults.TEXT_COLOR_T)
-            for key, text in {
-                'cancel': "Cancel",
-                'full': "Full Sync",
-                'light': "Light Sync",
-                'info_text': "Syncs a dummy so that you can archive it,\nbefore syncing the full document"
-            }.items()
-        }
-
-        self.calculate_texts()
+        self.handle_title()
+        self.handle_texts()
 
         self.doc_view = ImportScreenDocView(self.parent_context, self)
         self.api.add_hook(self.EVENT_HOOK_NAME.format(id(self)), self.resize_check_hook)
@@ -112,15 +101,6 @@ class ImportScreen(pe.ChildContext):
         if isinstance(event, ResizeEvent):
             self.calculate_texts()
             self.doc_view.update_size()
-
-    def calculate_texts(self):
-        right = self.width - self.ratios.import_screen_button_margin
-        for text in self.texts.values():
-            text.rect.height = max(text.rect.height, self.ratios.import_screen_button_size)
-            text.rect.centery = self.height - self.ratios.import_screen_button_margin
-            text.rect.right = right
-            text.position = text.rect.center
-            right = text.rect.left - self.ratios.import_screen_button_margin
 
     def add_item(self, document: 'Document'):
         assert isinstance(document, Document)
@@ -138,7 +118,6 @@ class ImportScreen(pe.ChildContext):
             self.dummy_documents[-1].provision = True
             self.dummy_documents[-1].metadata.last_modified += timedelta(weeks=10).total_seconds()
             DocumentViewer.PROBLEMATIC_DOCUMENTS.add(self.dummy_documents[-1].uuid)
-
 
     def loop(self):
         self.title.display()

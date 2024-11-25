@@ -1,24 +1,16 @@
-import os
-import threading
-from traceback import print_exc
-
 import pygameextra as pe
-from typing import TYPE_CHECKING, Union, Dict
+from typing import TYPE_CHECKING, Dict
 
-from gui.events import ResizeEvent, InternalSyncCompleted
-from gui.helpers import Logo
-from rm_api.notifications.models import SyncCompleted
+from gui.screens.mixins import LogoMixin
 from gui.defaults import Defaults
-from gui.screens.main_menu import MainMenu
 
-from gui.gui import APP_NAME
 
 if TYPE_CHECKING:
     from gui.gui import GUI
     from rm_api import API
 
 
-class MultiSync(pe.ChildContext, Logo):
+class MultiSync(pe.ChildContext, LogoMixin):
     LAYER = pe.AFTER_LOOP_LAYER
     icons: Dict[str, pe.Image]
     api: 'API'
