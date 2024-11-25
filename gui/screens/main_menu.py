@@ -11,6 +11,7 @@ from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
+from gui.screens.name_field_screen import NameFieldScreen
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 
 from gui.defaults import Defaults
@@ -29,8 +30,7 @@ class TopBar(pe.ChildContext):
         {
             "text": "Notebook",
             "icon": "notebook_add",
-            "action": None,
-            "disabled": True
+            "action": 'create_notebook',
         }, {
             "text": "Import",
             "icon": "import",
@@ -137,8 +137,11 @@ class TopBar(pe.ChildContext):
             if button.disabled:
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
+    def create_notebook(self):
+        NameFieldScreen(self.parent_context, "New Notebook", "", print, None)
+
     def import_action(self):
-        import_prompt(lambda file_paths: import_files_to_cloud(self, file_paths))
+        import_prompt(lambda file_paths: import_files_to_cloud(self.parent_context, file_paths))
 
 
 class MainMenuDocView(DocumentTreeViewer):
@@ -310,7 +313,7 @@ class MainMenu(pe.ChildContext):
 
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
-                     (self.width, self.ratios.main_menu_top_height), self.ratios.pixel(2))
+                     (self.width, self.ratios.main_menu_top_height), self.ratios.line)
 
         render_header(self.parent_context, self.texts, self.set_parent, self.path_queue)
 

@@ -12,6 +12,8 @@ class Ratios:
 
         self.scale = scale
 
+        self.line = int(2 * scale)
+
         # GENERAL
         self.bottom_bar_height = int(40 * scale)
         self.bottom_loading_bar_height = int(10 * scale)
@@ -83,6 +85,11 @@ class Ratios:
         self.import_screen_title_size = int(30 * scale)
         self.import_screen_title_padding = int(25 * scale)
         self.import_screen_margin = int(8 * scale)
+
+        # Name Field Screen
+        self.field_screen_title_size = int(30 * scale)
+        self.field_screen_input_height = int(40 * scale)
+        self.field_screen_input_size = int(20 * scale)
 
     def pixel(self, value):
         return max(1, int(value * self.scale))
