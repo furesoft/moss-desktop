@@ -190,3 +190,6 @@ class ImportScreen(pe.ChildContext):
                 light_documents.append(document.replace_pdf(self.data['light_pdf']))
 
         return light_documents
+
+    def handle_event(self, e):
+        self.doc_view.handle_event(e)
