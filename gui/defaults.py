@@ -87,7 +87,7 @@ class Defaults:
     BUTTON_DISABLED_COLOR = (0, 0, 0, 100)
     BUTTON_DISABLED_LIGHT_COLOR = (*BACKGROUND, 150)
 
-    PDF_PREVIEW_SIZE = (312, 416)
+    PREVIEW_SIZE = (312, 416)
 
     # Colors
     OUTLINE_COLOR = pe.colors.black

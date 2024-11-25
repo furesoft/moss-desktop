@@ -30,6 +30,7 @@ class PreviewHandler:
 
     @classmethod
     def get_preview(cls, document: Document, size: Tuple[int, int]) -> MAY_CONTAIN_A_IMAGE:
+        size = tuple(min(given, max) for given, max in zip(size, Defaults.PREVIEW_SIZE))
         try:
             image = cls._get_preview(document)
         except:
@@ -39,6 +40,8 @@ class PreviewHandler:
             return None
         resized_image = cls.CACHED_RESIZES.get(document.uuid)
         if not resized_image:
+            if image.size == size:
+                return image
             resized_image = image.copy()
             resized_image.resize(size)
             cls.CACHED_RESIZES[document.uuid] = resized_image
@@ -72,7 +75,6 @@ class PreviewHandler:
             image = pe.Image(location)
             cls.CACHED_PREVIEW[document_id] = (page_id, image)
             return cls._get_preview(document)
-
 
         # Prevent multiple of the same task
         if loading_task in cls.PREVIEW_LOAD_TASKS:
@@ -120,8 +122,8 @@ class PreviewHandler:
 
                     pdf_page = pdf[page.redirect.value]
 
-                    scale_x = Defaults.PDF_PREVIEW_SIZE[0] / pdf_page.rect.width
-                    scale_y = Defaults.PDF_PREVIEW_SIZE[1] / pdf_page.rect.height
+                    scale_x = Defaults.PREVIEW_SIZE[0] / pdf_page.rect.width
+                    scale_y = Defaults.PREVIEW_SIZE[1] / pdf_page.rect.height
                     matrix = fitz.Matrix(scale_x, scale_y)
 
                     # noinspection PyUnresolvedReferences
@@ -150,7 +152,7 @@ class PreviewHandler:
             image = Notebook_rM_Lines_Renderer.generate_expanded_notebook_from_rm(document.metadata, rm_bytes,
                                                                                   use_lock=cls.PYGAME_THREAD_LOCK).get_frame_from_initial(
                 0, 0)
-            image.resize(Defaults.PDF_PREVIEW_SIZE)
+            image.resize(Defaults.PREVIEW_SIZE)
         else:
             image = None
 
