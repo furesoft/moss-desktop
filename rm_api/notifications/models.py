@@ -34,6 +34,7 @@ class APIFatal(Notification):
     """
     ...
 
+
 class SyncRefresh(SyncCompleted):
     """
     Used when new files were synced by moss / moss doesn't pick up sync complete.
@@ -43,6 +44,7 @@ class SyncRefresh(SyncCompleted):
     # noinspection PyMissingConstructor
     def __init__(self):
         self.source_device_id = None
+
 
 class SyncProgressBase(LongLasting):
     finished: bool
@@ -77,15 +79,11 @@ class DocumentSyncProgress(SyncProgressBase):
             return False
         return self.total_tasks - self.finished_tasks <= 0
 
-    def add_task(self):
+    def add_task(self, count: int = 1):
         self._tasks_was_set_once = True
-        self.total_tasks += 1
-        if self.file_sync_operation:
-            self.file_sync_operation.total += 1
+        self.total_tasks += count
 
     def finish_task(self):
         self.finished_tasks += 1
         if self.file_sync_operation:
             self.file_sync_operation.done += 1
-
-

@@ -293,6 +293,7 @@ class API:
             document_operations[document.uuid] = document_sync_operation
 
         futures = []
+        progress.total += len(files_with_changes)
         with ThreadPoolExecutor(max_workers=4) as executor:
             loop = asyncio.new_event_loop()  # Get the current event loop
             for file in sorted(files_with_changes, key=lambda f: f.size):
@@ -301,6 +302,9 @@ class API:
                 else:
                     document_operations[file.uuid] = DocumentSyncProgress(file.uuid, progress)
                     document_operation = document_operations[file.uuid]
+
+                if file.uuid.endswith('.content') or file.uuid.endswith('.metadata'):
+                    file.save_to_cache(self, content_datas[file.uuid])
 
                 # This is where you use run_in_executor to call your async function in a separate thread
                 future = loop.run_in_executor(executor, put_file, self, file, content_datas[file.uuid],

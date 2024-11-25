@@ -66,6 +66,13 @@ class File:
     def to_line(self):
         return f'{self.hash}:0:{self.uuid}:{self.content_count}:{self.size}\n'
 
+    def save_to_cache(self, api: 'API', data: bytes):
+        location = os.path.join(api.sync_file_path, self.hash)
+        if os.path.exists(location):
+            return  # No need cache it if it is already cached
+        with open(location, 'wb') as f:
+            f.write(data)
+
     def __repr__(self):
         return f'{self.uuid} ({self.size})[{self.content_count}]'
 
