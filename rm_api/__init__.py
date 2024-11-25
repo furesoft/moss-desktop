@@ -295,7 +295,7 @@ class API:
         futures = []
         with ThreadPoolExecutor(max_workers=4) as executor:
             loop = asyncio.new_event_loop()  # Get the current event loop
-            for file in files_with_changes:
+            for file in sorted(files_with_changes, key=lambda f: f.size):
                 if (document_uuid := file.uuid.split('/')[0].split('.')[0]) in document_operations:
                     document_operation = document_operations[document_uuid]
                 else:
