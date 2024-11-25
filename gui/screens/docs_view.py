@@ -197,7 +197,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 self.scale += 0.1
             else:
                 self.scale -= 0.1
-            self.scale = max(0.7, min(3., self.scale))
+            self.scale = max(0.5, min(2.08, self.scale))
             self.texts.clear()
             self.handle_texts()
 
