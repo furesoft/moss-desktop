@@ -79,7 +79,6 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
             self.has_focused = True
 
     def close(self):
-        self.on_cancel()
         self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
         if self.on_cancel:
             self.on_cancel()
