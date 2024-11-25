@@ -15,15 +15,22 @@ class Injector(pe.ChildContext):
     def __init__(self, parent: GUI):
         self.hover = False
         self.hover_t = self.MIN_HOVER_T
+        self.injected = False
         self.last_area = None
+        self.extensions = {}
         super().__init__(parent)
         self.menu = InjectorMenu(self)
 
     def loop(self):
-        try:
-            resync_rect = self.parent_context.ratios.pad_button_rect(self.parent_context.main_menu.resync_rect)
-        except AttributeError:
+        if not self.injected:
+            from .loader import InjectorLoader
+            if self.parent_context.main_menu is None:
+                return
+            if isinstance(self.parent_context.screens.queue[-1], InjectorLoader):
+                return
+            self.parent_context.screens.put(InjectorLoader(self))
             return
+        resync_rect = self.parent_context.ratios.pad_button_rect(self.parent_context.main_menu.resync_rect)
         area = resync_rect.copy()
         area.right -= self.width - resync_rect.right
         area.right -= area.width
