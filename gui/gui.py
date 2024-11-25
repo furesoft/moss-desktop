@@ -313,12 +313,12 @@ class GUI(pe.GameContext):
             self.ctrl_hold = True
         elif pe.event.key_UP(pe.K_LCTRL) or pe.event.key_UP(pe.K_RCTRL):
             self.ctrl_hold = False
-        if self.screens.queue[-1].handle_event != self.handle_event:
-            self.screens.queue[-1].handle_event(e)
-        if pe.event.quit_check():
-            self.running = False
         if pe.event.resize_check():
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
+        super().handle_event(e)
+
+    def quit_check(self):
+        self.running = False
 
     def handle_api_event(self, e):
         if isinstance(e, APIFatal):
