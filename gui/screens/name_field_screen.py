@@ -46,14 +46,16 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
 
     EVENT_HOOK_NAME = 'name_field_screen_resize_check<{0}>'
 
-
-    def __init__(self, gui: 'GUI', title, text, on_submit, on_cancel, empty_ok: bool = False):
+    def __init__(self, gui: 'GUI', title, text, on_submit, on_cancel, empty_ok: bool = False,
+                 submit_text: str = 'Submit'):
         self.title = title
         self.empty_ok = empty_ok
         self.on_submit = on_submit
         self.on_cancel = on_cancel
         self.has_focused = False
         super().__init__(gui)
+
+        self.BUTTON_TEXTS['ok_button'] = submit_text
 
         self.handle_title(title)
         self.handle_texts()
@@ -84,6 +86,11 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
             self.on_cancel()
         del self.screens.queue[-1]
 
+    def ok(self):
+        if self.on_submit:
+            self.on_submit(self.text)
+        self.close()
+
     def resize_check_hook(self, event):
         if isinstance(event, ResizeEvent):
             self.field.area.width = self.width
@@ -94,5 +101,8 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         self.field.display()
 
         render_button_using_text(self.parent_context, self.texts['cancel'], outline=self.ratios.outline,
-                                 action=self.close, name='import_screen.cancel',
+                                 action=self.close, name='name_field_screen.cancel')
+
+        render_button_using_text(self.parent_context, self.texts['ok_button'], outline=self.ratios.outline,
+                                 action=self.ok, name='name_field_screen.ok_button',
                                  disabled=False if self.empty_ok or self.text else (0, 0, 0, 50))

@@ -13,6 +13,7 @@ from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_h
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.name_field_screen import NameFieldScreen
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
+from rm_api.models import Document
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path
@@ -20,7 +21,7 @@ from gui.helpers import shorten_path
 if TYPE_CHECKING:
     from gui import GUI
     from gui.aspect_ratio import Ratios
-    from rm_api import API, Document
+    from rm_api import API
     from gui.screens.loader import Loader
 
 
@@ -138,7 +139,11 @@ class TopBar(pe.ChildContext):
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
     def create_notebook(self):
-        NameFieldScreen(self.parent_context, "New Notebook", "", print, None, empty_ok=True)
+        NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None, submit_text='Create notebook')
+
+    def _create_notebook(self, title):
+        doc = Document.new_notebook(self.api, title, self.main_menu.navigation_parent)
+        self.api.upload(doc)
 
     def import_action(self):
         import_prompt(lambda file_paths: import_files_to_cloud(self.parent_context, file_paths))
