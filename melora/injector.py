@@ -39,7 +39,7 @@ class Injector(pe.ChildContext):
         draw_area.center = area.center
         self.last_area = draw_area
         pe.draw.rect(INJECTOR_COLOR, draw_area)
-        pe.button.action(area, action_set={
+        pe.button.action(draw_area if self.hover and self.hover_t >= 1 else area, action_set={
             'hover': {
                 'action': self.hover_hold
             },
