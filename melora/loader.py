@@ -36,7 +36,6 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
             for path in os.listdir(self.extensions_dir)
             if path.endswith('.py') and os.path.isfile(final_path := os.path.join(self.extensions_dir, path))
         ]
-        print(files)
         self.total = len(files)
         for file in files:
             self.load_extension(file)
