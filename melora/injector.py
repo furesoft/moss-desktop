@@ -1,3 +1,4 @@
+from rm_api import DocumentCollection, Metadata, make_uuid
 from .common import INJECTOR_COLOR
 from .menu import InjectorMenu
 from gui import GUI
@@ -11,6 +12,7 @@ class Injector(pe.ChildContext):
     MAX_HOVER_T = 2
 
     menu: InjectorMenu
+    gui: GUI
 
     def __init__(self, parent: GUI):
         self.hover = False
@@ -18,6 +20,7 @@ class Injector(pe.ChildContext):
         self.injected = False
         self.last_area = None
         self.extensions = {}
+        self.gui = parent
         super().__init__(parent)
         self.menu = InjectorMenu(self)
 
@@ -45,6 +48,15 @@ class Injector(pe.ChildContext):
             },
             'hover_draw': None
         }, name='moss_extender')
+
+    def create_temp_collection(self, name: str):
+        uuid = make_uuid()
+        self.api.document_collections[uuid] = DocumentCollection(
+            [],
+            Metadata.new(name, self.gui.main_menu.navigation_parent, 'CollectionType'), uuid
+        )
+        self.gui.main_menu.set_parent(uuid)
+        return uuid
 
     def post_loop(self):
         if self.hover:

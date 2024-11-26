@@ -121,4 +121,5 @@ class Extension(ExtensionBase):
     def download_gallery(self):
         if not self.authenticate():
             return
+        temp_collection = self.injector.create_temp_collection(f'{self.SHORT} Favorites')
         favorites = self.get_favorites()
