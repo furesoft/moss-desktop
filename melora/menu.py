@@ -38,7 +38,7 @@ class InjectorMenu(pe.ChildContext):
         button_height = self.gui.ratios.bottom_bar_height  # Just using the bottom bar height here
         for extension_id, extension in self.injector.extensions.items():
             for action_name, action_function in extension.ACTIONS.items():
-                text = self.get_text(action_name)
+                text = self.get_text(f'{extension.SHORT}: {action_name}')
 
                 pe.button.rect(
                     (self.rect.x, y, self.rect.width, button_height),
