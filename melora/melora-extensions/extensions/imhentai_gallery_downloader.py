@@ -30,7 +30,9 @@ def extract_galleries(response_text):
     galleries = set(re.findall(pattern, response_text))
     return tuple(f'{SITE_URL}{gallery}' for gallery in galleries)
 
+
 def extract_gallery_info(response_text):
+    cover_pattern = r'https://.*?cover\.jpg'
     ids_to_extract = ['gallery_title', 'load_id', 'load_dir', 'gallery_id']
     extracted_info = {}
 
@@ -39,7 +41,14 @@ def extract_gallery_info(response_text):
         match = re.search(pattern, response_text)
         extracted_info[input_id] = match.group(1) if match else None
 
-    return extracted_info
+    cover_match = re.search(cover_pattern, response_text)
+    cover_url = cover_match.group(0) if cover_match else None
+
+    return {
+        'download_info': extracted_info,
+        'cover_url': cover_url
+    }
+
 
 class Extension(ExtensionBase):
     ID = 'imhentai_gallery_downloader'
@@ -83,7 +92,7 @@ class Extension(ExtensionBase):
 
     def check_auth(self):
         response = self.session.get(PROFILE_URL, allow_redirects=False)
-        return response.ok
+        return response.status_code == 200
 
     def set_session_id(self, token: str):
         self.config['token'] = token
