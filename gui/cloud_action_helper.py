@@ -1,8 +1,11 @@
-import json
+import io
+import pygameextra as pe
 import os
+from PIL import Image
+from PyPDF2 import PdfWriter
 
-from rm_api import Document, Content, Metadata, File, make_uuid, make_hash
-from typing import TYPE_CHECKING, Union
+from rm_api import Document
+from typing import TYPE_CHECKING, List
 
 from rm_api.storage.common import FileHandle
 
@@ -21,7 +24,6 @@ def import_pdf_to_cloud(gui: 'GUI', file_path):
     gui.import_screen.add_item(document)
 
 
-
 def import_files_to_cloud(gui: 'GUI', files):
     files = tuple(
         file for file in files if file.endswith('.pdf')
@@ -32,3 +34,29 @@ def import_files_to_cloud(gui: 'GUI', files):
     for file in files:
         if file.endswith('.pdf'):
             import_pdf_to_cloud(gui, file)
+
+
+def surfaces_to_pdf(surfaces: List[pe.Surface]):
+    pdf_bytes = io.BytesIO()
+    images = []
+
+    for surface in (surface.surface for surface in surfaces):
+        surface: pe.pygame.Surface
+        # Convert the pygame surface to a raw image
+        raw_image = pe.pygame.image.tobytes(surface, "RGB")
+        width, height = surface.get_size()
+
+        # Create a PIL Image for PDF inclusion
+        image = Image.frombytes("RGB", (width, height), raw_image)
+
+        images.append(image)
+
+    images[0].save(
+        pdf_bytes,
+        "PDF",
+        save_all=True,
+        resolution=100.0,
+        append_images=images[1:]
+    )
+
+    return pdf_bytes.getvalue()
