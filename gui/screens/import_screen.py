@@ -181,7 +181,6 @@ class ImportScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
 
         for document in self.documents_to_upload:
             preview = PreviewHandler.get_preview(document, Defaults.PREVIEW_SIZE)
-            print(preview)
             if document.content.file_type == "pdf":
                 light_documents.append(document.replace_pdf(surfaces_to_pdf([
                     preview.surface

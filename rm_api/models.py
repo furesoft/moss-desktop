@@ -362,6 +362,7 @@ class Content:
     def check(self, document: 'Document'):
         if self.content_file_pdf_check and self.file_type == 'pdf':
             self.parse_create_new_pdf_content_file(document)
+            self.content_file_pdf_check = False
 
     def parse_create_new_pdf_content_file(self, document: 'Document'):
         """Creates the c_pages data for a pdf that wasn't indexed"""

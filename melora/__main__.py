@@ -14,3 +14,4 @@ while _gui.running:
 print("Saving melora extensions")
 for extension in _injector.extensions.values():
     extension.save()
+_gui.save_config_if_dirty()
