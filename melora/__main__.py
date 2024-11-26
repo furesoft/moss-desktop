@@ -10,3 +10,7 @@ _injector = Injector(_gui)
 while _gui.running:
     _injector.run_pp_helpers()
     _gui()
+
+print("Saving melora extensions")
+for extension in _injector.extensions.values():
+    extension.save()

@@ -53,6 +53,7 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
         extension_class = getattr(module, 'Extension')
         extension_instance = extension_class(self.injector)
         self.injector.extensions[extension_instance.ID] = extension_instance
+        extension_instance.load()
 
 
     def load(self):
