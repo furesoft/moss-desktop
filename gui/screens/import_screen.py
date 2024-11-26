@@ -6,8 +6,10 @@ from typing import Dict, TYPE_CHECKING, List
 
 import pygameextra as pe
 from gui.aspect_ratio import Ratios
+from gui.cloud_action_helper import surfaces_to_pdf
 from gui.defaults import Defaults
 from gui.events import ResizeEvent
+from gui.preview_handler import PreviewHandler
 from gui.rendering import render_button_using_text, render_full_text
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.mixins import ButtonReadyMixin, TitledMixin
@@ -178,8 +180,12 @@ class ImportScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         light_documents = []
 
         for document in self.documents_to_upload:
+            preview = PreviewHandler.get_preview(document, Defaults.PREVIEW_SIZE)
+            print(preview)
             if document.content.file_type == "pdf":
-                light_documents.append(document.replace_pdf(self.data['light_pdf']))
+                light_documents.append(document.replace_pdf(surfaces_to_pdf([
+                    preview.surface
+                ]) if preview else self.data['light_pdf']))
 
         return light_documents
 
