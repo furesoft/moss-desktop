@@ -1,6 +1,8 @@
 import json
 import os.path
 
+from requests import Session
+
 from gui.defaults import Defaults
 from melora.extension_base import ExtensionBase
 
@@ -17,6 +19,7 @@ class Extension(ExtensionBase):
         super().__init__(injector)
         self.path_to_config = os.path.join(Defaults.MELORA_CONFIG_DIR, '', 'imhentai_gallery_downloader.json')
         self.config = {}
+        self.session = Session()
 
     def load(self):
         if os.path.exists(self.path_to_config):
@@ -29,5 +32,9 @@ class Extension(ExtensionBase):
         with open(self.path_to_config, 'w') as f:
             json.dump(self.config, f)
 
+    def authenticate(self):
+        username = self.config.get('username')
+        password = self.config.get('password')
+
     def download_gallery(self):
-        print("this works")
+        self.authenticate()
