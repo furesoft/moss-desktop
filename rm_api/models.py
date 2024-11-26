@@ -656,7 +656,7 @@ class Document:
             pdf_uuid: make_hash(pdf_data)
         }
 
-        document = Document(api, content, metadata, [
+        document = cls(api, content, metadata, [
             File(content_hashes[key], key, 0, len(content))
             for key, content in content_data.items()
         ], document_uuid)
