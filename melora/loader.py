@@ -31,6 +31,8 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
         threading.Thread(target=self.load).start()
 
     def _load(self):
+        if not os.path.exists(self.extensions_dir):
+            os.mkdir(self.extensions_dir)
         files = [
             final_path
             for path in os.listdir(self.extensions_dir)
