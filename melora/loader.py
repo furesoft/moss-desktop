@@ -4,12 +4,15 @@ import threading
 from traceback import print_exc
 from typing import TYPE_CHECKING
 
+from box import BoxKeyError
+
 from gui.defaults import Defaults
 from gui.screens.mixins import LogoMixin
 
 import pygameextra as pe
 
 from melora.common import INJECTOR_COLOR
+from melora.extension_base import ExtensionBase
 
 if TYPE_CHECKING:
     from injector import Injector
@@ -23,6 +26,7 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
         self.done = 0
         self.total = 0
         self.injector = injector
+        self.gui = injector.parent_context
         super().__init__(injector.parent_context)
         self.initialize_logo_and_line()
         self.logo.color, self.logo.background = INJECTOR_COLOR, None
@@ -51,11 +55,24 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
         spec = importlib.util.spec_from_file_location(module_name, file_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        extension_class = getattr(module, 'Extension')
+        extension_class: ExtensionBase = getattr(module, 'Extension')
+        if not self.enabled(extension_class.ID):
+            return
         extension_instance = extension_class(self.injector)
         self.injector.extensions[extension_instance.ID] = extension_instance
         extension_instance.load()
 
+    def enabled(self,  extension_id: str):
+        try:
+            switches = self.gui.config.melora_extensions
+        except BoxKeyError:
+            self.gui.config.melora_extensions = {}
+            return self.enabled(extension_id)
+        enabled = switches.get(extension_id)
+        if not enabled:
+            switches[extension_id] = False
+            self.gui.dirty_config = True
+        return enabled
 
     def load(self):
         try:
