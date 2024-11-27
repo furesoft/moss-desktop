@@ -81,6 +81,7 @@ class Extension(ExtensionBase):
     ID = 'imhentai_gallery_downloader'
     NAME = "ImHentai Gallery Downloader"
     SHORT = 'ImHentai'
+    AUTHOR = "Manga Extensions"
     ACTIONS = {
         "Download Gallery": "download_gallery"
     }

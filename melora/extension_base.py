@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 class ExtensionBase(ABC):
     NAME: str = "Unknown"
+    AUTHOR: str = "Unknown"
     SHORT: str = "Unknown"
     ID: str = 'unknown'
     ACTIONS: Dict[str, str] = {}  # Name: Function
