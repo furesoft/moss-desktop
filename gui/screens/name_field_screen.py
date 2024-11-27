@@ -46,7 +46,7 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
 
     EVENT_HOOK_NAME = 'name_field_screen_resize_check<{0}>'
 
-    def __init__(self, gui: 'GUI', title, text, on_submit, on_cancel, empty_ok: bool = False,
+    def __init__(self, gui: 'GUI', title, text='', on_submit=None, on_cancel=None, empty_ok: bool = False,
                  submit_text: str = 'Submit'):
         self.title = title
         self.empty_ok = empty_ok
