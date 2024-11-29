@@ -13,7 +13,7 @@ from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_h
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.name_field_screen import NameFieldScreen
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
-from rm_api.models import Document
+from rm_api.models import Document, DocumentCollection
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path
@@ -32,6 +32,10 @@ class TopBar(pe.ChildContext):
             "text": "Notebook",
             "icon": "notebook_add",
             "action": 'create_notebook',
+        }, {
+            "text": "Folder",
+            "icon": "folder_add",
+            "action": 'create_collection',
         }, {
             "text": "Import",
             "icon": "import",
@@ -141,9 +145,16 @@ class TopBar(pe.ChildContext):
     def create_notebook(self):
         NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None, submit_text='Create notebook')
 
+    def create_collection(self):
+        NameFieldScreen(self.parent_context, "New Folder", "", self._create_collection, None, submit_text='Create folder')
+
     def _create_notebook(self, title):
         doc = Document.new_notebook(self.api, title, self.main_menu.navigation_parent)
         self.api.upload(doc)
+    
+    def _create_collection(self, title):
+        col = DocumentCollection.create(self.api, title, self.main_menu.navigation_parent)
+        self.api.upload(col)
 
     def import_action(self):
         import_prompt(lambda file_paths: import_files_to_cloud(self.parent_context, file_paths))

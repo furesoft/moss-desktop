@@ -28,6 +28,7 @@ class Loader(pe.ChildContext, LogoMixin):
     TO_LOAD = {
         # Icons and Images
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
+        'folder_add': os.path.join(Defaults.ICON_DIR, 'folder_add.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
         'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
         'tag_inverted': os.path.join(Defaults.ICON_DIR, 'tag_inverted.svg'),

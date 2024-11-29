@@ -475,6 +475,9 @@ class Tag:
 
 
 class DocumentCollection:
+    downloading = False
+    available = True
+
     def __init__(self, tags: List[Tag], metadata: Metadata, uuid: str):
         self.tags = tags
         self.metadata = metadata
@@ -485,8 +488,46 @@ class DocumentCollection:
     def parent(self):
         return self.metadata.parent
 
+    @property
+    def content(self):
+        return json.dumps({
+            'tags': [tag.to_rm_json() for tag in self.tags]
+        })
+    
+    @property
+    def files(self):
+        return [
+            File(self.metadata.hash, f'{self.uuid}.metadata', 0, len(self.metadata.to_dict())),
+            File(make_hash(self.content), f'{self.uuid}.content', 0, len(self.content)),
+        ]
+    
+    @property
+    def content_data(self):
+        return {
+            f'{self.uuid}.metadata': json.dumps(self.metadata.to_dict(), indent=4).encode(),
+            f'{self.uuid}.content': self.content.encode()
+        }
+
     def __repr__(self):
         return f'{self.metadata.visible_name}'
+    
+    @classmethod
+    def create(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None):
+        if not document_uuid:
+            document_uuid = make_uuid()
+        return cls([], Metadata.new(name, parent, 'CollectionType'), document_uuid)
+    
+    def ensure_download(self):
+        pass
+
+    def ensure_download_and_callback(self, callback):
+        callback()
+
+    def export(self):
+        pass
+
+    def check_files_availability(self):
+        return {}
 
 
 class Document:
