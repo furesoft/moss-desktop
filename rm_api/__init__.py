@@ -225,7 +225,11 @@ class API:
             document.provision = True
         self.documents.update({
             document.uuid: document
-            for document in documents
+            for document in documents if isinstance(document, Document)
+        })
+        self.document_collections.update({
+            document_collection.uuid: document_collection
+            for document_collection in documents if isinstance(document_collection, DocumentCollection)
         })
         self.spread_event(NewDocuments())
 
