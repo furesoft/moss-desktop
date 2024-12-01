@@ -656,6 +656,12 @@ class Document:
     def export(self):
         self.content_data[f'{self.uuid}.metadata'] = json.dumps(self.metadata.to_dict(), indent=4).encode()
         self.content_data[f'{self.uuid}.content'] = json.dumps(self.content.to_dict(), indent=4).encode()
+        for file in self.files:
+            data = self.content_data.get(file.uuid)
+            if not data:
+                continue
+            file.hash = make_hash(data)
+            file.size = len(data)
 
     @property
     def parent(self):
