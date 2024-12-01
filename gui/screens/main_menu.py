@@ -298,8 +298,10 @@ class MainMenu(pe.ChildContext):
                         self.ratios.main_menu_path_size,
                         (0, 0), Defaults.TEXT_COLOR
                     )
-
-                parent = document_collections[parent].parent
+                try:
+                    parent = document_collections[parent].parent
+                except KeyError:
+                    parent = None
         self.doc_view.handle_texts()
 
     def pre_loop(self):
