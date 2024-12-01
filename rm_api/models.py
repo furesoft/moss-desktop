@@ -554,6 +554,9 @@ class DocumentCollection:
     def export(self):
         pass
 
+    def check(self):
+        pass
+
     def check_files_availability(self):
         return {}
 
@@ -564,7 +567,7 @@ class Document:
         'pdf', 'notebook'
     ]
     CONTENT_FILE_TYPES = [
-        'pdf', 'rm', 'epub'
+        'pdf', 'rm', 'epub', 'pagedata', '-metadata.json'
     ]
 
     files: List[File]
@@ -671,12 +674,10 @@ class Document:
     def export(self):
         self.content_data[f'{self.uuid}.metadata'] = json.dumps(self.metadata.to_dict(), indent=4).encode()
         self.content_data[f'{self.uuid}.content'] = json.dumps(self.content.to_dict(), indent=4).encode()
+
         for file in self.files:
-            data = self.content_data.get(file.uuid)
-            if not data:
-                continue
-            file.hash = make_hash(data)
-            file.size = len(data)
+            if data := self.content_data.get(file.uuid):
+                file.hash = make_hash(data)
 
     @property
     def parent(self):

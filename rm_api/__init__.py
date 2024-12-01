@@ -227,6 +227,7 @@ class API:
         files_with_changes = []
 
         for document in documents:
+            document.check()
             document.export()
             document.provision = True
         self.documents.update({
@@ -270,9 +271,14 @@ class API:
             document_file_content = ['3\n']
             document_file_hash = sha256()
             for file in sorted(document.files, key=lambda file: file.uuid):
-                file.hash = make_hash(content_datas[file.uuid])
+                if data := content_datas.get(file.uuid):
+                    file.hash = make_hash(data)
+                    file.size = len(data)
+                else:
+                    print(f"File {file.uuid} not found in content data: {file.hash}")
+                    return
                 document_file_hash.update(bytes.fromhex(file.hash))
-                file.size = len(content_datas[file.uuid])
+
                 document_file_content.append(file.to_line())
 
             document_file_content = ''.join(document_file_content).encode()
