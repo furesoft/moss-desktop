@@ -259,7 +259,7 @@ class Content:
         self.dummy_document: bool = content.get('dummyDocument', False)
         self.file_type: str = content['fileType']
         self.version: int = content.get('formatVersion')
-        self.size_in_bytes: int = content.get('sizeInBytes', -1)
+        self.size_in_bytes: int = int(content.get('sizeInBytes', '-1'))
         self.tags: List[Tag] = [Tag(tag) for tag in content.get('tags', ())]
 
         # Handle the different versions
@@ -374,7 +374,7 @@ class Content:
             'formatVersion': self.version,
             'cPages': self.c_pages.to_dict(),
             'tags': [tag.to_rm_json() for tag in self.tags],
-            'sizeInBytes': self.size_in_bytes,
+            'sizeInBytes': str(self.size_in_bytes),
             'coverPageNumber': self.cover_page_number,
         }
 
@@ -391,6 +391,11 @@ class Content:
         if self.content_file_pdf_check and self.file_type == 'pdf':
             self.parse_create_new_pdf_content_file(document)
             self.content_file_pdf_check = False
+        size = 0
+        for file in document.files:
+            if file.uuid in document.content_data:
+                size += len(document.content_data[file.uuid])
+        self.size_in_bytes = size
 
     def _parse_create_new_pdf_content_file(self, pdf: bytes):
         page_count = get_pdf_page_count(pdf)
@@ -673,6 +678,7 @@ class Document:
 
     def check(self):
         self.content.check(self)
+        self.export()
 
     @classmethod
     def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None) -> 'Document':
