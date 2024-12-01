@@ -614,6 +614,8 @@ class Document:
         for file in self.files:
             if file.uuid not in self.content_files:
                 continue
+            if file.uuid in self.content_data:
+                continue
             data = get_file_contents(self.api, file.hash, binary=True)
             if data:
                 self.content_data[file.uuid] = data
@@ -631,19 +633,19 @@ class Document:
                 self.content_data[file.uuid] = data
 
     def ensure_download_and_callback(self, callback):
+        self.check()
         if not self.available:
             threading.Thread(target=self._download_files, args=(callback,)).start()
         else:
-            if not self.content_data:
-                self._load_files()
+            self._load_files()
             callback()
 
     def ensure_download(self):
+        self.check()
         if not self.available:
             self._download_files()
         else:
-            if not self.content_data:
-                self._load_files()
+            self._load_files()
 
     def check_files_availability(self):
         if not self.api.sync_file_path:

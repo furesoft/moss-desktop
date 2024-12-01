@@ -32,8 +32,9 @@ class PDF_PyMuPDF_Viewer(AbstractRenderer):
 
     def load(self):
         if not self.pdf_raw:
-            return
-        self.pdf = fitz.open(stream=self.pdf_raw, filetype='pdf')
+            self.pdf = None
+        else:
+            self.pdf = fitz.open(stream=self.pdf_raw, filetype='pdf')
         self.document_renderer.loading -= 1
 
     def render(self, page_uuid: str):
