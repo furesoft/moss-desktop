@@ -58,6 +58,7 @@ class API:
         self.document_storage_uri = None
         self.document_notifications_uri = None
         self._upload_lock = threading.Lock()
+        self.sync_notifiers: int = 0
         self._hook_list = {}  # Used for event hooks
         self._use_new_sync = False
         # noinspection PyTypeChecker
@@ -161,27 +162,18 @@ class API:
 
             self.document_storage_uri = uri
 
-    def upload(self, document: Document, unload: bool = False):
-        upload_event = FileSyncProgress()
-        self.spread_event(upload_event)
-        try:
-            document.provision = True
-            document.ensure_download()
-            with self._upload_lock:
-                self._upload_document_contents([document], upload_event)
-        finally:
-            upload_event.finished = True
-            if unload:
-                document.unload_files()
+    def upload(self, document: Document, callback=None, unload: bool = False):
+        self.upload_many_documents([document], callback, unload)
 
     def upload_many_documents(self, documents: List[Document], callback=None, unload: bool = False):
+        self.sync_notifiers += 1
+        self._upload_lock.acquire()
         upload_event = FileSyncProgress()
         self.spread_event(upload_event)
         try:
             for document in documents:
                 document.ensure_download()
-            with self._upload_lock:
-                self._upload_document_contents(documents, upload_event)
+            self._upload_document_contents(documents, upload_event)
         except:
             print_exc()
         finally:
@@ -189,6 +181,9 @@ class API:
             if unload:
                 for document in documents:
                     document.unload_files()
+            time.sleep(.1)
+            self._upload_lock.release()
+            self.sync_notifiers -= 1
 
     def _upload_document_contents(self, documents: List[Document], progress: FileSyncProgress):
         # We need to upload the content, metadata, rm file, file list and update root
@@ -347,7 +342,8 @@ class API:
             document.files_available = document.check_files_availability()
             document.provision = False
 
-        self.spread_event(SyncRefresh())
+        if self.sync_notifiers <= 1:
+            self.spread_event(SyncRefresh())
 
     def check_for_document_notifications(self):
         if not self.document_notifications_uri:

@@ -60,7 +60,8 @@ def make_storage_request(api: 'API', method, request, data: dict = None) -> Unio
 
 
 @lru_cache
-def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True, enforce_cache: bool = False) -> \
+def make_files_request(api: 'API', method, file, data: dict = None, binary: bool = False, use_cache: bool = True,
+                       enforce_cache: bool = False) -> \
         Union[str, None, dict, bool, bytes]:
     if method == 'HEAD':
         method = 'GET'
@@ -243,6 +244,8 @@ def put_file(api: 'API', file: 'File', data: bytes, sync_event: DocumentSyncProg
 
 def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tuple[int, Union[List['File'], List[str]]]:
     res = make_files_request(api, "GET", file, use_cache=use_cache)
+    if not res:
+        return -1, []
     if isinstance(res, int):
         return res, []
     version, *lines = res.splitlines()
@@ -252,9 +255,10 @@ def get_file(api: 'API', file, use_cache: bool = True, raw: bool = False) -> Tup
 
 
 def get_file_contents(api: 'API', file, binary: bool = False, use_cache: bool = True, enforce_cache: bool = False):
-    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache, enforce_cache= enforce_cache)
+    return make_files_request(api, "GET", file, binary=binary, use_cache=use_cache, enforce_cache=enforce_cache)
 
 
+@lru_cache(maxsize=600)
 def check_file_exists(api: 'API', file, binary: bool = False, use_cache: bool = True):
     return make_files_request(api, "HEAD", file, binary=binary, use_cache=use_cache)
 

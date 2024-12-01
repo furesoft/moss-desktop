@@ -327,7 +327,8 @@ class MainMenu(pe.ChildContext):
         return documents
 
     def refresh(self):
-        self.api.spread_event(SyncRefresh())
+        if self.api.sync_notifiers < 1:
+            self.api.spread_event(SyncRefresh())
 
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
@@ -339,7 +340,7 @@ class MainMenu(pe.ChildContext):
         pe.button.rect(
             self.ratios.pad_button_rect(self.resync_rect),
             Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
-            action=self.refresh, name='main_menu.refresh'
+            action=self.refresh, name='main_menu.refresh', disabled=self.api.sync_notifiers > 0
         )
 
         self.doc_view()
