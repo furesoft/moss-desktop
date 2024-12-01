@@ -161,17 +161,20 @@ class API:
 
             self.document_storage_uri = uri
 
-    def upload(self, document: Document):
+    def upload(self, document: Document, unload: bool = False):
         upload_event = FileSyncProgress()
         self.spread_event(upload_event)
         try:
+            document.provision = True
             document.ensure_download()
             with self._upload_lock:
                 self._upload_document_contents([document], upload_event)
         finally:
             upload_event.finished = True
+            if unload:
+                document.unload_files()
 
-    def upload_many_documents(self, documents: List[Document], callback=None):
+    def upload_many_documents(self, documents: List[Document], callback=None, unload: bool = False):
         upload_event = FileSyncProgress()
         self.spread_event(upload_event)
         try:
@@ -183,6 +186,9 @@ class API:
             print_exc()
         finally:
             upload_event.finished = True
+            if unload:
+                for document in documents:
+                    document.unload_files()
 
     def _upload_document_contents(self, documents: List[Document], progress: FileSyncProgress):
         # We need to upload the content, metadata, rm file, file list and update root

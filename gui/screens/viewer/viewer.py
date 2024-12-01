@@ -1,3 +1,4 @@
+import threading
 import time
 
 import pygameextra as pe
@@ -22,16 +23,19 @@ except Exception:
 
 from gui.defaults import Defaults
 from gui.pp_helpers import DraggablePuller
+from rm_api import models
 
 if TYPE_CHECKING:
     from gui.gui import GUI, ConfigType
     from queue import Queue
     from rm_api.models import Document, Content
 
+
 class UnusableContent(Exception):
     def __init__(self, content: 'Content'):
         self.content = content
         super().__init__(f"Unusable content: {content}")
+
 
 class CannotRenderDocument(Exception):
     def __init__(self, document: 'Document'):
@@ -56,7 +60,7 @@ class DocumentRenderer(pe.ChildContext):
         self.hold_next = False
         self.hold_previous = False
         self.hold_timer = 0
-        
+
         # Check compatability
         if not self.document.content.usable:
             raise UnusableContent(self.document.content)
@@ -270,7 +274,10 @@ class DocumentViewer(pe.ChildContext):
     def close(self):
         self.document_renderer.close()
         self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
-        self.document.unload_files()
+        self.document.content.c_pages.last_opened.value = self.document_renderer.last_opened_uuid
+        self.document.metadata.last_opened_page = self.document_renderer.current_page_index
+        self.document.metadata.last_opened = models.now_time()
+        threading.Thread(target=self.api.upload, args=(self.document,), kwargs={'unload': True}).start()
         del self.screens.queue[-1]
 
     def draw_close_indicator(self):

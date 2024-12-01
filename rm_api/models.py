@@ -675,6 +675,8 @@ class Document:
             data = self.content_data.get(file.uuid)
             if not data:
                 continue
+            file.hash = make_hash(data)
+            file.size = len(data)
 
     @property
     def parent(self):
@@ -686,7 +688,6 @@ class Document:
 
     def check(self):
         self.content.check(self)
-        self.export()
 
     @classmethod
     def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None) -> 'Document':
