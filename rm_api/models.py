@@ -563,6 +563,9 @@ class Document:
     KNOWN_FILE_TYPES = [
         'pdf', 'notebook'
     ]
+    CONTENT_FILE_TYPES = [
+        'pdf', 'rm', 'epub'
+    ]
 
     files: List[File]
     content_data: Dict[str, bytes]
@@ -585,7 +588,8 @@ class Document:
 
     @property
     def content_files(self):
-        return [file.uuid for file in self.files]
+        return [file.uuid for file in self.files if
+                any(file.uuid.endswith(file_type) for file_type in self.CONTENT_FILE_TYPES)]
 
     @property
     def file_uuid_map(self):
@@ -621,8 +625,12 @@ class Document:
                 self.content_data[file.uuid] = data
 
     def unload_files(self):
-        del self.content_data
-        self.content_data = {}
+        to_unload = []
+        for file_uuid, data in self.content_data.items():
+            if file_uuid in self.content_files:
+                to_unload.append(file_uuid)
+        for file_uuid in to_unload:
+            del self.content_data[file_uuid]
 
     def load_files_from_cache(self):
         for file in self.files:
@@ -667,8 +675,6 @@ class Document:
             data = self.content_data.get(file.uuid)
             if not data:
                 continue
-            file.hash = make_hash(data)
-            file.size = len(data)
 
     @property
     def parent(self):

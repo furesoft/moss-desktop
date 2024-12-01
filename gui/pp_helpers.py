@@ -186,7 +186,10 @@ class DocumentDebugPopup(pe.ChildContext):
                 data: bytes = get_file_contents(self.api, file.hash, binary=True, use_cache=False)
             except:
                 print(f"{Fore.RED}Could not fetch file with UUID={file.uuid} HASH={file.hash}{Fore.RESET}")
-                continue
+                if file.uuid in self.document.content_data:
+                    data = self.document.content_data[file.uuid]
+                else:
+                    continue
             file_path = os.path.join(self.extract_location, self.clean_file_uuid(file))
 
             is_json = file.uuid.rsplit('.')[-1] in ("content", "metadata")
