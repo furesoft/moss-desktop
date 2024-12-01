@@ -21,6 +21,8 @@ def import_pdf_to_cloud(gui: 'GUI', file_path):
 
     document = Document.new_pdf(gui.api, name, pdf_data, parent)
 
+    document.check()
+
     gui.import_screen.add_item(document)
 
 

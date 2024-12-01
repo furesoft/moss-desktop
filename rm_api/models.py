@@ -147,6 +147,18 @@ class Page:
     def new_pdf_redirect(cls, redirection_page: int, index: str, uuid: str = None):
         return cls(cls.new_pdf_redirect_dict(redirection_page, index, uuid))
 
+    def to_dict(self):
+        result = {
+            'id': self.id,
+            'idx': self.index.to_dict(),
+        }
+        if self.template:
+            result['template'] = self.template.to_dict()
+        if self.redirect:
+            result['redir'] = self.redirect.to_dict()
+
+        return result
+
 
 # TODO: Figure out what the CPagesUUID is referring to
 class CPagesUUID(TypedDict):
@@ -180,6 +192,14 @@ class CPages:
                 return page
         return None
 
+    def to_dict(self) -> dict:
+        return {
+            'lastOpened': self.last_opened.to_dict(),
+            'original': self.original.to_dict(),
+            'pages': [page.to_dict() for page in self.pages],
+            'uuids': self.uuids
+        }
+
 
 class Content:
     """
@@ -198,6 +218,36 @@ class Content:
     cover_page_number: int
     file_type: str
     version: int
+    CONTENT_TEMPLATE = {
+        "dummyDocument": False,
+        "extraMetadata": {
+            "LastPen": "Finelinerv2",
+            "LastTool": "Finelinerv2",
+            "ThicknessScale": "",
+            "LastFinelinerv2Size": "1"
+        },
+        "fileType": "pdf",
+        "fontName": "",
+        "lastOpenedPage": 0,
+        "lineHeight": -1,
+        "margins": 180,
+        "orientation": "portrait",
+        "pageCount": 0,
+        "pages": [],
+        "textScale": 1,
+        "formatVersion": 1,
+        "transform": {
+            "m11": 1,
+            "m12": 0,
+            "m13": 0,
+            "m21": 0,
+            "m22": 1,
+            "m23": 0,
+            "m31": 0,
+            "m32": 0,
+            "m33": 1
+        }
+    }
 
     def __init__(self, content: dict, content_hash: str, show_debug: bool = False):
         self.__content = content
@@ -209,7 +259,7 @@ class Content:
         self.dummy_document: bool = content.get('dummyDocument', False)
         self.file_type: str = content['fileType']
         self.version: int = content.get('formatVersion')
-        self.sizeInBytes: int = content.get('sizeInBytes', -1)
+        self.size_in_bytes: int = content.get('sizeInBytes', -1)
         self.tags: List[Tag] = [Tag(tag) for tag in content.get('tags', ())]
 
         # Handle the different versions
@@ -314,41 +364,19 @@ class Content:
 
     @classmethod
     def new_pdf(cls):
-        content = {
-            "dummyDocument": False,
-            "extraMetadata": {
-                "LastPen": "Finelinerv2",
-                "LastTool": "Finelinerv2",
-                "ThicknessScale": "",
-                "LastFinelinerv2Size": "1"
-            },
-            "fileType": "pdf",
-            "fontName": "",
-            "lastOpenedPage": 0,
-            "lineHeight": -1,
-            "margins": 180,
-            "orientation": "portrait",
-            "pageCount": 0,
-            "pages": [],
-            "textScale": 1,
-            "formatVersion": 1,
-            "transform": {
-                "m11": 1,
-                "m12": 0,
-                "m13": 0,
-                "m21": 0,
-                "m22": 1,
-                "m23": 0,
-                "m31": 0,
-                "m32": 0,
-                "m33": 1
-            }
-        }
-
-        return cls(content, make_hash(json.dumps(content, indent=4)))
+        return cls(cls.CONTENT_TEMPLATE, make_hash(json.dumps(cls.CONTENT_TEMPLATE, indent=4)))
 
     def to_dict(self) -> dict:
-        return self.__content
+        return {
+            **self.CONTENT_TEMPLATE,
+            **self.__content,
+            'fileType': self.file_type,
+            'formatVersion': self.version,
+            'cPages': self.c_pages.to_dict(),
+            'tags': [tag.to_rm_json() for tag in self.tags],
+            'sizeInBytes': self.size_in_bytes,
+            'coverPageNumber': self.cover_page_number,
+        }
 
     def __str__(self):
         return f'content version: {self.version} file type: {self.file_type}'
@@ -364,9 +392,7 @@ class Content:
             self.parse_create_new_pdf_content_file(document)
             self.content_file_pdf_check = False
 
-    def parse_create_new_pdf_content_file(self, document: 'Document'):
-        """Creates the c_pages data for a pdf that wasn't indexed"""
-        pdf = document.content_data[f'{document.uuid}.pdf']
+    def _parse_create_new_pdf_content_file(self, pdf: bytes):
         page_count = get_pdf_page_count(pdf)
 
         index = self.page_index_generator()
@@ -375,15 +401,11 @@ class Content:
             for i in range(page_count)
         ]
 
-    def __setattr__(self, key, value):
-        super().__setattr__(key, value)
+    def parse_create_new_pdf_content_file(self, document: 'Document'):
+        """Creates the c_pages data for a pdf that wasn't indexed"""
+        pdf = document.content_data[f'{document.uuid}.pdf']
 
-        # A dirty translation of the keys to content keys
-
-        if key not in self.__content:
-            return
-
-        self.__content[key] = value
+        self._parse_create_new_pdf_content_file(pdf)
 
 
 class Metadata:
@@ -413,6 +435,7 @@ class Metadata:
             "lastModified": now,
             "createdTime": now,
             "lastOpened": "",
+            "lastOpenedPage": 0,
             "metadatamodified": True,
             "modified": False,
             "parent": parent or '',
