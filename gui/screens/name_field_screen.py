@@ -66,6 +66,7 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
             Defaults.DOCUMENT_TITLE_FONT,
             text, gui.ratios.field_screen_input_size,
             colors=Defaults.DOCUMENT_TITLE_COLOR,
+            return_action=self.ok,
         )
 
         gui.screens.put(self)
@@ -74,11 +75,6 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
     @property
     def text(self):
         return self.field.text.text
-
-    def pre_loop(self):
-        if not self.has_focused and not pe.mouse.clicked()[0]:
-            self.field.focus()
-            self.has_focused = True
 
     def close(self):
         self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
@@ -106,3 +102,8 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         render_button_using_text(self.parent_context, self.texts['ok_button'], outline=self.ratios.outline,
                                  action=self.ok, name='name_field_screen.ok_button',
                                  disabled=False if self.empty_ok or self.text else (0, 0, 0, 50))
+
+    def post_loop(self):
+        if not self.has_focused and not pe.mouse.clicked()[0]:
+            self.field.focus()
+            self.has_focused = True
