@@ -211,7 +211,18 @@ class MainMenu(pe.ChildContext):
 
     HEADER_TEXTS = {
         'my_files': "My files",
-        'trash': "Trash"
+        'trash': "Trash",
+        'favorites': "Favorites",
+        'tags': "Tags",
+        'notebooks': "Notebooks",
+        'pdfs': "PDFs",
+        'ebooks': "Ebooks",
+    }
+
+    SMALL_HEADER_TEXTS = {
+        **{f'small_{key}': f"{value} ({len})" for key, value in HEADER_TEXTS.items()},
+        'menu': "Menu",
+        'settings': "Settings",
     }
 
     file_sync_operation: Union[None, FileSyncProgress]
@@ -246,6 +257,9 @@ class MainMenu(pe.ChildContext):
                                       (0, 0), Defaults.TEXT_COLOR)
             self.texts[key].rect.topleft = (
                 self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
+        for key, text in self.SMALL_HEADER_TEXTS.items():
+            self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
+                                      (0, 0), Defaults.TEXT_COLOR)
 
         self.doc_view = MainMenuDocView(parent)
         self.get_items()
@@ -336,6 +350,7 @@ class MainMenu(pe.ChildContext):
         pass
 
     def loop(self):
+        self.texts['menu'].display()
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
                      (self.width, self.ratios.main_menu_top_height), self.ratios.line)
 
@@ -404,7 +419,7 @@ class MainMenu(pe.ChildContext):
             self._critical_event_hook(event)
 
     def invalidate_cache(self):
-        header_texts = {key: text for key, text in self.texts.items() if key in self.HEADER_TEXTS}
+        header_texts = {key: text for key, text in self.texts.items() if key in self.HEADER_TEXTS or key in self.SMALL_HEADER_TEXTS}
         self.texts.clear()
         self.texts.update(header_texts)
         self.get_items()
@@ -425,6 +440,9 @@ class MainMenu(pe.ChildContext):
         padded.size = (self.ratios.main_menu_top_height,) * 2
         padded.topleft = (0, 0)
         self.hamburger_rect.center = padded.center
+        self.texts['menu'].rect.midleft = self.hamburger_rect.midright
+        self.texts['menu'].rect.left += self.ratios.main_menu_x_padding
+        self.hamburger_rect.width += self.texts['menu'].rect.width + self.ratios.main_menu_x_padding
 
     def handle_event(self, event):
         self.doc_view.handle_event(event)
