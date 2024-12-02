@@ -48,11 +48,11 @@ def try_to_load_int(rm_value: str):
 
 
 class File:
-    def __init__(self, file_hash, file_uuid, content_count, file_size, rm_filename=None):
+    def __init__(self, file_hash: str, file_uuid: str, content_count: str, file_size: str, rm_filename=None):
         self.hash = file_hash
         self.uuid = file_uuid
-        self.content_count = content_count
-        self.size = file_size
+        self.content_count = int(content_count)
+        self.size = int(file_size)
         self.rm_filename = rm_filename or file_uuid
 
     @classmethod

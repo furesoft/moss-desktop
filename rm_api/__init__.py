@@ -266,6 +266,7 @@ class API:
         for document, document_file in zip(documents, document_files):
             document_file_content = ['3\n']
             document_file_hash = sha256()
+            document_file.size = 0
             for file in sorted(document.files, key=lambda file: file.uuid):
                 if data := content_datas.get(file.uuid):
                     file.hash = make_hash(data)
@@ -275,12 +276,12 @@ class API:
                     self.spread_event(APIFatal())
 
                 document_file_hash.update(bytes.fromhex(file.hash))
+                document_file.size += file.size
 
                 document_file_content.append(file.to_line())
 
             document_file_content = ''.join(document_file_content).encode()
             document_file.hash = document_file_hash.hexdigest()
-            document_file.size = len(document_file_content)
 
             # Add the document file to the content_data
             content_datas[document_file.uuid] = document_file_content
