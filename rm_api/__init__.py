@@ -332,7 +332,7 @@ class API:
             update_root(self, new_root)
         except RootUploadFailure:
             self.log("Sync root failed, this is fine if you decided to sync on another device / start a secondary sync")
-            progress.done = 0
+            progress.done = -1
             progress.total = 0
             self._upload_document_contents(documents, progress)
         progress.done += 1  # Update done finally matching done/total
