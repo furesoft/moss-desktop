@@ -289,11 +289,13 @@ class API:
 
         # Prepare the root file
         root_file_content = ['3\n']
-        for file in new_root_files:
+        root_file_hash = sha256()
+        for file in sorted(new_root_files, key=lambda file: file.uuid):
             root_file_content.append(file.to_root_line())
+            root_file_hash.update(bytes.fromhex(file.hash))
 
         root_file_content = ''.join(root_file_content).encode()
-        root_file = File(make_hash(root_file_content), f"root.docSchema", len(new_root_files), len(root_file_content))
+        root_file = File(root_file_hash.hexdigest(), f"root.docSchema", len(new_root_files), len(root_file_content))
         new_root['hash'] = root_file.hash
 
         files_with_changes.append(root_file)
