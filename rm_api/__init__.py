@@ -257,8 +257,9 @@ class API:
 
         # Update the hash for files that have changed
         for file in files_with_changes:
-            file.hash = make_hash(content_datas[file.uuid])
-            file.size = len(content_datas[file.uuid])
+            if data := content_datas.get(file.uuid):
+                file.hash = make_hash(data)
+                file.size = len(data)
 
         # Make a new document file with the updated files for this document
 
