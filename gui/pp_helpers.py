@@ -166,6 +166,7 @@ class DocumentDebugPopup(pe.ChildContext):
                 file = models.File.from_line(line)
                 if file.uuid == self.document.uuid:
                     f.write(line)
+                    f.write('\n')
                     f.write(
                         make_files_request(self.api, "GET", file.hash, use_cache=False, binary=True).decode()
                     )
