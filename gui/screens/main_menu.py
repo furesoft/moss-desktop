@@ -218,6 +218,8 @@ class MainMenu(pe.ChildContext):
 
     resync_icon: pe.Image
     resync_rect: pe.Rect
+    hamburger_icon: pe.Image
+    hamburger_rect: pe.Rect
     doc_view: MainMenuDocView
 
     def __init__(self, parent: 'GUI'):
@@ -330,6 +332,9 @@ class MainMenu(pe.ChildContext):
         if self.api.sync_notifiers < 1:
             self.api.spread_event(SyncRefresh())
 
+    def hamburger(self):
+        pass
+
     def loop(self):
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
                      (self.width, self.ratios.main_menu_top_height), self.ratios.line)
@@ -340,10 +345,24 @@ class MainMenu(pe.ChildContext):
         pe.button.rect(
             self.ratios.pad_button_rect(self.resync_rect),
             Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
-            action=self.refresh, name='main_menu.refresh', disabled=self.api.sync_notifiers > 0
+            action=self.refresh, name='main_menu.refresh',
+            disabled=Defaults.BUTTON_DISABLED_LIGHT_COLOR if self.loading or self.api.sync_notifiers != 0 else False
+        )
+        self.hamburger_icon.display(self.hamburger_rect.topleft)
+        pe.button.rect(
+            self.ratios.pad_button_rect(self.hamburger_rect),
+            Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+            action=self.hamburger, name='main_menu.hamburger'
         )
 
         self.doc_view()
+
+    @property
+    def loading(self):
+        loader: 'Loader' = self.parent_context.screens.queue[0]
+        return loader.files_to_load is not None or \
+            loader.loading_feedback or \
+            self.file_sync_operation and not self.file_sync_operation.finished
 
     def post_loop(self):
         # Draw progress bar for file sync operations
@@ -395,11 +414,17 @@ class MainMenu(pe.ChildContext):
     def rect_calculations(self):
         # Handle sync refresh button rect
         self.resync_icon = self.icons['rotate']
+        self.hamburger_icon = self.icons['burger']
         self.resync_rect = pe.Rect(0, 0, *self.resync_icon.size)
+        self.hamburger_rect = pe.Rect(0, 0, *self.hamburger_icon.size)
         padded = self.resync_rect.copy()
         padded.size = (self.ratios.main_menu_top_height,) * 2
         padded.topright = (self.width, 0)
         self.resync_rect.center = padded.center
+        padded = self.hamburger_rect.copy()
+        padded.size = (self.ratios.main_menu_top_height,) * 2
+        padded.topleft = (0, 0)
+        self.hamburger_rect.center = padded.center
 
     def handle_event(self, event):
         self.doc_view.handle_event(event)
