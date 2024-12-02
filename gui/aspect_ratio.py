@@ -60,6 +60,7 @@ class Ratios:
         self.main_menu_document_width = int(168 * scale)
         self.main_menu_document_height = int(223 * scale)
         self.main_menu_x_padding = int(17 * scale)
+        self.main_menu_button_padding = self.main_menu_x_padding / 2
         self.main_menu_my_files_size = int(24 * scale)
         self.main_menu_label_size = int(13 * scale)
         self.main_menu_document_title_size = int(15 * scale)

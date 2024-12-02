@@ -121,13 +121,13 @@ class TopBar(pe.ChildContext):
         for button, button_meta, button_text in self.button_data_zipped:
             # Position the button text with padding
             button_text.rect.midright = button.area.midright
-            button_text.rect.right -= self.ratios.main_menu_x_padding / 2
+            button_text.rect.right -= self.ratios.main_menu_button_padding
 
             # Position the icon with padding
             icon = self.icons[button_meta['icon']]
             icon_rect = pe.Rect(0, 0, *icon.size)
             icon_rect.midleft = button.area.midleft
-            icon_rect.left += self.ratios.main_menu_x_padding / 2
+            icon_rect.left += self.ratios.main_menu_button_padding
             button_meta['icon_rect'] = icon_rect
 
     def loop(self):
@@ -441,8 +441,8 @@ class MainMenu(pe.ChildContext):
         padded.topleft = (0, 0)
         self.hamburger_rect.center = padded.center
         self.texts['menu'].rect.midleft = self.hamburger_rect.midright
-        self.texts['menu'].rect.left += self.ratios.main_menu_x_padding
-        self.hamburger_rect.width += self.texts['menu'].rect.width + self.ratios.main_menu_x_padding
+        self.texts['menu'].rect.left += self.ratios.main_menu_button_padding
+        self.hamburger_rect.width += self.texts['menu'].rect.width + self.ratios.main_menu_button_padding
 
     def handle_event(self, event):
         self.doc_view.handle_event(event)
