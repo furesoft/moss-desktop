@@ -270,7 +270,7 @@ class API:
                     file.hash = make_hash(data)
                     file.size = len(data)
                 else:
-                    print(f"File {file.uuid} not found in content data: {file.hash}")
+                    self.log(f"File {file.uuid} not found in content data: {file.hash}")
                     return
                 document_file_hash.update(bytes.fromhex(file.hash))
 
