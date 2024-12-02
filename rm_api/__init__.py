@@ -16,7 +16,7 @@ from urllib3 import Retry
 from rm_api.auth import get_token, refresh_token
 from rm_api.models import DocumentCollection, Document, Metadata, Content, make_uuid, File, make_hash
 from rm_api.notifications import handle_notifications
-from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress, NewDocuments
+from rm_api.notifications.models import FileSyncProgress, SyncRefresh, DocumentSyncProgress, NewDocuments, APIFatal
 from rm_api.storage.common import get_document_storage_uri, get_document_notifications_uri
 from rm_api.storage.new_sync import get_documents_new_sync, handle_new_api_steps
 from rm_api.storage.old_sync import get_documents_old_sync, update_root, RootUploadFailure
@@ -269,9 +269,10 @@ class API:
                 if data := content_datas.get(file.uuid):
                     file.hash = make_hash(data)
                     file.size = len(data)
-                else:
+                elif file.uuid.endswith('.content') or file.uuid.endswith('.metadata'):
                     self.log(f"File {file.uuid} not found in content data: {file.hash}")
-                    return
+                    self.spread_event(APIFatal())
+
                 document_file_hash.update(bytes.fromhex(file.hash))
 
                 document_file_content.append(file.to_line())
