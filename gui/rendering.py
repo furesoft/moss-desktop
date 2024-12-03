@@ -31,7 +31,10 @@ def render_full_text(gui: 'GUI', text: pe.Text):
 def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[str, pe.Text], callback, x, y, width):
     icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
     icon.display((x, y))
-    text = texts[collection.uuid]
+    try:
+        text = texts[collection.uuid]
+    except KeyError:
+        return
     text.rect.midleft = (x, y)
     text.rect.x += icon.width + gui.ratios.main_menu_folder_padding
     text.rect.y += icon.height // 1.5

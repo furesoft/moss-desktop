@@ -62,8 +62,6 @@ class Ratios:
         self.main_menu_x_padding = int(17 * scale)
         self.main_menu_button_padding = self.main_menu_x_padding / 2
         self.main_menu_my_files_size = int(24 * scale)
-        self.main_menu_label_size = int(13 * scale)
-        self.main_menu_document_title_size = int(15 * scale)
         self.main_menu_document_title_height_margin = int(8 * scale)
         self.main_menu_document_cloud_padding = int(20 * scale)  # 10 on each size (left and right) / (top and bottom)
         self.main_menu_path_size = int(15.8 * scale)
@@ -72,6 +70,11 @@ class Ratios:
         self.document_sync_progress_height = int(8 * scale)
         self.document_sync_progress_margin = int(5 * scale)
         self.document_sync_progress_rounding = int(3 * scale)
+
+        # Document Tree View
+        self.document_tree_view_document_title_size = int(14 * scale)
+        self.document_tree_view_folder_title_size = int(14 * scale)
+        self.document_tree_view_list_text_height = int(60 * scale)
 
         # Document Viewer
         self.document_viewer_top_draggable_height = int(48 * scale)  # Accurate to device

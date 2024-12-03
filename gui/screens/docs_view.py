@@ -29,7 +29,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
         documents = dict(self.documents)
 
         # Preparing the document collection texts
-        font_details = (Defaults.FOLDER_FONT, self.gui.ratios.main_menu_label_size)
+        font_details = (Defaults.FOLDER_TITLE_FONT, self.gui.ratios.document_tree_view_folder_title_size)
         for uuid, document_collection in document_collections.items():
             if self.texts.get(uuid) is None or self.texts[
                 uuid + '_full'
@@ -40,7 +40,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
                                                      *font_details, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
-        font_details = (Defaults.DOCUMENT_TITLE_FONT, self.gui.ratios.main_menu_document_title_size)
+        font_details = (Defaults.DOCUMENT_TITLE_FONT, self.gui.ratios.document_tree_view_document_title_size)
         for uuid, document in documents.items():
             if self.texts.get(uuid) is None or self.texts[uuid + '_full'].text != document.metadata.visible_name:
                 shortened_text = dynamic_text(document.metadata.visible_name, *font_details, self.document_width if self.mode == 'grid' else self.width)
