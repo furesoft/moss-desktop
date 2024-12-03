@@ -43,12 +43,20 @@ A few things will be checked
 - etc.
 
 ## Extensions
-***Coming soon...***
+*Extensions are not supported not loaded by default.*
+
+1. Run melora.py to start moss with extension injector melora
+
+2. Upon first launch any extensions will be added to config
+
+4. Enable the extensions you want in config.json file
+
+5. Reload melora, a menu on the top right to access is available
 
 Here are some planned extensions I will create!
 The system will be open for people to make extensions on their own
 - Replace PDF function (the origin of this whole project)
-- PDF Templates Store (with update support)
+- PDF Templates Store (with update support) **PLANNED NATIVE SUPPORT**
 - nyaa.si ebook/pdf download
 - Image(s) to PDF import
 - Add Image to PDF function (from suggestion)
