@@ -67,7 +67,8 @@ class ContextBar(pe.ChildContext, ABC):
                             'action': getattr(self, button['action']) if button['action'] else None
                         },
                         'r_click': {
-                            'action': getattr(self, context_menu) if context_menu else None
+                            'action': self.handle_new_context_menu,
+                            'args': (getattr(self, context_menu), i)
                         } if (context_menu := button.get('context_menu')) else None,
                         'hover_draw': None,
                         'hover': None
@@ -81,6 +82,15 @@ class ContextBar(pe.ChildContext, ABC):
         self.finalize_button_rect(buttons, width, height)
 
         return buttons
+
+    def handle_new_context_menu(self, context_menu_getter, index):
+        context_menu = context_menu_getter(self.buttons[index].area.bottomleft)
+        if not context_menu:
+            return
+        if context_menu:
+            context_menu()
+            self.BUTTONS[index]['_context_menu'] = context_menu
+
 
     @abstractmethod
     def finalize_button_rect(self, buttons, width, height):
@@ -121,13 +131,12 @@ class ContextBar(pe.ChildContext, ABC):
             # Position the context icon with padding
             context_icon = self.icons['context_menu']
             context_icon_rect = pe.Rect(0, 0, *context_icon.size)
-            
+
             context_icon_rect.bottomright = button.area.bottomright
             context_icon_rect.left -= self.ratios.main_menu_button_padding / 2
             context_icon_rect.top -= self.ratios.main_menu_button_padding / 2
 
             button_meta['context_icon_rect'] = context_icon_rect
-
 
     def loop(self):
         for button, button_meta, button_text in self.button_data_zipped:
@@ -144,6 +153,48 @@ class ContextBar(pe.ChildContext, ABC):
 
             if button.disabled:
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
+
+            if context_menu := button_meta.get('_context_menu'):
+                if context_menu.can_close:
+                    button_meta['_context_menu'] = None
+                context_menu()
+
+
+class ContextMenu(ContextBar, ABC):
+
+    def __init__(self, parent: 'MainMenu', topleft: Tuple[int, int]):
+        self.left, self.top = topleft
+        self.can_close = False
+        self.rect = pe.Rect(0, 0, 0, 0)
+        super().__init__(parent)
+
+    def pre_loop(self):
+        pe.draw.rect(Defaults.BACKGROUND, self.rect, 0)
+        super().pre_loop()
+
+    def finalize_button_rect(self, buttons, width, height):
+        max_width = max(button.area.width for button in buttons)
+        x = self.left
+        y = self.top
+        for button in buttons:
+            button.area.topleft = x, y
+            button.area.width = max_width
+            y += button.area.height
+        self.rect = pe.Rect(self.left, self.top, max_width, self.y - self.top)
+
+
+class ImportContextMenu(ContextMenu):
+    BUTTONS = (
+        {
+            "text": "PDF/EPUB Import",
+            "icon": "import",
+            "action": 'import_action',
+        },
+    )
+
+    def import_action(self):
+        self.main_menu.bar.import_action()
+        self.can_close = True
 
 
 class TopBar(ContextBar):
@@ -178,15 +229,17 @@ class TopBar(ContextBar):
             x = button.area.right + self.ratios.main_menu_bar_padding
 
     def create_notebook(self):
-        NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None, submit_text='Create notebook')
+        NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None,
+                        submit_text='Create notebook')
 
     def create_collection(self):
-        NameFieldScreen(self.parent_context, "New Folder", "", self._create_collection, None, submit_text='Create folder')
+        NameFieldScreen(self.parent_context, "New Folder", "", self._create_collection, None,
+                        submit_text='Create folder')
 
     def _create_notebook(self, title):
         doc = Document.new_notebook(self.api, title, self.main_menu.navigation_parent)
         self.api.upload(doc)
-    
+
     def _create_collection(self, title):
         col = DocumentCollection.create(self.api, title, self.main_menu.navigation_parent)
         self.api.upload(col)
@@ -194,8 +247,8 @@ class TopBar(ContextBar):
     def import_action(self):
         import_prompt(lambda file_paths: import_files_to_cloud(self.parent_context, file_paths))
 
-    def import_context(self):
-        pass
+    def import_context(self, ideal_position):
+        return ImportContextMenu(self.main_menu, ideal_position)
 
 
 class MainMenuDocView(DocumentTreeViewer):
@@ -457,7 +510,8 @@ class MainMenu(pe.ChildContext):
             self._critical_event_hook(event)
 
     def invalidate_cache(self):
-        header_texts = {key: text for key, text in self.texts.items() if key in self.HEADER_TEXTS or key in self.SMALL_HEADER_TEXTS}
+        header_texts = {key: text for key, text in self.texts.items() if
+                        key in self.HEADER_TEXTS or key in self.SMALL_HEADER_TEXTS}
         self.texts.clear()
         self.texts.update(header_texts)
         self.get_items()
