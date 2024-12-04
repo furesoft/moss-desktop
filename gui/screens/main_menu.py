@@ -165,12 +165,23 @@ class ContextMenu(ContextBar, ABC):
     def __init__(self, parent: 'MainMenu', topleft: Tuple[int, int]):
         self.left, self.top = topleft
         self.can_close = False
+        self.waiting_for_let_go = True
         self.rect = pe.Rect(0, 0, 0, 0)
         super().__init__(parent)
 
     def pre_loop(self):
         pe.draw.rect(Defaults.BACKGROUND, self.rect, 0)
         super().pre_loop()
+
+    def close(self):
+        self.can_close = True
+
+    def post_loop(self):
+        if self.waiting_for_let_go:
+            if not any(pe.mouse.clicked()):
+                self.waiting_for_let_go = False
+        elif any(pe.mouse.clicked()) and not self.rect.collidepoint(pe.mouse.pos()):
+            self.close()
 
     def finalize_button_rect(self, buttons, width, height):
         max_width = max(button.area.width for button in buttons)
@@ -194,7 +205,7 @@ class ImportContextMenu(ContextMenu):
 
     def import_action(self):
         self.main_menu.bar.import_action()
-        self.can_close = True
+        self.close()
 
 
 class TopBar(ContextBar):
