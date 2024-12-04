@@ -2,7 +2,7 @@ import time
 from functools import lru_cache
 from queue import Queue
 from threading import Lock
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
 import pygameextra as pe
 
@@ -25,28 +25,9 @@ if TYPE_CHECKING:
     from gui.screens.loader import Loader
 
 
-class TopBar(pe.ChildContext):
+class ContextBar(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
-    BUTTONS = (
-        {
-            "text": "Notebook",
-            "icon": "notebook_add",
-            "action": 'create_notebook',
-        }, {
-            "text": "Folder",
-            "icon": "folder_add",
-            "action": 'create_collection',
-        }, {
-            "text": "Import",
-            "icon": "import",
-            "action": 'import_action'
-        }, {
-            "text": "Export",
-            "icon": "export",
-            "action": None,
-            "disabled": True
-        },
-    )
+    BUTTONS: Tuple[dict] = ()
 
     # definitions from GUI
     icons: Dict[str, pe.Image]
@@ -84,11 +65,14 @@ class TopBar(pe.ChildContext):
                         'l_click': {
                             'action': getattr(self, button['action']) if button['action'] else None
                         },
+                        'r_click': {
+                            'action': getattr(self, context_menu) if context_menu else None
+                        } if (context_menu := button.get('context_menu')) else None,
                         'hover_draw': None,
                         'hover': None
                     },
                     disabled=disabled,
-                    name=f'main_menu.top_bar.button_{i}'
+                    name=f'context_bar<{id(self)}>.button_{i}'
                 )
             ))
             width += buttons[-1].area.width
@@ -126,9 +110,22 @@ class TopBar(pe.ChildContext):
             # Position the icon with padding
             icon = self.icons[button_meta['icon']]
             icon_rect = pe.Rect(0, 0, *icon.size)
+
             icon_rect.midleft = button.area.midleft
             icon_rect.left += self.ratios.main_menu_button_padding
+
             button_meta['icon_rect'] = icon_rect
+
+            # Position the context icon with padding
+            context_icon = self.icons['context_menu']
+            context_icon_rect = pe.Rect(0, 0, *context_icon.size)
+            
+            context_icon_rect.bottomright = button.area.bottomright
+            context_icon_rect.left -= self.ratios.main_menu_button_padding / 2
+            context_icon_rect.top -= self.ratios.main_menu_button_padding / 2
+
+            button_meta['context_icon_rect'] = context_icon_rect
+
 
     def loop(self):
         for button, button_meta, button_text in self.button_data_zipped:
@@ -139,8 +136,36 @@ class TopBar(pe.ChildContext):
             icon = self.icons[button_meta['icon']]
             icon.display(button_meta['icon_rect'].topleft)
 
+            if button.action_set['r_click']:
+                context_icon = self.icons['context_menu']
+                context_icon.display(button_meta['context_icon_rect'].topleft)
+
             if button.disabled:
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
+
+
+class TopBar(ContextBar):
+    BUTTONS = (
+        {
+            "text": "Notebook",
+            "icon": "notebook_add",
+            "action": 'create_notebook',
+        }, {
+            "text": "Folder",
+            "icon": "folder_add",
+            "action": 'create_collection',
+        }, {
+            "text": "Import",
+            "icon": "import",
+            "action": 'import_action',
+            "context_menu": 'import_context'
+        }, {
+            "text": "Export",
+            "icon": "export",
+            "action": None,
+            "disabled": True
+        },
+    )
 
     def create_notebook(self):
         NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None, submit_text='Create notebook')
@@ -158,6 +183,9 @@ class TopBar(pe.ChildContext):
 
     def import_action(self):
         import_prompt(lambda file_paths: import_files_to_cloud(self.parent_context, file_paths))
+
+    def import_context(self):
+        pass
 
 
 class MainMenuDocView(DocumentTreeViewer):

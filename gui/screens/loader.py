@@ -39,15 +39,16 @@ class Loader(pe.ChildContext, LogoMixin):
         'cloud_synced': os.path.join(Defaults.ICON_DIR, 'cloud_synced.svg'),
         'cloud_synced_inverted': os.path.join(Defaults.ICON_DIR, 'cloud_synced_inverted.svg'),
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
-        'notebook': os.path.join(Defaults.ICON_DIR, 'notebook.svg'),
-        'notebook_add': os.path.join(Defaults.ICON_DIR, 'notebook_add.svg'),
         'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
+        'notebook': ReusedIcon('notebook_large', 0.333),
+        'notebook_add': os.path.join(Defaults.ICON_DIR, 'notebook_add.svg'),
         'share': os.path.join(Defaults.ICON_DIR, 'share.svg'),
         'export': os.path.join(Defaults.ICON_DIR, 'export.svg'),
         'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
         'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
         'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
+        'context_menu': ReusedIcon('burger', 0.4),
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
         # Data files
