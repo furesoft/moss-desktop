@@ -48,7 +48,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
         'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
         'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
-        'context_menu': ReusedIcon('burger', 0.4),
+        'context_menu': os.path.join(Defaults.ICON_DIR, 'context_menu.svg'),
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
         # Data files
