@@ -47,23 +47,18 @@ class ContextBar(pe.ChildContext):
     def buttons(self) -> List[pe.RectButton]:
         width = 0
         buttons: List[pe.RectButton] = []
-        rects: List[pe.Rect] = []
         for i, button in enumerate(self.BUTTONS):
             icon = self.icons[button['icon']]
-            
             rect = pe.Rect(
                 0, 0,
                 self.texts[i].rect.width + icon.width * 1.5,
                 self.ratios.main_menu_top_height
             )
             rect.inflate_ip(self.ratios.main_menu_x_padding, -self.ratios.main_menu_x_padding)
-            rects.append(rect)
-
-        for i, button in enumerate(self.BUTTONS):
             disabled = button.get('disabled', False)
             buttons.append((
                 pe.RectButton(
-                    rects[i],
+                    rect,
                     Defaults.TRANSPARENT_COLOR,
                     Defaults.BUTTON_ACTIVE_COLOR,
                     action_set={
