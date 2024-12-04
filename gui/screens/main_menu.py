@@ -1,4 +1,5 @@
 import time
+from abc import abstractmethod, ABC
 from functools import lru_cache
 from queue import Queue
 from threading import Lock
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from gui.screens.loader import Loader
 
 
-class ContextBar(pe.ChildContext):
+class ContextBar(pe.ChildContext, ABC):
     LAYER = pe.AFTER_LOOP_LAYER
     BUTTONS: Tuple[dict] = ()
 
@@ -45,7 +46,7 @@ class ContextBar(pe.ChildContext):
     @property
     @lru_cache()
     def buttons(self) -> List[pe.RectButton]:
-        width = 0
+        width, height = 0, 0
         buttons: List[pe.RectButton] = []
         for i, button in enumerate(self.BUTTONS):
             icon = self.icons[button['icon']]
@@ -76,14 +77,14 @@ class ContextBar(pe.ChildContext):
                 )
             ))
             width += buttons[-1].area.width
-        width += (len(self.BUTTONS) - 1) * self.ratios.main_menu_bar_padding
-        x = self.width / 2
-        x -= width / 2
-        for button in buttons:
-            button.area.left = x
-            x = button.area.right + self.ratios.main_menu_bar_padding
+            height += buttons[-1].area.height
+        self.finalize_button_rect(buttons, width, height)
 
         return buttons
+
+    @abstractmethod
+    def finalize_button_rect(self, buttons, width, height):
+        ...
 
     @property
     def button_data_zipped(self):
@@ -104,6 +105,7 @@ class ContextBar(pe.ChildContext):
         # Process final text and icon positions inside button and padding
         for button, button_meta, button_text in self.button_data_zipped:
             # Position the button text with padding
+
             button_text.rect.midright = button.area.midright
             button_text.rect.right -= self.ratios.main_menu_button_padding
 
@@ -166,6 +168,14 @@ class TopBar(ContextBar):
             "disabled": True
         },
     )
+
+    def finalize_button_rect(self, buttons, width, height):
+        width += (len(self.BUTTONS) - 1) * self.ratios.main_menu_bar_padding
+        x = self.width / 2
+        x -= width / 2
+        for button in buttons:
+            button.area.left = x
+            x = button.area.right + self.ratios.main_menu_bar_padding
 
     def create_notebook(self):
         NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None, submit_text='Create notebook')
