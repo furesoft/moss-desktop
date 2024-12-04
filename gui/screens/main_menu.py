@@ -201,10 +201,19 @@ class ImportContextMenu(ContextMenu):
             "icon": "import",
             "action": 'import_action',
         },
+        {
+            "text": "Notebook Import",
+            "icon": "notebook_add",
+            "action": 'notebook_import',
+            "disabled": True
+        },
     )
 
     def import_action(self):
         self.main_menu.bar.import_action()
+        self.close()
+
+    def notebook_import(self):
         self.close()
 
 
