@@ -383,7 +383,7 @@ class MainMenu(pe.ChildContext):
 
     def invalidate_cache(self):
         header_texts = {key: text for key, text in self.texts.items() if
-                        key in self.HEADER_TEXTS or key in self.SMALL_HEADER_TEXTS}
+                        key in self.MAINTAIN_TEXT_KEYS}
         self.texts.clear()
         self.texts.update(header_texts)
         self.get_items()
