@@ -37,6 +37,9 @@ def import_files_to_cloud(gui: 'GUI', files):
         if file.endswith('.pdf'):
             import_pdf_to_cloud(gui, file)
 
+def import_notebook_pages_to_cloud(gui: 'GUI', files: List[str], title: str):
+    parent = gui.main_menu.navigation_parent
+
 
 def surfaces_to_pdf(surfaces: List[pe.Surface]):
     pdf_bytes = io.BytesIO()

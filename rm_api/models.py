@@ -317,19 +317,20 @@ class Content:
         )
 
     @classmethod
-    def new_notebook(cls, author_id: str = None):
+    def new_notebook(cls, author_id: str = None, page_count: int = 1):
         first_page_uuid = make_uuid()
         if not author_id:
             author_id = make_uuid()
+        page_index = cls.page_index_generator()
         content = {
             'cPages': {
                 'lastOpened': TimestampedValue[str].create(first_page_uuid, bare=True),
                 'original': TimestampedValue[int].create(-1, 0, 0, bare=True),
                 'pages': [{
-                    'id': first_page_uuid,
-                    'idx': TimestampedValue[str].create('ba', t2=2, bare=True),
+                    'id': first_page_uuid if i == 0 else make_uuid(),
+                    'idx': TimestampedValue[str].create(next(page_index), t2=2, bare=True),
                     'template': TimestampedValue[str].create(BLANK_TEMPLATE, bare=True),
-                }],
+                } for i in range(page_count)],
                 'uuids': [{
                     'first': author_id,  # This is the author id
                     'second': 1
@@ -340,7 +341,8 @@ class Content:
             "customZoomCenterY": 936,
             "customZoomOrientation": "portrait",
             # rM2 page size
-            # TODO: Check values on RPP and if zoom changes
+            # Q: Check values on RPP and if zoom changes
+            # A: It actually does not, even for new notebooks
             "customZoomPageHeight": 1872,
             "customZoomPageWidth": 1404,
             "customZoomScale": 1,
@@ -354,7 +356,7 @@ class Content:
             "orientation": "portrait",
             "pageCount": 1,
             "pageTags": [],
-            "sizeInBytes": "3289",
+            "sizeInBytes": "0",  # This is not important here
             "tags": [],
             "textAlignment": "justify",
             "textScale": 1,
@@ -691,13 +693,13 @@ class Document:
         self.content.check(self)
 
     @classmethod
-    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None) -> 'Document':
+    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None, page_count: int = 1, notebook_data: List[Union[bytes, FileHandle]] = []) -> 'Document':
         metadata = Metadata.new(name, parent)
-        content = Content.new_notebook(api.author_id)
-        first_page_uuid = content.c_pages.pages[0].id
+        content = Content.new_notebook(api.author_id, page_count)
 
-        buffer = BytesIO()
-        write_blocks(buffer, blank_document(api.author_id))
+        blank_notebook_buffer = BytesIO()
+        write_blocks(blank_notebook_buffer, blank_document(api.author_id))
+        blank_notebook = blank_notebook_buffer.getvalue()
 
         if document_uuid is None:
             document_uuid = make_uuid()
@@ -705,13 +707,20 @@ class Document:
         content_data: List[bytes] = [
             json.dumps(content.to_dict(), indent=4).encode(),
             json.dumps(metadata.to_dict(), indent=4).encode(),
-            buffer.getvalue()
+            *notebook_data,
+            *[
+                blank_notebook
+                for _ in range(page_count-len(notebook_data))
+            ]
         ]
 
         files = [
             File(make_hash(content_data[0]), f"{document_uuid}.content", 0, len(content_data[0])),
             File(make_hash(content_data[1]), f"{document_uuid}.metadata", 0, len(content_data[1])),
-            File(make_hash(content_data[2]), f"{document_uuid}/{first_page_uuid}.rm", 0, len(content_data[2])),
+            *[
+                File(make_hash(data), f"{document_uuid}/{content.c_pages.pages[i].id}.rm", 0, len(data))
+                for i, data in enumerate(content_data[2:], 0)
+            ]
         ]
 
         document = cls(api, content, metadata, files, document_uuid)
