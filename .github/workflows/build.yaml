@@ -39,8 +39,7 @@ jobs:
         with:
           nuitka-version: ${{ matrix.os == 'macos-latest-large' && 'factory' || 'main' }}
           script-name: moss.py
-          standalone: true
-          onefile: true
+          mode: app
           disable-console: ${{ github.ref == 'refs/heads/main' }}
           macos-create-app-bundle: true
           deployment: ${{ github.ref == 'refs/heads/main' }}
