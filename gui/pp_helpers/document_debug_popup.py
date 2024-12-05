@@ -10,6 +10,7 @@ import pygameextra as pe
 from colorama import Fore
 
 from gui.defaults import Defaults
+from gui.pp_helpers.context_menu import ContextMenu
 import rm_api.models as models
 from rm_api.storage.v3 import get_file_contents, get_file, make_files_request
 from rm_lines import rm_bytes_to_svg
@@ -20,59 +21,31 @@ if TYPE_CHECKING:
     from gui import GUI
 
 
-class DocumentDebugPopup(pe.ChildContext):
-    LAYER = pe.AFTER_LOOP_LAYER
+class DocumentDebugPopup(ContextMenu):
     EXISTING = {}
+    BUTTONS = (
+        {
+            "text": "Extract files",
+            "icon": "import",
+            "action": 'extract_files'
+        },
+        {
+            "text": "Render pages",
+            "icon": "import",
+            "action": 'render_pages'
+        },
+        {
+            "text": "Render important",
+            "icon": "import",
+            "action": 'render_important'
+        }
+    )
 
     ratios: 'Ratios'
 
     def __init__(self, parent: 'GUI', document: 'Document', position):
         self.document = document
-        self.offset = pe.display.display_reference.pos
-        self.position = position
-        self.used_at = time.time()
-        self.popup_rect = pe.Rect(*position, parent.ratios.main_menu_document_width,
-                                  parent.ratios.main_menu_document_height)
-        if self.offset:
-            self.popup_rect.x += self.offset[0]
-            self.popup_rect.y += self.offset[1]
-        self.popup_rect.clamp_ip(pe.Rect(0, 0, *parent.size))
-        self.button_actions = {
-            'Extract files': self.extract_files,
-            'Render pages': self.render_pages,
-            'Render important': lambda: self.render_pages(True),
-            'Close': self.close
-        }
-        self.texts = {
-            text: pe.Text(
-                text,
-                Defaults.DEBUG_FONT, parent.ratios.debug_text_size,
-                colors=Defaults.TEXT_COLOR_H
-            )
-            for text in self.button_actions.keys()
-        }
-        super().__init__(parent)
-
-    def pre_loop(self):
-        pe.draw.rect((0, 0, 0, 100), self.popup_rect, 0)
-
-    def loop(self):
-        x = self.popup_rect.left
-        y = self.popup_rect.top
-        h = self.popup_rect.height // len(self.button_actions)
-        for item, action in self.button_actions.items():
-            pe.button.rect(
-                (x, y, self.popup_rect.width, h),
-                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
-                action=action,
-                text=self.texts[item],
-                name=f'document_debug_popup<{id(self)}>.button.{item}'
-            )
-            y += h
-
-    def post_loop(self):
-        pe.draw.rect(pe.colors.brown, self.popup_rect, self.ratios.pixel(3))
-        self.used_at = time.time()
+        super().__init__(parent.main_menu, (0, 0))
 
     @classmethod
     def create(cls, parent: 'GUI', document: 'Document', position):
@@ -81,7 +54,7 @@ class DocumentDebugPopup(pe.ChildContext):
             cls.EXISTING.clear()
             cls.EXISTING[key] = cls(parent, document, position)
             return cls.EXISTING[key]
-        if time.time() - cls.EXISTING[key].used_at < .05:
+        if not cls.EXISTING[key].can_close:
             return cls.EXISTING[key]
         else:
             cls.EXISTING.clear()
@@ -89,6 +62,10 @@ class DocumentDebugPopup(pe.ChildContext):
 
     def close(self):
         self.EXISTING.clear()
+        super().close()
+
+    def parent_hooking(self):
+        return super().parent_hooking()
 
     @property
     @lru_cache
@@ -178,3 +155,6 @@ class DocumentDebugPopup(pe.ChildContext):
             except Exception as e:
                 print_exc()
             i += 1
+
+    def render_important(self):
+        return self.render_pages(True)
