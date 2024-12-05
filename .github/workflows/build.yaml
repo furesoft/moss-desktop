@@ -3,6 +3,9 @@ on:
     branches:
       - main
       - action-testing
+    paths:
+      - '**/*.py'
+      - '.github/workflows/build.yaml'
 
 env:
   APP_NAME: "Moss Desktop"
@@ -13,8 +16,7 @@ jobs:
     strategy:
       matrix:
 #        os: [ windows-latest, ubuntu-latest, macos-latest ]
-#        os: [ ubuntu-latest, macos-latest ]
-        os: [ macos-latest-large ]
+        os: [ windows-latest, ubuntu-latest ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
