@@ -34,7 +34,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
             if self.texts.get(uuid) is None or self.texts[
                 uuid + '_full'
             ].text != document_collection.metadata.visible_name:
-                shortened_text = dynamic_text(document_collection.metadata.visible_name, *font_details, self.document_width if self.mode == 'grid' else self.width)
+                shortened_text = dynamic_text(document_collection.metadata.visible_name, *font_details,
+                                              self.document_width if self.mode == 'grid' else self.width)
                 self.texts[uuid] = pe.Text(shortened_text, *font_details, (0, 0), Defaults.TEXT_COLOR)
                 self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
                                                      *font_details, (0, 0), Defaults.TEXT_COLOR)
@@ -43,7 +44,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
         font_details = (Defaults.DOCUMENT_TITLE_FONT, self.gui.ratios.document_tree_view_document_title_size)
         for uuid, document in documents.items():
             if self.texts.get(uuid) is None or self.texts[uuid + '_full'].text != document.metadata.visible_name:
-                shortened_text = dynamic_text(document.metadata.visible_name, *font_details, self.document_width if self.mode == 'grid' else self.width)
+                shortened_text = dynamic_text(document.metadata.visible_name, *font_details,
+                                              self.document_width if self.mode == 'grid' else self.width)
                 self.texts[uuid] = pe.Text(shortened_text, *font_details
                                            , (0, 0),
                                            Defaults.DOCUMENT_TITLE_COLOR)
