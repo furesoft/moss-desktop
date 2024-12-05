@@ -49,7 +49,7 @@ class ImportContextMenu(ContextMenu):
         notebook_prompt(lambda file_paths: import_notebook_pages_to_cloud(self.main_menu, file_paths, title))
 
     def notebook_import(self):
-        NameFieldScreen(self.main_menu, "Import Notebook", "", self._notebook_import, None,)
+        NameFieldScreen(self.main_menu.parent_context, "Import Notebook", "", self._notebook_import, None,)
         self.close()
 
 
