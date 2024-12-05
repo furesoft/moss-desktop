@@ -67,8 +67,7 @@ class ConfigDict(TypedDict):
 
 
 DEFAULT_CONFIG: ConfigDict = {
-    'enable_fake_screen_refresh': True,
-    # TODO: Fix the fact that disabling this, makes loading much slower
+    'enable_fake_screen_refresh': False,
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
@@ -85,6 +84,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'format_raw_exports': True,
     'add_ext_to_raw_exports': True,
     'debug': False,
+    'debug_button_rects': False,
     'portable_mode': False
 }
 
@@ -293,7 +293,7 @@ class GUI(pe.GameContext):
             
 
     def end_loop(self):
-        if self.config.debug:
+        if self.config.debug_button_rects:
             for button in self.buttons:
                 rect = pe.Rect(*button.area)
                 if button.display_reference.pos:
