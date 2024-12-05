@@ -23,6 +23,7 @@ class ContextMenu(ContextBar, ABC):
 
     def close(self):
         self.can_close = True
+        self.quick_refresh()
 
     def post_loop(self):
         if self.waiting_for_let_go:

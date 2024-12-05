@@ -22,6 +22,7 @@ class ContextBar(pe.ChildContext, ABC):
         self.texts = []
         self.main_menu = parent
         self.initialized = False
+        parent.quick_refresh()
         super().__init__(parent.parent_context)
 
     @property
