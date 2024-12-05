@@ -8,6 +8,7 @@ from gui.defaults import Defaults
 
 class ContextBar(pe.ChildContext, ABC):
     LAYER = pe.AFTER_LOOP_LAYER
+    TEXT_COLOR = Defaults.TEXT_COLOR_T
     BUTTONS: Tuple[dict] = ()
 
     # definitions from GUI
@@ -88,7 +89,7 @@ class ContextBar(pe.ChildContext, ABC):
         for button_meta in self.BUTTONS:
             self.texts.append(pe.Text(
                 button_meta['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
-                colors=Defaults.TEXT_COLOR_T
+                colors=self.TEXT_COLOR
             ))
 
         # Process final text and icon positions inside button and padding
