@@ -11,18 +11,22 @@ def generate_indexes():
 indexes = []
 gen = generate_indexes()
 
-with open('sync_exports\\a9998bd1-7174-4998-a0ce-613b8959209e\\1bc80041-4ccf-45c6-8d22-585848b898d2\\1bc80041-4ccf-45c6-8d22-585848b898d2.content.json') as f:
-    data = json.load(f)
-    for page in data['cPages']['pages']:
-        indexes.append(page['idx']['value'])
+# with open('sync_exports\\a9998bd1-7174-4998-a0ce-613b8959209e\\1bc80041-4ccf-45c6-8d22-585848b898d2\\1bc80041-4ccf-45c6-8d22-585848b898d2.content.json') as f:
+#     data = json.load(f)
+#     for page in data['cPages']['pages']:
+#         indexes.append(page['idx']['value'])
 
-with open('indexes.txt', 'w') as f:
-    f.writelines([
-        index + '\n'
-        for index in indexes
-    ])
+with open('indexes.txt', 'r') as f:
+    indexes = [index.strip() for index in f.readlines()]
 
-for index in indexes[:100]:
-    val = next(gen) 
+# with open('indexes.txt', 'w') as f:
+#     f.writelines([
+#         index + '\n'
+#         for index in indexes
+#     ])
+
+for index in indexes:
+    val = next(gen)
     correct = val == index
-    print(f"{index}: {correct} -> {val}")
+    if not correct:
+        print(f"{index}: {correct} -> {val}")
