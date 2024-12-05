@@ -56,6 +56,11 @@ class ImportContextMenu(ContextMenu):
 class TopBar(ContextBar):
     BUTTONS = (
         {
+            "text": "Menu",
+            "icon": "burger",
+            "action": 'open_menu'
+        },
+        {
             "text": "Notebook",
             "icon": "notebook_add",
             "action": 'create_notebook'
@@ -77,10 +82,14 @@ class TopBar(ContextBar):
     )
 
     def finalize_button_rect(self, buttons, width, height):
-        width += (len(self.BUTTONS) - 1) * self.ratios.main_menu_bar_padding
+        width += (len(self.BUTTONS) - 2) * self.ratios.main_menu_bar_padding
+        width -= buttons[0].area.width
         x = self.width / 2
         x -= width / 2
-        for button in buttons:
+        margin = (self.ratios.main_menu_top_height - buttons[0].area.height) / 2
+        buttons[0].area.left = margin
+        buttons[0].area.top = margin
+        for button in buttons[1:]:
             button.area.left = x
             x = button.area.right + self.ratios.main_menu_bar_padding
 
@@ -105,6 +114,9 @@ class TopBar(ContextBar):
 
     def import_context(self, ideal_position):
         return ImportContextMenu(self.main_menu, ideal_position)
+
+    def open_menu(self):
+        self.main_menu.hamburger()
 
 
 class SideBar(ContextMenu):
@@ -191,7 +203,7 @@ class SideBar(ContextMenu):
 
     @property
     def button_margin(self):
-        return self.main_menu.hamburger_rect.left
+        return self.main_menu.bar.buttons[0].area.left + self.main_menu.bar.button_padding
 
     @property
     def currently_inverted(self):
@@ -258,7 +270,6 @@ class MainMenu(pe.ChildContext):
     }
 
     SMALL_HEADER_TEXTS = {
-        'menu': "Menu",
     }
 
     MAINTAIN_TEXT_KEYS = (
@@ -441,7 +452,6 @@ class MainMenu(pe.ChildContext):
         self.side_bar.is_closed = False
 
     def loop(self):
-        self.texts['menu'].display()
         pe.draw.line(Defaults.LINE_GRAY, (0, self.ratios.main_menu_top_height),
                      (self.width, self.ratios.main_menu_top_height), self.ratios.line)
 
@@ -454,13 +464,6 @@ class MainMenu(pe.ChildContext):
             action=self.refresh, name='main_menu.refresh',
             disabled=Defaults.BUTTON_DISABLED_LIGHT_COLOR if self.loading or self.api.sync_notifiers != 0 else False
         )
-        self.hamburger_icon.display(self.hamburger_rect.topleft)
-        pe.button.rect(
-            self.ratios.pad_button_rect(self.hamburger_rect),
-            Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
-            action=self.hamburger, name='main_menu.hamburger'
-        )
-
         self.doc_view()
 
     @property
@@ -522,20 +525,11 @@ class MainMenu(pe.ChildContext):
     def rect_calculations(self):
         # Handle sync refresh button rect
         self.resync_icon = self.icons['rotate']
-        self.hamburger_icon = self.icons['burger']
         self.resync_rect = pe.Rect(0, 0, *self.resync_icon.size)
-        self.hamburger_rect = pe.Rect(0, 0, *self.hamburger_icon.size)
         padded = self.resync_rect.copy()
         padded.size = (self.ratios.main_menu_top_height,) * 2
         padded.topright = (self.width, 0)
         self.resync_rect.center = padded.center
-        padded = self.hamburger_rect.copy()
-        padded.size = (self.ratios.main_menu_top_height,) * 2
-        padded.topleft = (0, 0)
-        self.hamburger_rect.center = padded.center
-        self.texts['menu'].rect.midleft = self.hamburger_rect.midright
-        self.texts['menu'].rect.left += self.ratios.main_menu_button_padding
-        self.hamburger_rect.width += self.texts['menu'].rect.width + self.ratios.main_menu_button_padding
 
     def handle_event(self, event):
         self.doc_view.handle_event(event)
