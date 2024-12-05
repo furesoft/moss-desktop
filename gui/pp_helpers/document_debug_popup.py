@@ -60,7 +60,7 @@ class DocumentDebugPopup(ContextMenu):
             cls.EXISTING.clear()
             cls.EXISTING[key] = cls(parent, document, position)
             return cls.EXISTING[key]
-        if not cls.EXISTING[key].can_close:
+        if not cls.EXISTING[key].is_closed:
             cls.EXISTING[key].check_position(position)
             return cls.EXISTING[key]
         else:

@@ -9,6 +9,7 @@ from gui.defaults import Defaults
 class ContextBar(pe.ChildContext, ABC):
     LAYER = pe.AFTER_LOOP_LAYER
     TEXT_COLOR = Defaults.TEXT_COLOR_T
+    TEXT_COLOR_INVERTED = Defaults.TEXT_COLOR_H
     BUTTONS: Tuple[dict] = ()
 
     # definitions from GUI
@@ -17,9 +18,11 @@ class ContextBar(pe.ChildContext, ABC):
 
     # Scaled button texts
     texts: List[pe.Text]
+    texts_inverted: List[pe.Text]
 
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
+        self.texts_inverted = []
         self.main_menu = parent
         self.initialized = False
         parent.quick_refresh()
@@ -46,7 +49,8 @@ class ContextBar(pe.ChildContext, ABC):
                     Defaults.BUTTON_ACTIVE_COLOR,
                     action_set={
                         'l_click': {
-                            'action': getattr(self, button['action']) if button['action'] else None
+                            'action': getattr(self, button['action']) if button['action'] else None,
+                            'args': button.get('data', ())
                         },
                         'r_click': {
                             'action': self.handle_new_context_menu,
@@ -79,11 +83,12 @@ class ContextBar(pe.ChildContext, ABC):
 
     @property
     def button_data_zipped(self):
-        return zip(self.buttons, self.BUTTONS, self.texts)
+        return zip(self.buttons, self.BUTTONS, self.texts, self.texts_inverted)
 
     def handle_scales(self):
         # Cache reset
         self.texts.clear()
+        self.texts_inverted.clear()
         self.__class__.buttons.fget.cache_clear()
 
         # Handle texts so we know their size
@@ -92,20 +97,24 @@ class ContextBar(pe.ChildContext, ABC):
                 button_meta['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
                 colors=self.TEXT_COLOR
             ))
+            self.texts_inverted.append(pe.Text(
+                button_meta['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
+                colors=self.TEXT_COLOR_INVERTED
+            ))
 
         # Process final text and icon positions inside button and padding
-        for button, button_meta, button_text in self.button_data_zipped:
-            # Position the button text with padding
-
-            button_text.rect.midright = button.area.midright
-            button_text.rect.right -= self.ratios.main_menu_button_padding
-
+        for button, button_meta, button_text, button_text_inverted in self.button_data_zipped:
             # Position the icon with padding
             icon = self.icons[button_meta['icon']]
             icon_rect = pe.Rect(0, 0, *icon.size)
 
             icon_rect.midleft = button.area.midleft
-            icon_rect.left += self.ratios.main_menu_button_padding
+            icon_rect.left += self.button_margin
+
+            # Position the button text with padding
+            button_text.rect.midleft = icon_rect.midright
+            button_text.rect.left += self.button_padding
+            button_text_inverted.rect.center = button_text.rect.center
 
             button_meta['icon_rect'] = icon_rect
 
@@ -114,10 +123,22 @@ class ContextBar(pe.ChildContext, ABC):
             context_icon_rect = pe.Rect(0, 0, *context_icon.size)
 
             context_icon_rect.bottomright = button.area.bottomright
-            context_icon_rect.left -= self.ratios.main_menu_button_padding / 2
-            context_icon_rect.top -= self.ratios.main_menu_button_padding / 2
+            context_icon_rect.left -= self.button_margin / 2
+            context_icon_rect.top -= self.button_margin / 2
 
             button_meta['context_icon_rect'] = context_icon_rect
+
+    @property
+    def button_margin(self):
+        return self.ratios.main_menu_button_margin
+
+    @property
+    def button_padding(self):
+        return self.ratios.main_menu_button_padding
+
+    @property
+    def currently_inverted(self):
+        return None
 
     def pre_loop(self):
         if not self.initialized:
@@ -125,12 +146,27 @@ class ContextBar(pe.ChildContext, ABC):
             self.initialized = True
 
     def loop(self):
-        for button, button_meta, button_text in self.button_data_zipped:
+        for button, button_meta, button_text, button_text_inverted in self.button_data_zipped:
+            if inverted_id := button_meta.get('inverted_id'):
+                if is_inverted := (inverted_id == self.currently_inverted):
+                    pe.draw.rect(Defaults.INVERTED_COLOR, button.area)
+            else:
+                is_inverted = False
             pe.settings.game_context.buttons.append(button)
+            if is_inverted:
+                button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
+            else:
+                button.active_resource = Defaults.BUTTON_ACTIVE_COLOR
             pe.button.check_hover(button)
-            button_text.display()
+
+            if is_inverted:
+                button_text_inverted.display()
+            else:
+                button_text.display()
 
             icon = self.icons[button_meta['icon']]
+            if is_inverted:
+                icon = self.icons.get(f'{button_meta["icon"]}_inverted', icon)
             icon.display(button_meta['icon_rect'].topleft)
 
             if button.action_set['r_click']:
@@ -141,6 +177,8 @@ class ContextBar(pe.ChildContext, ABC):
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
             if context_menu := button_meta.get('_context_menu'):
-                if context_menu.can_close:
+                if context_menu.is_closed:
                     button_meta['_context_menu'] = None
                 context_menu()
+
+

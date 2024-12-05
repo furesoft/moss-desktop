@@ -16,7 +16,7 @@ from colorama import Fore
 from rm_api.auth import FailedToRefreshToken
 from rm_api.notifications.models import APIFatal
 from .events import ResizeEvent
-from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES
+from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES, MAIN_MENU_LOCATIONS
 
 Defaults = None
 
@@ -60,6 +60,7 @@ class ConfigDict(TypedDict):
     scale: Number
     doc_view_scale: Number
     main_menu_view_mode: MAIN_MENU_MODES
+    main_menu_menu_location: MAIN_MENU_LOCATIONS
     format_raw_exports: bool
     add_ext_to_raw_exports: bool
     debug: bool
@@ -81,6 +82,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'scale': .9,
     'doc_view_scale': 1,
     'main_menu_view_mode': 'grid',
+    'main_menu_menu_location': 'my_files',
     'format_raw_exports': True,
     'add_ext_to_raw_exports': True,
     'debug': False,

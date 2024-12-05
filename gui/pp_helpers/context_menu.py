@@ -8,21 +8,24 @@ from gui.pp_helpers.context_bar import ContextBar
 
 
 class ContextMenu(ContextBar, ABC):
+    ENABLE_OUTLINE = True
 
     def __init__(self, parent: 'MainMenu', topleft: Tuple[int, int]):
         self.left, self.top = topleft
-        self.can_close = False
+        self.is_closed = False
         self.waiting_for_let_go = True
         self.rect = pe.Rect(0, 0, 0, 0)
         super().__init__(parent)
 
     def pre_loop(self):
-        pe.draw.rect(Defaults.BACKGROUND, self.rect, 0)
-        pe.draw.rect(Defaults.LINE_GRAY, self.rect, self.ratios.line)
+        pe.draw.rect(Defaults.BACKGROUND, self.rect)
+        pe.button.action(self.rect, name=f'context_menu<{id(self)}>.blank_space')
+        if self.ENABLE_OUTLINE:
+            pe.draw.rect(Defaults.LINE_GRAY, self.rect, self.ratios.line)
         super().pre_loop()
 
     def close(self):
-        self.can_close = True
+        self.is_closed = True
         self.quick_refresh()
 
     def post_loop(self):

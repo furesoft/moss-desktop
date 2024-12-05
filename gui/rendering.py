@@ -253,10 +253,12 @@ def render_button_using_text(
 
 
 def render_header(gui: 'GUI', texts: Dict[str, pe.Text], callback, path_queue: 'Queue'):
-    render_button_using_text(gui, texts['my_files'], action=callback, name='main_menu.my_files')
+    menu_location = gui.main_menu.menu_location
 
-    x = texts['my_files'].rect.right + gui.ratios.main_menu_path_padding
-    y = texts['my_files'].rect.centery
+    render_button_using_text(gui, texts[menu_location], action=callback, name='main_menu.header')
+
+    x = texts[menu_location].rect.right + gui.ratios.main_menu_path_padding
+    y = texts[menu_location].rect.centery
 
     width = 0
     skips = 0

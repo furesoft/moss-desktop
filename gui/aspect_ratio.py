@@ -13,6 +13,7 @@ class Ratios:
         self.scale = scale
 
         self.line = int(2 * scale)
+        self.seperator = self.line * 2
 
         # GENERAL
         self.bottom_bar_height = int(40 * scale)
@@ -45,6 +46,7 @@ class Ratios:
 
         # MAIN MENU
         self.main_menu_top_height = int(64 * scale)
+        self.main_menu_side_bar_width = int(185 * scale)
         self.main_menu_top_padding = int(21 * scale)
         self.main_menu_my_files_folder_padding = int(28 * scale)
         self.main_menu_path_padding = int(0 * scale)
@@ -61,6 +63,7 @@ class Ratios:
         self.main_menu_document_height = int(223 * scale)
         self.main_menu_x_padding = int(17 * scale)
         self.main_menu_button_padding = self.main_menu_x_padding / 2
+        self.main_menu_button_margin = self.main_menu_button_padding
         self.main_menu_my_files_size = int(24 * scale)
         self.main_menu_document_title_height_margin = int(8 * scale)
         self.main_menu_document_cloud_padding = int(20 * scale)  # 10 on each size (left and right) / (top and bottom)

@@ -107,6 +107,100 @@ class TopBar(ContextBar):
         return ImportContextMenu(self.main_menu, ideal_position)
 
 
+class SideBar(ContextMenu):
+    ENABLE_OUTLINE = False
+    BUTTONS = (
+        {
+            "text": "My Files",
+            "icon": "my_files",
+            "action": "set_location",
+            "data": "my_files",
+            "inverted_id": "my_files"
+        },
+        {
+            "text": "Filter by",
+            "icon": "trashcan",
+            "action": None,
+            "inverted_id": "filter",
+            "disabled": True
+        },
+        {
+            "text": "Favorites",
+            "icon": "star",
+            "action": None,
+            "inverted_id": "favorites",
+            "disabled": True
+        },
+        {
+            "text": "Tags",
+            "icon": "tag",
+            "action": None,
+            "inverted_id": "tags",
+            "disabled": True
+        },
+        {
+            "text": "Trash",
+            "icon": "trashcan",
+            "action": "set_location",
+            "data": "trash",
+            "inverted_id": "trash"
+        },
+        {
+            "text": "Made by RedTTG",
+            "icon": "heart",
+            "action": 'love'
+        },
+        {
+            "text": "Settings",
+            "icon": "cog",
+            "action": "settings",
+            "disabled": True
+        },
+    )
+
+    def pre_loop(self):
+        super().pre_loop()
+        pe.draw.line(Defaults.LINE_GRAY, self.rect.topright, self.rect.bottomright, self.ratios.seperator)
+
+    def set_location(self, menu_location: str):
+        self.main_menu.menu_location = menu_location
+        self.close()
+
+    def settings(self):
+        self.close()
+
+    def love(self):
+        pass
+
+    def finalize_button_rect(self, buttons, width, height):
+        # Rescale the buttons
+        for button in buttons:
+            button.area.width = self.ratios.main_menu_side_bar_width
+            button.area.height = self.ratios.main_menu_top_height
+            button.area.left = self.left
+
+        # Position the top 4 buttons
+        y = self.top
+        for button in buttons[:4]:
+            button.area.top = y
+            y += button.area.height
+
+        # Position the bottom buttons
+        y = self.height
+        for button in reversed(buttons[4:]):
+            button.area.bottom = y
+            y -= button.area.height
+        self.rect = pe.Rect(self.left, self.top, self.ratios.main_menu_side_bar_width, self.height)
+
+    @property
+    def button_margin(self):
+        return self.main_menu.hamburger_rect.left
+
+    @property
+    def currently_inverted(self):
+        return self.main_menu.menu_location
+
+
 class MainMenuDocView(DocumentTreeViewer):
     main_menu: 'MainMenu'
 
@@ -151,6 +245,7 @@ class MainMenu(pe.ChildContext):
     parent_context: 'GUI'
     icons: Dict[str, pe.Image]
     ratios: 'Ratios'
+    dirty_config: bool
 
     SORTING_FUNCTIONS = {
         'last_modified': lambda item: item.metadata.last_modified,
@@ -167,9 +262,7 @@ class MainMenu(pe.ChildContext):
     }
 
     SMALL_HEADER_TEXTS = {
-        **{f'small_{key}': f"{value} ({len})" for key, value in HEADER_TEXTS.items()},
         'menu': "Menu",
-        'settings': "Settings",
     }
 
     MAINTAIN_TEXT_KEYS = (
@@ -225,6 +318,8 @@ class MainMenu(pe.ChildContext):
         )
 
         self.doc_view = MainMenuDocView(parent)
+        self.side_bar = SideBar(self, (0, 0))
+        self.side_bar.is_closed = True
         self.get_items()
 
         self.document_sync_operations: Dict[str, DocumentSyncProgress] = {}
@@ -233,6 +328,20 @@ class MainMenu(pe.ChildContext):
     @property
     def view_mode(self):
         return self.config.main_menu_view_mode
+
+    @view_mode.setter
+    def view_mode(self, value):
+        self.config.main_menu_view_mode = value
+        self.dirty_config = True
+
+    @property
+    def menu_location(self):
+        return self.config.main_menu_menu_location
+
+    @menu_location.setter
+    def menu_location(self, value):
+        self.config.main_menu_menu_location = value
+        self.dirty_config = True
 
     def __call__(self, *args, **kwargs):
         super().__call__(*args, **kwargs)
@@ -286,6 +395,8 @@ class MainMenu(pe.ChildContext):
     def pre_loop(self):
         if 'screenshot' in self.icons:
             self.icons['screenshot'].display()
+        if not self.side_bar.is_closed:
+            self.side_bar()
 
     def set_parent(self, uuid=None):
         self.navigation_parent = uuid
@@ -310,7 +421,7 @@ class MainMenu(pe.ChildContext):
             self.api.spread_event(SyncRefresh())
 
     def hamburger(self):
-        pass
+        self.side_bar.is_closed = False
 
     def loop(self):
         self.texts['menu'].display()
@@ -366,6 +477,7 @@ class MainMenu(pe.ChildContext):
         if isinstance(event, ResizeEvent):
             self.invalidate_cache()
             self.bar.handle_scales()
+            self.side_bar.handle_scales()
             self.doc_view.update_size()
         elif isinstance(event, NewDocuments):
             self.get_items()

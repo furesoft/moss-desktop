@@ -86,6 +86,7 @@ class Defaults:
     DOCUMENT_GRAY = (184, 184, 184)
     TRANSPARENT_COLOR = (0, 0, 0, 0)
     BUTTON_ACTIVE_COLOR = (0, 0, 0, 25)
+    BUTTON_ACTIVE_COLOR_INVERTED = (255, 255, 255, 50)
     BUTTON_DISABLED_COLOR = (0, 0, 0, 100)
     BUTTON_DISABLED_LIGHT_COLOR = (*BACKGROUND, 150)
 
@@ -93,6 +94,7 @@ class Defaults:
 
     # Colors
     OUTLINE_COLOR = pe.colors.black
+    INVERTED_COLOR = pe.colors.black
     RED = (255, 50, 50)
 
     # Key bindings

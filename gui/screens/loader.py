@@ -30,7 +30,9 @@ class Loader(pe.ChildContext, LogoMixin):
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
         'folder_add': os.path.join(Defaults.ICON_DIR, 'folder_add.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
+        'star': os.path.join(Defaults.ICON_DIR, 'star.svg'),
         'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
+        'tag': os.path.join(Defaults.ICON_DIR, 'tag.svg'),
         'tag_inverted': os.path.join(Defaults.ICON_DIR, 'tag_inverted.svg'),
         'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
@@ -50,6 +52,14 @@ class Loader(pe.ChildContext, LogoMixin):
         'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
         'context_menu': os.path.join(Defaults.ICON_DIR, 'context_menu.svg'),
         'pencil': os.path.join(Defaults.ICON_DIR, 'pencil.svg'),
+        'my_files': os.path.join(Defaults.ICON_DIR, 'my_files.svg'),
+        'my_files_inverted': os.path.join(Defaults.ICON_DIR, 'my_files_inverted.svg'),
+        'trashcan': os.path.join(Defaults.ICON_DIR, 'trashcan.svg'),
+        'trashcan_inverted': os.path.join(Defaults.ICON_DIR, 'trashcan_inverted.svg'),
+        'cog': os.path.join(Defaults.ICON_DIR, 'cog.svg'),
+        'cog_inverted': os.path.join(Defaults.ICON_DIR, 'cog_inverted.svg'),
+        'heart': os.path.join(Defaults.ICON_DIR, 'heart.svg'),
+
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
         # Data files
