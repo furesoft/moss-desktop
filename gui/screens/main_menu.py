@@ -1,8 +1,8 @@
 import time
 from abc import abstractmethod, ABC
-from functools import lru_cache
+from functools import lru_cache, wraps
 from queue import Queue
-from threading import Lock
+from threading import Lock, Thread
 from typing import TYPE_CHECKING, Dict, List, Tuple, Union
 
 import pygameextra as pe
@@ -25,6 +25,13 @@ if TYPE_CHECKING:
     from gui.aspect_ratio import Ratios
     from rm_api import API
     from gui.screens.loader import Loader
+
+
+def threaded(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        Thread(target=func, args=args, kwargs=kwargs).start()
+    return wrapper
 
 
 class ImportContextMenu(ContextMenu):
@@ -102,10 +109,12 @@ class TopBar(ContextBar):
         NameFieldScreen(self.parent_context, "New Folder", "", self._create_collection, None,
                         submit_text='Create folder')
 
+    @threaded
     def _create_notebook(self, title):
         doc = Document.new_notebook(self.api, title, self.main_menu.navigation_parent)
         self.api.upload(doc)
 
+    @threaded
     def _create_collection(self, title):
         col = DocumentCollection.create(self.api, title, self.main_menu.navigation_parent)
         self.api.upload(col)
