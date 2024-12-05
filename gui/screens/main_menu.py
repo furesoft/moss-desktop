@@ -72,7 +72,8 @@ class TopBar(ContextBar):
             "text": "Import",
             "icon": "import",
             "action": 'import_action',
-            "context_menu": 'import_context'
+            "context_menu": 'import_context',
+            "context_icon": "small_chevron_down"
         }, {
             "text": "Export",
             "icon": "export",
@@ -134,7 +135,8 @@ class SideBar(ContextMenu):
             "icon": "trashcan",
             "action": None,
             "inverted_id": "filter",
-            "disabled": True
+            "disabled": True,
+            "context_icon": "chevron_right",
         },
         {
             "text": "Favorites",

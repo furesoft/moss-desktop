@@ -118,15 +118,19 @@ class ContextBar(pe.ChildContext, ABC):
 
             button_meta['icon_rect'] = icon_rect
 
-            # Position the context icon with padding
-            context_icon = self.icons['context_menu']
-            context_icon_rect = pe.Rect(0, 0, *context_icon.size)
+            # Position the context icons with padding
+            for icon_key in (
+            'context_menu', 'chevron_right', 'chevron_down', 'small_chevron_right', 'small_chevron_down'):
+                context_icon = self.icons[icon_key]
+                context_icon_rect = pe.Rect(0, 0, *context_icon.size)
 
-            context_icon_rect.bottomright = button.area.bottomright
-            context_icon_rect.left -= self.button_margin / 2
-            context_icon_rect.top -= self.button_margin / 2
-
-            button_meta['context_icon_rect'] = context_icon_rect
+                if 'right' in icon_key:
+                    context_icon_rect.midright = button.area.midright
+                else:
+                    context_icon_rect.bottomright = button.area.bottomright
+                    context_icon_rect.top -= self.button_margin / 2
+                context_icon_rect.left -= self.button_margin / 2
+                button_meta[f'{icon_key}_icon_rect'] = context_icon_rect
 
     @property
     def button_margin(self):
@@ -171,9 +175,27 @@ class ContextBar(pe.ChildContext, ABC):
                 icon = self.icons.get(f'{button_meta["icon"]}_inverted', icon)
             icon.display(button_meta['icon_rect'].topleft)
 
-            if button.action_set['r_click']:
-                context_icon = self.icons['context_menu']
-                context_icon.display(button_meta['context_icon_rect'].topleft)
+            if context_icon_type := button_meta.get('context_icon'):
+                if context_icon_type == 'context_menu':
+                    context_icon = self.icons['context_menu'] if not is_inverted else self.icons[
+                        'context_menu_inverted']
+                    context_icon.display(button_meta['context_menu_icon_rect'].topleft)
+                elif context_icon_type == 'chevron_right':
+                    context_icon = self.icons['chevron_right'] if not is_inverted else self.icons[
+                        'chevron_right_inverted']
+                    context_icon.display(button_meta['chevron_right_icon_rect'].topleft)
+                elif context_icon_type == 'chevron_down':
+                    context_icon = self.icons['chevron_down'] if not is_inverted else self.icons[
+                        'chevron_down_inverted']
+                    context_icon.display(button_meta['chevron_down_icon_rect'].topleft)
+                elif context_icon_type == 'small_chevron_right':
+                    context_icon = self.icons['small_chevron_right'] if not is_inverted else self.icons[
+                        'small_chevron_right_inverted']
+                    context_icon.display(button_meta['small_chevron_right_icon_rect'].topleft)
+                elif context_icon_type == 'small_chevron_down':
+                    context_icon = self.icons['small_chevron_down'] if not is_inverted else self.icons[
+                        'small_chevron_down_inverted']
+                    context_icon.display(button_meta['small_chevron_down_icon_rect'].topleft)
 
             if button.disabled:
                 pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
@@ -182,5 +204,3 @@ class ContextBar(pe.ChildContext, ABC):
                 if context_menu.is_closed:
                     button_meta['_context_menu'] = None
                 context_menu()
-
-
