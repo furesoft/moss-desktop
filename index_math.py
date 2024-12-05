@@ -3,8 +3,29 @@ import json
 
 
 def generate_indexes():
+    char_first = chr(ord('a') - 1)
+    chars = ['b', char_first]
+    target = 1
+    n_ord = ord('n')
+    z_ord = ord('z')
+    a_ord = ord('a')
+
+    def increment_char(char):
+        return chr(ord(char) + 1)
+
     while True:
-        yield ''
+        chars[target] = increment_char(chars[target])
+        yield ''.join(chars)
+
+        z_index = target
+        while chars[z_index] == 'z':
+            if z_index == 0:
+                chars.insert(0, 'a')
+                target += 1
+                z_index += 1
+            chars[z_index-1] = increment_char(chars[z_index-1])
+            chars[z_index] = char_first
+
 
 
 # Extract indexes
@@ -25,8 +46,10 @@ with open('indexes.txt', 'r') as f:
 #         for index in indexes
 #     ])
 
-for index in indexes:
+for index in indexes[:500]:
     val = next(gen)
     correct = val == index
     if not correct:
         print(f"{index}: {correct} -> {val}")
+    else:
+        print(f"{index}")
