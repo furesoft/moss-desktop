@@ -45,7 +45,7 @@ def open_file(title: str, types_text: str, *filetypes):
                 file_names = filedialog.askopenfilenames(
                     parent=root,
                     title=title,
-                    
+
                     filetypes=filetypes_with_default,
                     initialdir=config.last_prompt_directory if config.last_prompt_directory and os.path.isdir(
                         config.last_prompt_directory) else None
@@ -97,8 +97,12 @@ def import_prompt(file_path, callback):
     callback(file_path)
 
 
+@open_file("Import notebook pages", "RM lines", '.rm')
+def notebook_prompt(file_path, callback):
+    callback(file_path)
+
+
 @save_file("PDF export", '.pdf')
 def export_prompt(file_path, document: 'Document', callback):
     # TODO: formats need work
     callback(file_path)
-    
