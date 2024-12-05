@@ -385,9 +385,49 @@ class Content:
 
     @staticmethod
     def page_index_generator():
-        # TODO: Figure out the index pattern and make a generator
+        char_first = chr(ord('a') - 1)
+        chars = ['b', char_first]
+        target = 1
+        flag_z = 0
+
+        def increment_char(char):
+            return chr(ord(char) + 1)
+
         while True:
-            yield 'ba'
+            chars[target] = increment_char(chars[target])
+
+            
+            do_n = chars[target-flag_z] == 'n' if flag_z else chars[target] == 'n' 
+            if do_n:
+                n_count = 0
+                n_index = target-flag_z if flag_z else target
+                while n_index >=0:
+                    if chars[n_index] == 'n':
+                        n_count += 1
+                    else:
+                        break
+                    n_index -= 1
+                if n_index < 0 and n_count >= 2:
+                    yield ''.join([*chars, 'a'])
+                    chars.extend(('b', 'a'))
+                    target += 2
+
+            yield ''.join(chars)
+
+            z_index = target
+            flag_z = 0
+            while chars[z_index] == 'z':
+                if z_index == 0:
+                    chars.insert(0, 'a')
+                    target += 1
+                    z_index += 1
+                chars[z_index] = char_first if z_index == target else 'a'
+                if chars[z_index-1] == 'z':
+                    z_index -= 1
+                else:
+                    chars[z_index-1] = increment_char(chars[z_index-1])
+                
+                flag_z += 1
 
     def check(self, document: 'Document'):
         if self.content_file_pdf_check and self.file_type == 'pdf':
