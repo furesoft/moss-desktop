@@ -144,7 +144,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
                     y += self.gui.ratios.main_menu_folder_height_distance
             else:
                 y += self.gui.ratios.main_menu_folder_height_distance
-                if i < len(self.document_collections) - 1:
+                if len(self.documents) > 0 or i < len(self.document_collections) - 1:
                     line_y = y - self.gui.ratios.main_menu_folder_margin_y / 2
                     pe.draw.line(Defaults.LINE_GRAY,
                                  (collections_x, line_y), (self.width - collections_x, line_y),
