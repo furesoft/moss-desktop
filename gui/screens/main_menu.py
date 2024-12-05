@@ -32,14 +32,13 @@ class ImportContextMenu(ContextMenu):
         {
             "text": "PDF/EPUB Import",
             "icon": "import",
-            "action": 'import_action',
+            "action": 'import_action'
         },
         {
             "text": "Notebook Import",
             "icon": "notebook_add",
-            "action": 'notebook_import',
-            "disabled": True
-        },
+            "action": 'notebook_import'
+        }
     )
 
     def import_action(self):
@@ -55,11 +54,11 @@ class TopBar(ContextBar):
         {
             "text": "Notebook",
             "icon": "notebook_add",
-            "action": 'create_notebook',
+            "action": 'create_notebook'
         }, {
             "text": "Folder",
             "icon": "folder_add",
-            "action": 'create_collection',
+            "action": 'create_collection'
         }, {
             "text": "Import",
             "icon": "import",
@@ -70,7 +69,7 @@ class TopBar(ContextBar):
             "icon": "export",
             "action": None,
             "disabled": True
-        },
+        }
     )
 
     def finalize_button_rect(self, buttons, width, height):
