@@ -41,8 +41,8 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
     text.display()
 
     extra_x = text.rect.right + gui.ratios.main_menu_folder_padding
-    star_icon = gui.icons['star_inverted']
-    tag_icon = gui.icons['tag_inverted']
+    star_icon = gui.icons['star']
+    tag_icon = gui.icons['tag']
 
     # Draw the star icon
     if collection.metadata.pinned:
