@@ -49,7 +49,7 @@ class ImportContextMenu(ContextMenu):
         notebook_prompt(lambda file_paths: import_notebook_pages_to_cloud(self.main_menu, file_paths, title))
 
     def notebook_import(self):
-        NameFieldScreen(self.main_menu.parent_context, "Import Notebook", "", self._notebook_import, None,)
+        NameFieldScreen(self.main_menu.parent_context, "Import Notebook", "", self._notebook_import, None, )
         self.close()
 
 
@@ -172,6 +172,12 @@ class MainMenu(pe.ChildContext):
         'settings': "Settings",
     }
 
+    MAINTAIN_TEXT_KEYS = (
+        *HEADER_TEXTS.keys(),
+        *SMALL_HEADER_TEXTS.keys(),
+        'debug'
+    )
+
     file_sync_operation: Union[None, FileSyncProgress]
 
     resync_icon: pe.Image
@@ -199,6 +205,8 @@ class MainMenu(pe.ChildContext):
         self.bar = TopBar(self)
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
+
+        # Header texts
         for key, text in self.HEADER_TEXTS.items():
             self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_FONT, self.ratios.main_menu_my_files_size,
                                       (0, 0), Defaults.TEXT_COLOR)
@@ -207,6 +215,14 @@ class MainMenu(pe.ChildContext):
         for key, text in self.SMALL_HEADER_TEXTS.items():
             self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
                                       (0, 0), Defaults.TEXT_COLOR)
+
+        # Document debug button text
+        self.texts['debug'] = pe.Text(
+            'DEBUG',
+            Defaults.DEBUG_FONT,
+            self.ratios.small_debug_text_size,
+            colors=Defaults.TEXT_COLOR_H
+        )
 
         self.doc_view = MainMenuDocView(parent)
         self.get_items()

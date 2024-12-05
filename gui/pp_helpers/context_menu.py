@@ -38,4 +38,4 @@ class ContextMenu(ContextBar, ABC):
             button.area.topleft = x, y
             button.area.width = max_width
             y += button.area.height
-        self.rect = pe.Rect(self.left, self.top, max_width, self.y - self.top)
+        self.rect = pe.Rect(self.left, self.top, max_width, y - self.top)

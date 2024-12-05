@@ -4,7 +4,7 @@ import time
 import json
 from functools import lru_cache
 from traceback import print_exc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 import pygameextra as pe
 from colorama import Fore
@@ -43,9 +43,15 @@ class DocumentDebugPopup(ContextMenu):
 
     ratios: 'Ratios'
 
-    def __init__(self, parent: 'GUI', document: 'Document', position):
+    def __init__(self, parent: 'GUI', document: 'Document', position: Tuple[int, int]):
         self.document = document
         super().__init__(parent.main_menu, (0, 0))
+        self.check_position(position)
+
+    def check_position(self, position):
+        self.left, self.top = tuple(p + o for p, o in zip(position, pe.display.display_reference.pos))
+        if self.rect.left != self.left or self.rect.top != self.top:
+            self.initialized = False
 
     @classmethod
     def create(cls, parent: 'GUI', document: 'Document', position):
@@ -55,6 +61,7 @@ class DocumentDebugPopup(ContextMenu):
             cls.EXISTING[key] = cls(parent, document, position)
             return cls.EXISTING[key]
         if not cls.EXISTING[key].can_close:
+            cls.EXISTING[key].check_position(position)
             return cls.EXISTING[key]
         else:
             cls.EXISTING.clear()

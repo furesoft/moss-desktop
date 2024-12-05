@@ -20,8 +20,8 @@ class ContextBar(pe.ChildContext, ABC):
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
         self.main_menu = parent
+        self.initialized = False
         super().__init__(parent.parent_context)
-        self.handle_scales()
 
     @property
     @lru_cache()
@@ -116,6 +116,11 @@ class ContextBar(pe.ChildContext, ABC):
             context_icon_rect.top -= self.ratios.main_menu_button_padding / 2
 
             button_meta['context_icon_rect'] = context_icon_rect
+
+    def pre_loop(self):
+        if not self.initialized:
+            self.handle_scales()
+            self.initialized = True
 
     def loop(self):
         for button, button_meta, button_text in self.button_data_zipped:

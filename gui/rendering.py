@@ -136,7 +136,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     preview = PreviewHandler.get_preview(document, rect.size)
     if not preview:
         notebook_large: pe.Image = gui.icons['notebook_large'].copy()
-        notebook_large.resize(tuple(v*scale for v in notebook_large.size))
+        notebook_large.resize(tuple(v * scale for v in notebook_large.size))
         notebook_large_rect = pe.Rect(0, 0, *notebook_large.size)
         notebook_large_rect.center = rect.center
         notebook_large.display(notebook_large_rect.topleft)
@@ -180,35 +180,33 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         data=data,
         disabled=document.provision or disabled
     )
-    if gui.config.debug and (popup := DocumentDebugPopup.EXISTING.get(id(document))) is not None:
-        open_document_debug_menu(gui, document, rect.topleft)
-    elif gui.config.debug:
-        debug_text = pe.Text(
-            'DEBUG',
-            Defaults.DEBUG_FONT,
-            gui.ratios.small_debug_text_size,
-            colors=Defaults.TEXT_COLOR_H
-        )
+
+    if gui.config.debug:
+        popup_exists = DocumentDebugPopup.EXISTING.get(id(document)) is not None
+        debug_text = gui.main_menu.texts['debug']
+
         # Inflate a rect around the debug text
         inflated_rect = debug_text.rect.inflate(gui.ratios.pixel(20), gui.ratios.pixel(20))
         inflated_rect.topright = rect.topright
         debug_text.rect.center = inflated_rect.center
 
-        def draw_debug_background():
-            # Draw the original_background
-            pe.draw.rect(Defaults.BUTTON_ACTIVE_COLOR, rect)
-            # Draw a background for the debug button
-            pe.draw.rect(pe.colors.darkgray, inflated_rect)
+        if not popup_exists:
+            def draw_debug_background():
+                # Draw the original_background
+                pe.draw.rect(Defaults.BUTTON_ACTIVE_COLOR, rect)
+                # Draw a background for the debug button
+                pe.draw.rect(pe.colors.darkgray, inflated_rect)
 
-        pe.button.action(
-            inflated_rect,
-            hover_draw_action=draw_debug_background,
-            name=document.uuid + '_debug',
-            action=open_document_debug_menu,
-            data=(gui, document, rect.topleft)
-        )
-
-        debug_text.display()
+            pe.button.action(
+                inflated_rect,
+                hover_draw_action=draw_debug_background,
+                name=document.uuid + '_debug',
+                action=open_document_debug_menu,
+                data=(gui, document, inflated_rect.topleft)
+            )
+            debug_text.display()
+        else:
+            open_document_debug_menu(gui, document, inflated_rect.topleft)
 
     if document.provision and document_sync_operation:
         progress_rect = rect.copy()
@@ -218,7 +216,8 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         progress_rect.bottom -= gui.ratios.document_sync_progress_margin
 
         outline_width = gui.ratios.pixel(3)
-        pe.draw.rect(Defaults.BACKGROUND, progress_rect.inflate(outline_width, outline_width), edge_rounding=gui.ratios.document_sync_progress_rounding)
+        pe.draw.rect(Defaults.BACKGROUND, progress_rect.inflate(outline_width, outline_width),
+                     edge_rounding=gui.ratios.document_sync_progress_rounding)
         pe.draw.rect(Defaults.LINE_GRAY_LIGHT, progress_rect, edge_rounding=gui.ratios.document_sync_progress_rounding)
         # left = progress_rect.left
         if document_sync_operation and document_sync_operation.total > 0:
