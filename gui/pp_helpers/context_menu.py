@@ -18,6 +18,7 @@ class ContextMenu(ContextBar, ABC):
 
     def pre_loop(self):
         pe.draw.rect(Defaults.BACKGROUND, self.rect, 0)
+        pe.draw.rect(Defaults.LINE_GRAY, self.rect, self.ratios.line)
         super().pre_loop()
 
     def close(self):
