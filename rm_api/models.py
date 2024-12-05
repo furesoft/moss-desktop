@@ -750,7 +750,7 @@ class Document:
             *notebook_data,
             *[
                 blank_notebook
-                for _ in range(page_count-len(notebook_data))
+                for _ in range(min(1, page_count-len(notebook_data)))
             ]
         ]
 
