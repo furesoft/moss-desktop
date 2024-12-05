@@ -46,11 +46,11 @@ class ContextBar(pe.ChildContext, ABC):
                 pe.RectButton(
                     rect,
                     Defaults.TRANSPARENT_COLOR,
-                    Defaults.BUTTON_ACTIVE_COLOR,
+                    Defaults.BUTTON_ACTIVE_COLOR if button['action'] else Defaults.TRANSPARENT_COLOR,
                     action_set={
                         'l_click': {
-                            'action': getattr(self, button['action']) if button['action'] else None,
-                            'args': button.get('data', ())
+                            'action': getattr(self, button['action']) if button['action'] else lambda: None,
+                            'args': button.get('data', ()),
                         },
                         'r_click': {
                             'action': self.handle_new_context_menu,
@@ -155,6 +155,8 @@ class ContextBar(pe.ChildContext, ABC):
             pe.settings.game_context.buttons.append(button)
             if is_inverted:
                 button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
+            elif not button_meta['action']:
+                button.active_resource = Defaults.TRANSPARENT_COLOR
             else:
                 button.active_resource = Defaults.BUTTON_ACTIVE_COLOR
             pe.button.check_hover(button)

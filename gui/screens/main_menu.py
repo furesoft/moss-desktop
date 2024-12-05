@@ -148,7 +148,7 @@ class SideBar(ContextMenu):
         {
             "text": "Made by RedTTG",
             "icon": "heart",
-            "action": 'love'
+            "action": None
         },
         {
             "text": "Settings",
@@ -168,9 +168,6 @@ class SideBar(ContextMenu):
 
     def settings(self):
         self.close()
-
-    def love(self):
-        pass
 
     def finalize_button_rect(self, buttons, width, height):
         # Rescale the buttons
