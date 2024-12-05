@@ -40,6 +40,17 @@ def import_files_to_cloud(gui: 'GUI', files):
 def import_notebook_pages_to_cloud(gui: 'GUI', files: List[str], title: str):
     parent = gui.main_menu.navigation_parent
 
+    gui.import_screen.predefine_item(1)
+    document = Document.new_notebook(gui.api, title, parent, page_count=len(files), notebook_data=[
+        FileHandle(file) for file in files
+    ])
+
+    document.check()
+
+    gui.import_screen.add_item(document)
+
+    
+
 
 def surfaces_to_pdf(surfaces: List[pe.Surface]):
     pdf_bytes = io.BytesIO()
