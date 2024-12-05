@@ -26,17 +26,17 @@ class DocumentDebugPopup(ContextMenu):
     BUTTONS = (
         {
             "text": "Extract files",
-            "icon": "import",
+            "icon": "export",
             "action": 'extract_files'
         },
         {
             "text": "Render pages",
-            "icon": "import",
+            "icon": "pencil",
             "action": 'render_pages'
         },
         {
             "text": "Render important",
-            "icon": "import",
+            "icon": "star_inverted",
             "action": 'render_important'
         }
     )
