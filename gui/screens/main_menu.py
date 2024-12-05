@@ -242,7 +242,6 @@ class MainMenu(pe.ChildContext):
     parent_context: 'GUI'
     icons: Dict[str, pe.Image]
     ratios: 'Ratios'
-    dirty_config: bool
 
     SORTING_FUNCTIONS = {
         'last_modified': lambda item: item.metadata.last_modified,
@@ -268,6 +267,11 @@ class MainMenu(pe.ChildContext):
         'debug'
     )
 
+    LOCATION_PARENT_MAPPING = {
+        'my_files': None,
+        'trash': 'trash',
+    }
+
     file_sync_operation: Union[None, FileSyncProgress]
 
     resync_icon: pe.Image
@@ -277,7 +281,7 @@ class MainMenu(pe.ChildContext):
     doc_view: MainMenuDocView
 
     def __init__(self, parent: 'GUI'):
-        self.navigation_parent = parent.config.last_opened_folder
+        self._navigation_parent = parent.config.last_opened_folder
         self.document_collections = {}
         self.documents = {}
         self.texts: Dict[str, pe.Text] = {}
@@ -323,13 +327,30 @@ class MainMenu(pe.ChildContext):
         self.rect_calculations()
 
     @property
+    def navigation_parent(self):
+        return self._navigation_parent
+
+    @navigation_parent.setter
+    def navigation_parent(self, uuid):
+        self._navigation_parent = uuid
+        if all((
+                self.menu_location == 'my_files',
+                self.config.save_last_opened_folder,
+                self.config.last_opened_folder != uuid
+        )):
+            self.config.last_opened_folder = uuid
+            self.parent_context.dirty_config = True
+        self.get_items()
+        self.quick_refresh()
+
+    @property
     def view_mode(self):
         return self.config.main_menu_view_mode
 
     @view_mode.setter
     def view_mode(self, value):
         self.config.main_menu_view_mode = value
-        self.dirty_config = True
+        self.parent_context.dirty_config = True
 
     @property
     def menu_location(self):
@@ -338,7 +359,11 @@ class MainMenu(pe.ChildContext):
     @menu_location.setter
     def menu_location(self, value):
         self.config.main_menu_menu_location = value
-        self.dirty_config = True
+        self.parent_context.dirty_config = True
+        if value == 'trash':
+            self.navigation_parent = 'trash'
+        elif value == 'my_files':
+            self.navigation_parent = self.config.last_opened_folder
 
     def __call__(self, *args, **kwargs):
         super().__call__(*args, **kwargs)
@@ -395,13 +420,8 @@ class MainMenu(pe.ChildContext):
         if not self.side_bar.is_closed:
             self.side_bar()
 
-    def set_parent(self, uuid=None):
-        self.navigation_parent = uuid
-        if self.config.save_last_opened_folder and self.config.last_opened_folder != uuid:
-            self.config.last_opened_folder = uuid
-            self.parent_context.dirty_config = True
-        self.get_items()
-        self.quick_refresh()
+    def set_parent(self, uuid=None):  # This function is from before navigation_parent was a property
+        self.navigation_parent = uuid or self.LOCATION_PARENT_MAPPING[self.menu_location]
 
     @staticmethod
     def get_sorted_document_collections(old_document_collections) -> sorted:
