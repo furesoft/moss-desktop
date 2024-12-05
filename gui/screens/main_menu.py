@@ -155,7 +155,7 @@ class SideBar(ContextMenu):
             "icon": "cog",
             "action": "settings",
             "disabled": True
-        },
+        }
     )
 
     def pre_loop(self):
