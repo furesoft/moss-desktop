@@ -53,7 +53,8 @@ jobs:
             assets=assets
           include-data-files: |
             LICENSE=LICENSE
-
+          nofollow-import-to: |
+            pymupdf.mupdf
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
