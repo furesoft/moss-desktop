@@ -11,4 +11,4 @@ crc32c==2.7.1
 pypdf2==3.0.1
 httpx==0.27.2
 aiohttp==3.11.6
-pymupdf==1.24.14
+pymupdf==1.25.0
