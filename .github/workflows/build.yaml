@@ -6,6 +6,7 @@ on:
     paths:
       - '**/*.py'
       - '.github/workflows/build.yaml'
+      - '*.txt'
 
 env:
   APP_NAME: "Moss Desktop"
