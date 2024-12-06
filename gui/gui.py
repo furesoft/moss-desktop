@@ -72,7 +72,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
-    'pdf_render_mode': 'cef',
+    'pdf_render_mode': 'pymupdf',
     'notebook_render_mode': 'rm_lines_svg_inker',
     'download_everything': False,
     'download_last_opened_page_to_make_preview': False,
