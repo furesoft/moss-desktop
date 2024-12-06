@@ -13,9 +13,9 @@ from rm_api.storage.common import FileHandle
 from rm_api.storage.v3 import get_file_contents, check_file_exists
 
 try:
-    import fitz
+    import pymupdf 
 except ImportError:
-    fitz = None
+    pymupdf  = None
 
 MAY_CONTAIN_A_IMAGE = Union[None, pe.Image]
 
@@ -113,11 +113,11 @@ class PreviewHandler:
 
                 document.load_files_from_cache()
 
-                if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and fitz:
+                if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and pymupdf :
                     if isinstance(stream, FileHandle):
-                        pdf = fitz.open(stream.file_path, filetype='pdf')
+                        pdf = pymupdf .open(stream.file_path, filetype='pdf')
                     else:
-                        pdf = fitz.open(
+                        pdf = pymupdf .open(
                             stream=stream,
                             filetype='pdf'
                         )
@@ -126,7 +126,7 @@ class PreviewHandler:
 
                     scale_x = Defaults.PREVIEW_SIZE[0] / pdf_page.rect.width
                     scale_y = Defaults.PREVIEW_SIZE[1] / pdf_page.rect.height
-                    matrix = fitz.Matrix(scale_x, scale_y)
+                    matrix = pymupdf .Matrix(scale_x, scale_y)
 
                     # noinspection PyUnresolvedReferences
                     pix = pdf_page.get_pixmap(matrix=matrix)
