@@ -139,7 +139,6 @@ class CodeScreen(pe.ChildContext):
 
     def pre_loop(self):
         # The background
-        pe.fill.interlace(Defaults.LINE_GRAY, 5)
 
         # Handling backspace
         if self.hold_backspace and time.time() - self.hold_backspace_timer > self.BACKSPACE_DELETE_SPEED and len(
@@ -164,14 +163,16 @@ class CodeScreen(pe.ChildContext):
                 self.ratios.pad_button_rect(self.website_info.rect),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=webbrowser.open,
-                data=("https://my.remarkable.com/#desktop", 0, True)
+                data=("https://my.remarkable.com/#desktop", 0, True),
+                name = 'code_screen.webopen<rm>'
             )
         else:
             pe.button.rect(
                 self.ratios.pad_button_rect(self.website_info.rect),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=webbrowser.open,
-                data=(self.config.uri, 0, True)
+                data=(self.config.uri, 0, True),
+                name='code_screen.webopen<custom>'
             )
 
         x = self.width // 2 - self.underscore.rect.width * (self.CODE_LENGTH / 2)

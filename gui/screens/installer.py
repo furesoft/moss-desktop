@@ -9,6 +9,7 @@ import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
 from gui.events import ResizeEvent
+from gui.screens.mixins import LogoMixin
 
 if os.name == 'nt':
     import winshell
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
     from rm_api import API
 
 
-class Installer(pe.ChildContext):
+class Installer(pe.ChildContext, LogoMixin):
     LAYER = pe.AFTER_LOOP_LAYER
     icons: Dict[str, pe.Image]
     api: 'API'
@@ -64,23 +65,7 @@ class Installer(pe.ChildContext):
             self.calculate_texts()
 
     def calculate_texts(self):
-        self.logo = pe.Text(
-            APP_NAME,
-            Defaults.LOGO_FONT, self.ratios.loader_logo_text_size,
-            pe.math.center(
-                (
-                    0, 0, self.width,
-                    self.height - (
-                            self.ratios.loader_loading_bar_height + self.ratios.loader_loading_bar_padding
-                    )
-                )
-            ),
-            Defaults.TEXT_COLOR
-        )
-        self.line_rect = pe.Rect(0, 0, self.ratios.loader_loading_bar_width,
-                                 self.ratios.loader_loading_bar_height)
-        self.line_rect.midtop = self.logo.rect.midbottom
-        self.line_rect.top += self.ratios.loader_loading_bar_padding
+        super().initialize_logo_and_line()
         buttons_rect = pe.Rect(0, 0, self.ratios.installer_buttons_width, self.ratios.installer_buttons_height)
         buttons_rect.midtop = self.line_rect.midtop
         self.cancel_button_rect = buttons_rect.scale_by(.5, 1)
@@ -104,7 +89,8 @@ class Installer(pe.ChildContext):
                 self.cancel_button_rect,
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=self.cancel,
-                text=self.cancel_text
+                text=self.cancel_text,
+                name='installer.cancel'
             )
             can_install = self.check_can_install()
             pe.button.rect(
@@ -114,6 +100,7 @@ class Installer(pe.ChildContext):
                 action=self.install,
                 text=self.install_text if not Defaults.INSTALLED else self.reinstall_text,
                 disabled=not can_install,
+                name='installer.install'
             )
             self.draw_button_outline(self.cancel_button_rect)
             self.draw_button_outline(self.install_button_rect)
@@ -122,7 +109,8 @@ class Installer(pe.ChildContext):
                 self.install_button_rect,
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=self.launch,
-                text=self.launch_text
+                text=self.launch_text,
+                name='installer.launch'
             )
             self.draw_button_outline(self.install_button_rect)
 

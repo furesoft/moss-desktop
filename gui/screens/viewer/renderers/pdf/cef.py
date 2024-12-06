@@ -31,10 +31,8 @@ class PDF_CEF_Viewer(AbstractRenderer):
     @lru_cache
     def pdf_raw(self):
         try:
-            for file in self.document.files:
-                if file.uuid == f'{self.document.uuid}.pdf':
-                    return self.document.content_data[file.uuid]
-        except IndexError:
+            return self.document.content_data[f'{self.document.uuid}.pdf']
+        except KeyError:
             self.error = 'PDF file missing'
             return None
 
