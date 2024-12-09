@@ -44,7 +44,7 @@ jobs:
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
+          nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'factory' }}
           # script-name: moss.py
           script-name: test_pymupdf.py
           mode: app
