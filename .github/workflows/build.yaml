@@ -40,7 +40,6 @@ jobs:
         run: |
           PYGAME_DIR=$(python -c 'import os, pygameextra; print(os.path.dirname(pygameextra.pygame.__file__))')
           echo "PYGAME_DIR=${PYGAME_DIR}" >> $GITHUB_ENV
-          echo "DEBUG: ${PYGAME_DIR}"
           
       - name: Build
         uses: Nuitka/Nuitka-Action@main
