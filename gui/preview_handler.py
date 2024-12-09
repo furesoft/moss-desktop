@@ -115,9 +115,9 @@ class PreviewHandler:
 
                 if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and pymupdf :
                     if isinstance(stream, FileHandle):
-                        pdf = pymupdf .open(stream.file_path, filetype='pdf')
+                        pdf = pymupdf.open(stream.file_path, filetype='pdf')
                     else:
-                        pdf = pymupdf .open(
+                        pdf = pymupdf.open(
                             stream=stream,
                             filetype='pdf'
                         )
@@ -126,7 +126,7 @@ class PreviewHandler:
 
                     scale_x = Defaults.PREVIEW_SIZE[0] / pdf_page.rect.width
                     scale_y = Defaults.PREVIEW_SIZE[1] / pdf_page.rect.height
-                    matrix = pymupdf .Matrix(scale_x, scale_y)
+                    matrix = pymupdf.Matrix(scale_x, scale_y)
 
                     # noinspection PyUnresolvedReferences
                     pix = pdf_page.get_pixmap(matrix=matrix)

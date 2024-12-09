@@ -34,7 +34,7 @@ class PDF_PyMuPDF_Viewer(AbstractRenderer):
         if not self.pdf_raw:
             self.pdf = None
         else:
-            self.pdf = pymupdf .open(stream=self.pdf_raw, filetype='pdf')
+            self.pdf = pymupdf.open(stream=self.pdf_raw, filetype='pdf')
         self.document_renderer.loading -= 1
 
     def render(self, page_uuid: str):
@@ -56,7 +56,7 @@ class PDF_PyMuPDF_Viewer(AbstractRenderer):
         scale_y = self.height / pdf_page.rect.height
 
         # Create a matrix for scaling
-        matrix = pymupdf .Matrix(scale_x, scale_y)
+        matrix = pymupdf.Matrix(scale_x, scale_y)
 
         # noinspection PyUnresolvedReferences
         pix = pdf_page.get_pixmap(matrix=matrix)
