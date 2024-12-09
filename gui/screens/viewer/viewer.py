@@ -1,3 +1,4 @@
+import threading
 import time
 
 import pygameextra as pe
@@ -7,6 +8,7 @@ from colorama import Fore
 
 from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
 from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+from .renderers.pdf.pymupdf import PDF_PyMuPDF_Viewer
 from ...events import ResizeEvent
 
 try:
@@ -21,16 +23,19 @@ except Exception:
 
 from gui.defaults import Defaults
 from gui.pp_helpers import DraggablePuller
+from rm_api import models
 
 if TYPE_CHECKING:
     from gui.gui import GUI, ConfigType
     from queue import Queue
     from rm_api.models import Document, Content
 
+
 class UnusableContent(Exception):
     def __init__(self, content: 'Content'):
         self.content = content
         super().__init__(f"Unusable content: {content}")
+
 
 class CannotRenderDocument(Exception):
     def __init__(self, document: 'Document'):
@@ -55,7 +60,7 @@ class DocumentRenderer(pe.ChildContext):
         self.hold_next = False
         self.hold_previous = False
         self.hold_timer = 0
-        
+
         # Check compatability
         if not self.document.content.usable:
             raise UnusableContent(self.document.content)
@@ -159,10 +164,16 @@ class DocumentRenderer(pe.ChildContext):
             if self.config.pdf_render_mode == 'cef' and CEFpygame:
                 self.loading += 1
                 self.renderer = PDF_CEF_Viewer(self)
+            elif self.config.pdf_render_mode == 'pymupdf':
+                self.loading += 1
+                self.renderer = PDF_PyMuPDF_Viewer(self)
             elif self.config.pdf_render_mode == 'none':
                 self.error = 'Could not render PDF'
+            elif self.config.pdf_render_mode == 'retry':
+                self.error = 'Could not render PDF. Check your configuration'
             else:
                 self.error = 'Could not render PDF. Make sure you have a compatible PDF renderer'
+
         elif self.document.content.file_type == 'notebook':
             pass
         else:
@@ -224,7 +235,7 @@ class DocumentViewer(pe.ChildContext):
     screens: 'Queue'
     icons: Dict[str, pe.Image]
     PROBLEMATIC_DOCUMENTS = set()
-    EVENT_HOOK = 'document_viewer_resize_check'
+    EVENT_HOOK_NAME = 'document_viewer_resize_check<{0}>'
 
     def __init__(self, parent: 'GUI', document_uuid: str):
         top_rect = pe.Rect(
@@ -232,7 +243,8 @@ class DocumentViewer(pe.ChildContext):
             parent.width,
             parent.ratios.document_viewer_top_draggable_height
         )
-        self.document = parent.api.documents[document_uuid]
+        self.document: Document = parent.api.documents[document_uuid]
+        self.document.check()
 
         self.top_puller = DraggablePuller(
             parent, top_rect,
@@ -245,7 +257,7 @@ class DocumentViewer(pe.ChildContext):
             self.PROBLEMATIC_DOCUMENTS.add(document_uuid)
             raise CannotRenderDocument(self.document)
         super().__init__(parent)
-        self.api.add_hook(self.EVENT_HOOK, self.resize_check_hook)
+        self.api.add_hook(self.EVENT_HOOK_NAME.format(id(self)), self.resize_check_hook)
 
     def loop(self):
         self.document_renderer()
@@ -261,7 +273,11 @@ class DocumentViewer(pe.ChildContext):
 
     def close(self):
         self.document_renderer.close()
-        self.api.remove_hook(self.EVENT_HOOK)
+        self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
+        self.document.content.c_pages.last_opened.value = self.document_renderer.last_opened_uuid
+        self.document.metadata.last_opened_page = self.document_renderer.current_page_index
+        self.document.metadata.last_opened = models.now_time()
+        threading.Thread(target=self.api.upload, args=(self.document,), kwargs={'unload': True}).start()
         del self.screens.queue[-1]
 
     def draw_close_indicator(self):

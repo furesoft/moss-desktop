@@ -6,6 +6,7 @@ on:
     paths:
       - '**/*.py'
       - '.github/workflows/build.yaml'
+      - '*.txt'
 
 env:
   APP_NAME: "Moss Desktop"
@@ -44,8 +45,7 @@ jobs:
         with:
           nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
           script-name: moss.py
-          standalone: true
-          onefile: true
+          mode: app
           disable-console: ${{ github.ref == 'refs/heads/main' }}
           macos-create-app-bundle: true
           deployment: ${{ github.ref == 'refs/heads/main' }}
@@ -59,7 +59,8 @@ jobs:
           include-data-files: |
             LICENSE=LICENSE
             ${{ env.SITE_PACKAGES_PATH }}/pygame/libpng16-16.dll=libpng16-16.dll
-
+          nofollow-import-to: |
+            pymupdf.mupdf
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

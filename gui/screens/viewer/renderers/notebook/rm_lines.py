@@ -57,11 +57,11 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
                              svg_content)
 
         encoded_svg_content = svg_content.encode()
-        if self.use_lock:
-            with self.use_lock:
-                return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
-        else:
-            return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
+        # if self.use_lock:
+        #     with self.use_lock:
+        #         return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
+        # else:
+        return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
 
 
 # noinspection PyPep8Naming

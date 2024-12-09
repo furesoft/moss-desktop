@@ -1,3 +1,6 @@
+import pygameextra as pe
+
+
 def shorten_name(name, letters=16, max_length=20):
     half = letters // 2
     # Account for the ellipsis
@@ -25,18 +28,31 @@ def shorten_name(name, letters=16, max_length=20):
     return name
 
 
-def shorten_folder(name, letters=16, max_length=20):
-    return shorten_name(name, letters, max_length)
+def text_width(text, font, fontsize):
+    return pe.Text(text, font, fontsize).rect.width
 
 
-def shorten_folder_by_size(name, width):
-    max_length = width // 10
-    letters = max_length - 4
-    return shorten_name(name, letters, max_length)
+def text_width(text, font, fontsize):
+    return pe.Text(text, font, fontsize).rect.width
 
 
-def shorten_document(name, letters=20, max_length=24):
-    return shorten_name(name, letters, max_length)
+def dynamic_text(name, font, fontsize, width):
+    if text_width(name, font, fontsize) <= width:
+        return name
+
+    ellipsis = "..."
+    max_length = len(name)
+    start_length = max_length // 2
+    end_length = max_length - start_length
+
+    while start_length > 0 and end_length > 0:
+        test_text = name[:start_length] + ellipsis + name[-end_length:]
+        if text_width(test_text, font, fontsize) <= width:
+            return test_text
+        start_length -= 1
+        end_length -= 1
+
+    return ellipsis
 
 
 def shorten_path(path, letters=26, max_length=30):
