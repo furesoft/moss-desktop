@@ -45,7 +45,8 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
-          script-name: moss.py
+          # script-name: moss.py
+          script-name: test_pymupdf.py
           mode: app
           disable-console: ${{ github.ref == 'refs/heads/main' }}
           macos-create-app-bundle: true
@@ -71,4 +72,5 @@ jobs:
             build/moss.exe
             build/moss.bin
             build/moss.app
+            build/test_pymupdf.exe
             compilation-report.xml
