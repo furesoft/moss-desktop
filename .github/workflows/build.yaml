@@ -36,6 +36,7 @@ jobs:
           pip install -r requirements-${{ runner.os }}.txt
 
       - name: Get pygame directory
+        shell: bash
         run: |
           PYGAME_DIR=$(python -c 'import os, pygame; print(os.path.dirname(pygame.__file__))')
           echo "PYGAME_DIR=${PYGAME_DIR}" >> $GITHUB_ENV
