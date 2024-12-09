@@ -37,8 +37,10 @@ jobs:
 
       - name: Get pygame directory
         run: |
-          echo "PYGAME_DIR=$(python -c 'import os, pygame; print(os.path.dirname(pygame.__file__))')" >> $GITHUB_ENV
-
+          PYGAME_DIR=$(python -c 'import os, pygame; print(os.path.dirname(pygame.__file__))')
+          echo "PYGAME_DIR=${PYGAME_DIR}" >> $GITHUB_ENV
+          echo "DEBUG: ${PYGAME_DIR}"
+          
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
