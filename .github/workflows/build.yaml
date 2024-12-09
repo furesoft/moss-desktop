@@ -61,8 +61,8 @@ jobs:
           include-data-files: |
             LICENSE=LICENSE
             ${{ env.PYGAME_DIR }}/libpng16-16.dll=libpng16-16.dll
-          nofollow-import-to: |
-            pymupdf.mupdf
+          # nofollow-import-to: |
+          #   pymupdf.mupdf
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
