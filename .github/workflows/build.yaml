@@ -35,6 +35,10 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-${{ runner.os }}.txt
 
+      - name: Get pygame directory
+        run: |
+          echo "PYGAME_DIR=$(python -c 'import os, pygame; print(os.path.dirname(pygame.__file__))')" >> $GITHUB_ENV
+
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
@@ -53,7 +57,7 @@ jobs:
             assets=assets
           include-data-files: |
             LICENSE=LICENSE
-            ${{ env.Python_ROOT_DIR }}/site-packages/pygame/libpng16-16.dll=libpng16-16.dll
+            ${{ env.PYGAME_DIR }}/libpng16-16.dll=libpng16-16.dll
           nofollow-import-to: |
             pymupdf.mupdf
 
