@@ -87,7 +87,8 @@ class MainMenuContextBar(ContextBar):
             self.update_offline_error_text()
 
     def update_offline_error_text(self):
-        self.offline_error_text.rect.bottomright = (self.width - self.ratios.main_menu_button_margin, self.ratios.main_menu_top_height)
+        self.offline_error_text.rect.bottomright = (
+        self.width - self.ratios.main_menu_button_margin, self.ratios.main_menu_top_height)
 
     def handle_scales(self):
         super().handle_scales()
@@ -165,7 +166,6 @@ class TopBar(MainMenuContextBar):
         return ImportContextMenu(self.main_menu, ideal_position)
 
 
-
 class TopBarSelectOne(MainMenuContextBar):
     BUTTONS = (
         {
@@ -183,7 +183,43 @@ class TopBarSelectOne(MainMenuContextBar):
         }, {
             "text": "Trash",
             "icon": "trashcan",
+            "action": "trash"
+        }, {
+            "text": "Delete",
+            "icon": "trashcan",
             "action": None
+        }, {
+            "text": "Move",
+            "icon": "move",
+            "action": None
+        },
+    )
+
+    def trash(self):
+        items_to_upload = []
+        for document_uuid in self.main_menu.doc_view.selected_documents:
+            document = self.api.documents[document_uuid]
+            items_to_upload.append(document)
+            document.parent = "trash"
+        for document_collection_uuid in self.main_menu.doc_view.selected_document_collections:
+            document_collection = self.api.document_collections[document_collection_uuid]
+            items_to_upload.append(document_collection)
+            document_collection.parent = "trash"
+        self.api.upload_many_documents(items_to_upload)
+        self.main_menu.doc_view.selected_documents.clear()
+        self.main_menu.doc_view.selected_document_collections.clear()
+
+
+class TopBarSelectMulti(TopBarSelectOne):
+    BUTTONS = (
+        {
+            "text": "Favorite",
+            "icon": "star",
+            "action": None
+        }, {
+            "text": "Trash",
+            "icon": "trashcan",
+            "action": "trash"
         }, {
             "text": "Delete",
             "icon": "trashcan",
@@ -396,6 +432,7 @@ class MainMenu(pe.ChildContext):
         parent.main_menu = self  # Assign myself as the main menu
         self._bar = TopBar(self)
         self._bar_one = TopBarSelectOne(self)
+        self._bar_multi = TopBarSelectMulti(self)
 
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
@@ -428,6 +465,11 @@ class MainMenu(pe.ChildContext):
 
     @property
     def bar(self):
+        selected_items = len(self.doc_view.selected_documents) + len(self.doc_view.selected_document_collections)
+        if selected_items == 1:
+            return self._bar_one
+        elif selected_items > 1:
+            return self._bar_multi
         return self._bar
 
     @property
@@ -589,7 +631,9 @@ class MainMenu(pe.ChildContext):
     def _critical_event_hook(self, event):
         if isinstance(event, ResizeEvent):
             self.invalidate_cache()
-            self.bar.handle_scales()
+            self._bar.handle_scales()
+            self._bar_one.handle_scales()
+            self._bar_multi.handle_scales()
             self.side_bar.handle_scales()
             self.doc_view.update_size()
         elif isinstance(event, NewDocuments):
