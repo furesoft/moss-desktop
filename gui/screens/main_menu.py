@@ -13,6 +13,7 @@ from gui.file_prompts import import_prompt, notebook_prompt
 from gui.pp_helpers import ContextMenu, ContextBar
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
+from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 from rm_api.models import Document, DocumentCollection
@@ -202,6 +203,11 @@ class SideBar(ContextMenu):
             "action": None
         },
         {
+            "text": "Guides",
+            "icon": "compass",
+            "action": "guides"
+        },
+        {
             "text": "Settings",
             "icon": "cog",
             "action": "settings",
@@ -218,6 +224,10 @@ class SideBar(ContextMenu):
         self.close()
 
     def settings(self):
+        self.close()
+
+    def guides(self):
+        self.screens.put(Guides(self.parent_context))
         self.close()
 
     def finalize_button_rect(self, buttons, width, height):

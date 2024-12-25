@@ -23,6 +23,11 @@ class ReusedIcon:
         self.key = key
         self.scale = scale
 
+class ResizedIcon:
+    def __init__(self, item: str, scale: float):
+        self.item = item
+        self.scale = scale
+
 
 class Loader(pe.ChildContext, LogoMixin):
     TO_LOAD = {
@@ -65,6 +70,8 @@ class Loader(pe.ChildContext, LogoMixin):
         'cog': os.path.join(Defaults.ICON_DIR, 'cog.svg'),
         'cog_inverted': os.path.join(Defaults.ICON_DIR, 'cog_inverted.svg'),
         'heart': os.path.join(Defaults.ICON_DIR, 'heart.svg'),
+        'compass': os.path.join(Defaults.ICON_DIR, 'compass.svg'),
+        'discord_qr_code': ResizedIcon(os.path.join(Defaults.IMAGES_DIR, 'discord_qr_code.png'), 0.1),
 
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
@@ -99,6 +106,8 @@ class Loader(pe.ChildContext, LogoMixin):
             if isinstance(item, ReusedIcon):
                 self.icons[key] = self.icons[item.key].copy()
                 self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
+            elif isinstance(item, ResizedIcon):
+                self.load_image(key, item.item, item.scale)
             elif not isinstance(item, str):
                 continue
             elif item.endswith('.svg'):
@@ -108,6 +117,7 @@ class Loader(pe.ChildContext, LogoMixin):
                 self.load_image(key, item, 0.5)
             elif item.endswith('.png'):
                 self.load_image(key, item)
+
             else:
                 self.load_data(key, item)
             self.items_loaded += 1

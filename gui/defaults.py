@@ -38,6 +38,7 @@ class Defaults:
 
     HTML_DIR = os.path.join(ASSET_DIR, 'html')
     ICON_DIR = os.path.join(ASSET_DIR, 'icons')
+    IMAGES_DIR = os.path.join(ASSET_DIR, 'images')
     DATA_DIR = os.path.join(ASSET_DIR, 'data')
     FONT_DIR = os.path.join(ASSET_DIR, 'fonts')
 
@@ -70,6 +71,7 @@ class Defaults:
     MAIN_MENU_PROGRESS_FONT = MONO_FONT
     CODE_FONT = MONO_FONT
     DEBUG_FONT = MONO_FONT
+    GUIDES_FONT = ROBOTO_REGULAR_FONT
 
     BACKGROUND = pe.colors.white
 
