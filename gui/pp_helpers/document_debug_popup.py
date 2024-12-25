@@ -36,7 +36,7 @@ class DocumentDebugPopup(ContextMenu):
         },
         {
             "text": "Render important",
-            "icon": "star_inverted",
+            "icon": "star",
             "action": 'render_important'
         }
     )
