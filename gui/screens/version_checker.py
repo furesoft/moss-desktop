@@ -71,23 +71,28 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                 subprocess.run(["git", "fetch"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
                 # Compare local and remote branch
-                local = subprocess.check_output(["git", "rev-parse", branch]).strip().decode("utf-8")
-                remote = subprocess.check_output(["git", "rev-parse", f"origin/{branch}"]).strip().decode("utf-8")
-                if 'unknown revision' in remote:
-                    raise GitCheckException("Remote branch not found")
-                if local != remote:
+                status = subprocess.check_output(["git", "status", "-sb"]).strip().decode('utf-8')
+                if '[behind' in status:
                     self.warnings.append(WarningPopup(
                         self.parent_context,
                         "New commits available!",
-                        "There are new commits available for this branch\n"
-                        "Please pull the changes to stay up to date\n\n"
+                        "There are new commits available for this branch.\n"
+                        "Please pull the changes to stay up to date.\n\n"
                         "Do not report issues unless you have pulled the changes!"
+                    ))
+                elif '[ahead' in status and not self.config.debug:
+                    self.warnings.append(WarningPopup(
+                        self.parent_context,
+                        "You've created new commits!",
+                        "Can't wait for you to share them!\n"
+                        "Disable this message by enabling debug.\n\n"
+                        "Do not report issues unless you have pushed these changes!"
                     ))
             except (FileNotFoundError, GitCheckException):
                 self.warnings.append(WarningPopup(
                     self.parent_context,
-                    "Failed to check for updates",
-                    "Failed to check for updates, please check manually for any new commits"
+                    "Failed to check for updates.",
+                    "Failed to check for updates, please check manually for any new commits."
                 ))
 
 
