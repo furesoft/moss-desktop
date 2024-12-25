@@ -11,6 +11,7 @@ class ContextBar(pe.ChildContext, ABC):
     TEXT_COLOR = Defaults.TEXT_COLOR_T
     TEXT_COLOR_INVERTED = Defaults.TEXT_COLOR_H
     BUTTONS: Tuple[dict] = ()
+    INVERT = False
 
     # definitions from GUI
     icons: Dict[str, pe.Image]
@@ -19,6 +20,7 @@ class ContextBar(pe.ChildContext, ABC):
     # Scaled button texts
     texts: List[pe.Text]
     texts_inverted: List[pe.Text]
+
 
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
@@ -152,10 +154,10 @@ class ContextBar(pe.ChildContext, ABC):
     def loop(self):
         for button, button_meta, button_text, button_text_inverted in self.button_data_zipped:
             if inverted_id := button_meta.get('inverted_id'):
-                if is_inverted := (inverted_id == self.currently_inverted):
+                if is_inverted := (self.INVERT or inverted_id == self.currently_inverted):
                     pe.draw.rect(Defaults.INVERTED_COLOR, button.area)
             else:
-                is_inverted = False
+                is_inverted = self.INVERT
             pe.settings.game_context.buttons.append(button)
             if is_inverted:
                 button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED

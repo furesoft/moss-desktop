@@ -88,12 +88,16 @@ class MainMenuContextBar(ContextBar):
 
     def update_offline_error_text(self):
         self.offline_error_text.rect.bottomright = (
-        self.width - self.ratios.main_menu_button_margin, self.ratios.main_menu_top_height)
+            self.width - self.ratios.main_menu_button_margin, self.ratios.main_menu_top_height)
 
     def handle_scales(self):
         super().handle_scales()
         if self.api.offline_mode:
             self.update_offline_error_text()
+
+    def pre_loop(self):
+        super().pre_loop()
+        pe.draw.rect(Defaults.SELECTED if self.INVERT else Defaults.BACKGROUND, (0, 0, self.width, self.ratios.main_menu_top_height))
 
     def post_loop(self):
         super().post_loop()
@@ -175,7 +179,7 @@ class TopBarSelectOne(MainMenuContextBar):
         }, {
             "text": "Favorite",
             "icon": "star",
-            "action": None
+            "action": "favorite"
         }, {
             "text": "Duplicate",
             "icon": "duplicate",
@@ -194,6 +198,45 @@ class TopBarSelectOne(MainMenuContextBar):
             "action": None
         },
     )
+    INVERT = True
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.is_favorite = False
+
+    @property
+    def documents(self):
+        return self.main_menu.doc_view.selected_documents
+
+    @property
+    def document_collections(self):
+        return self.main_menu.doc_view.selected_document_collections
+
+    @property
+    def both(self):
+        return tuple(self.documents) + tuple(self.document_collections)
+
+    def post_loop(self):
+        super().post_loop()
+        self.is_favorite = all(map(lambda x: self.get_item(x).metadata.pinned, self.both))
+        for button in self.BUTTONS:
+            if 'star' in button['icon']:
+                button['icon'] = 'star_empty' if self.is_favorite else 'star'
+                break
+
+    def favorite(self):
+        items_to_upload = []
+        for document_uuid in self.documents:
+            document = self.api.documents[document_uuid]
+            items_to_upload.append(document)
+            document.metadata.pinned = not self.is_favorite
+        for document_collection_uuid in self.document_collections:
+            document_collection = self.api.document_collections[document_collection_uuid]
+            items_to_upload.append(document_collection)
+            document_collection.metadata.pinned = not self.is_favorite
+        self.api.upload_many_documents(items_to_upload)
+        self.documents.clear()
+        self.document_collections.clear()
 
     def rename(self):
         NameFieldScreen(self.parent_context, "Rename", self.single_item.metadata.visible_name, self._rename, None,
@@ -206,24 +249,30 @@ class TopBarSelectOne(MainMenuContextBar):
 
     @property
     def single_item(self) -> Union[Document, DocumentCollection]:
-        if len(self.main_menu.doc_view.selected_documents) > 0:
-            return self.api.documents[next(iter(self.main_menu.doc_view.selected_documents))]
+        if len(self.documents) > 0:
+            return self.api.documents[next(iter(self.documents))]
         else:
-            return self.api.document_collections[next(iter(self.main_menu.doc_view.selected_document_collections))]
+            return self.api.document_collections[next(iter(self.document_collections))]
+
+    def get_item(self, uuid: str) -> Union[Document, DocumentCollection]:
+        if uuid in self.documents:
+            return self.api.documents[uuid]
+        else:
+            return self.api.document_collections[uuid]
 
     def trash(self):
         items_to_upload = []
-        for document_uuid in self.main_menu.doc_view.selected_documents:
+        for document_uuid in self.documents:
             document = self.api.documents[document_uuid]
             items_to_upload.append(document)
             document.parent = "trash"
-        for document_collection_uuid in self.main_menu.doc_view.selected_document_collections:
+        for document_collection_uuid in self.document_collections:
             document_collection = self.api.document_collections[document_collection_uuid]
             items_to_upload.append(document_collection)
             document_collection.parent = "trash"
         self.api.upload_many_documents(items_to_upload)
-        self.main_menu.doc_view.selected_documents.clear()
-        self.main_menu.doc_view.selected_document_collections.clear()
+        self.documents.clear()
+        self.document_collections.clear()
 
 
 class TopBarSelectMulti(TopBarSelectOne):
@@ -231,7 +280,7 @@ class TopBarSelectMulti(TopBarSelectOne):
         {
             "text": "Favorite",
             "icon": "star",
-            "action": None
+            "action": "favorite"
         }, {
             "text": "Trash",
             "icon": "trashcan",
