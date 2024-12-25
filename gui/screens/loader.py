@@ -133,6 +133,7 @@ class Loader(pe.ChildContext, LogoMixin):
         if not self.current_progress:
             self.current_progress = 1
         self.api.spread_event(NewDocuments())
+
         self.loading_complete_marker = time.time()
 
     def load_image(self, key, file, multiplier: float = 1):

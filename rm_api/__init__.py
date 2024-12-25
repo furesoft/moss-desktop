@@ -56,6 +56,7 @@ class API:
         if self.sync_file_path is not None:
             os.makedirs(self.sync_file_path, exist_ok=True)
         self.last_root = None
+        self.offline_mode = False
         self.document_storage_uri = None
         self.document_notifications_uri = None
         self._upload_lock = threading.Lock()
@@ -98,7 +99,7 @@ class API:
         return self._use_new_sync
 
     def connect_to_notifications(self):
-        if self.connected_to_notifications:
+        if self.connected_to_notifications or self.offline_mode:
             return
         self.check_for_document_notifications()
         handle_notifications(self)
@@ -150,6 +151,8 @@ class API:
         del self._hook_list[hook_id]
 
     def check_for_document_storage(self):
+        if self.offline_mode:
+            return
         if not self.document_storage_uri:
             uri = get_document_storage_uri(self)
             if not uri:

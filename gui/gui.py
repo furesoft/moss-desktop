@@ -177,6 +177,7 @@ class GUI(pe.GameContext):
         except FailedToRefreshToken:
             os.remove(Defaults.TOKEN_FILE_PATH)
             self.api = API(**self.api_kwargs)
+        self.api.last_root = self.config.last_root
         self.api.debug = self.config.debug
         self.screens = Queue()
         self.ratios = Ratios(self.config.scale)
@@ -187,7 +188,7 @@ class GUI(pe.GameContext):
         self.main_menu: Union['MainMenu', None] = None
         from gui.screens.version_checker import VersionChecker
 
-        if self.api.token:
+        if self.api.token or self.api.offline_mode:
             from gui.screens.loader import Loader
             self.screens.put(Loader(self))
         else:
