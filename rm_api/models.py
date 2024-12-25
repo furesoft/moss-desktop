@@ -649,6 +649,10 @@ class Document:
 
     # noinspection PyTypeChecker
     def _download_files(self, callback=None):
+        if self.api.offline_mode:
+            if callback is not None:
+                callback()
+            return
         self.downloading = True
         for file in self.files:
             if file.uuid not in self.content_files:
