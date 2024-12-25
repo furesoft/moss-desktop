@@ -52,8 +52,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
                                            , (0, 0),
                                            Defaults.DOCUMENT_TITLE_COLOR)
                 self.texts[uuid + '_inverted'] = pe.Text(shortened_text, *font_details
-                                           , (0, 0),
-                                           Defaults.DOCUMENT_TITLE_COLOR_INVERTED)
+                                                         , (0, 0),
+                                                         Defaults.DOCUMENT_TITLE_COLOR_INVERTED)
                 self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name, *font_details, (0, 0),
                                                      Defaults.DOCUMENT_TITLE_COLOR)
 
