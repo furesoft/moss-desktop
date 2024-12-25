@@ -63,17 +63,36 @@ class ImportContextMenu(ContextMenu):
         self.close()
 
 
+class DeleteContextMenu(ContextMenu):
+    BUTTONS = (
+        {
+            "text": "Delete",
+            "icon": "trashcan_delete",
+            "action": 'delete_confirm'
+        },
+    )
+    INVERT = True
+
+    def delete_confirm(self):
+        self.main_menu.bar.delete_confirm()
+        self.close()
+
+
 class MainMenuContextBar(ContextBar):
     ONLINE_ACTIONS = ()
+    INCLUDE_MENU = True
+    ALIGN = 'center'
 
     def __init__(self, parent):
-        self.BUTTONS = (
-            {
-                "text": "Menu",
-                "icon": "burger",
-                "action": 'open_menu'
-            }, *self.BUTTONS
-        )
+        if self.INCLUDE_MENU:
+            # noinspection PyTypeChecker
+            self.BUTTONS = (
+                {
+                    "text": "Menu",
+                    "icon": "burger",
+                    "action": 'open_menu'
+                }, *self.BUTTONS
+            )
         self.popups = Queue()
         if parent.api.offline_mode:
             for button in self.BUTTONS:
@@ -124,14 +143,22 @@ class MainMenuContextBar(ContextBar):
         )
 
     def finalize_button_rect(self, buttons, width, height):
-        width += (len(self.BUTTONS) - 2) * self.ratios.main_menu_bar_padding
-        width -= buttons[0].area.width
-        x = self.width / 2
-        x -= width / 2
-        margin = (self.ratios.main_menu_top_height - buttons[0].area.height) / 2
-        buttons[0].area.left = margin
-        buttons[0].area.top = margin
-        for button in buttons[1:]:
+        width += (len(self.BUTTONS) - (2 if self.INCLUDE_MENU else 1)) * self.ratios.main_menu_bar_padding
+        max_width = self.main_menu.resync_rect.left - self.ratios.main_menu_button_margin
+        if self.INCLUDE_MENU:
+            width -= buttons[0].area.width
+        if self.ALIGN == 'center':
+            x = self.width / 2
+            x -= width / 2
+        elif self.ALIGN == 'left':
+            x = self.ratios.main_menu_button_margin
+        elif self.ALIGN == 'right':
+            x = max_width - width - self.ratios.main_menu_button_margin
+        if self.INCLUDE_MENU:
+            margin = (self.ratios.main_menu_top_height - buttons[0].area.height) / 2
+            buttons[0].area.left = margin
+            buttons[0].area.top = margin
+        for button in buttons[1 if self.INCLUDE_MENU else 0:]:
             button.area.left = x
             x = button.area.right + self.ratios.main_menu_bar_padding
 
@@ -140,16 +167,17 @@ class MainMenuContextBar(ContextBar):
 
 
 class TopBar(MainMenuContextBar):
+    ADD_FOLDER = {
+        "text": "Folder",
+        "icon": "folder_add",
+        "action": 'create_collection'
+    }
     BUTTONS = (
         {
             "text": "Notebook",
             "icon": "notebook_add",
             "action": 'create_notebook'
-        }, {
-            "text": "Folder",
-            "icon": "folder_add",
-            "action": 'create_collection'
-        }, {
+        }, ADD_FOLDER, {
             "text": "Import",
             "icon": "import",
             "action": 'import_action',
@@ -192,6 +220,10 @@ class TopBar(MainMenuContextBar):
 class TopBarSelectOne(MainMenuContextBar):
     BUTTONS = (
         {
+            "text": "Deselect",
+            "icon": "x_medium",
+            "action": "deselect"
+        }, {
             "text": "Rename",
             "icon": "text_edit",
             "action": "rename"
@@ -202,23 +234,23 @@ class TopBarSelectOne(MainMenuContextBar):
         }, {
             "text": "Duplicate",
             "icon": "duplicate",
-            "action": None
+            "action": "duplicate"
         }, {
             "text": "Trash",
             "icon": "trashcan",
-            "action": "trash"
-        }, {
-            "text": "Delete",
-            "icon": "trashcan",
-            "action": "delete_confirm"
+            "action": "trash",
+            "context_menu": 'delete_context',
+            "context_icon": "small_chevron_down"
         }, {
             "text": "Move",
             "icon": "move",
-            "action": None
+            "action": "move"
         },
     )
     DELETE_MESSAGE = "Are you sure you want to delete this item?"
     INVERT = True
+    INCLUDE_MENU = False
+    ALIGN = 'left'
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -231,6 +263,18 @@ class TopBarSelectOne(MainMenuContextBar):
         self.popups.put(WarningPopup(
             self.parent_context, "Feature not ready",
             "Please note delete is not ready yet\nBut it would have occurred if it was ready."))
+
+    def move(self):
+        self.main_menu.move_mode = True
+
+    def duplicate(self):
+        self.popups.put(WarningPopup(
+            self.parent_context, "Feature not ready",
+            "Please note duplicate is not ready yet\nBut it would have occurred if it was ready."))
+
+    def deselect(self):
+        self.documents.clear()
+        self.document_collections.clear()
 
     @property
     def documents(self):
@@ -263,8 +307,7 @@ class TopBarSelectOne(MainMenuContextBar):
             items_to_upload.append(document_collection)
             document_collection.metadata.pinned = not self.is_favorite
         self.api.upload_many_documents(items_to_upload)
-        self.documents.clear()
-        self.document_collections.clear()
+        self.deselect()
 
     def rename(self):
         NameFieldScreen(self.parent_context, "Rename", self.single_item.metadata.visible_name, self._rename, None,
@@ -288,42 +331,90 @@ class TopBarSelectOne(MainMenuContextBar):
         else:
             return self.api.document_collections[uuid]
 
-    def trash(self):
+    def move_to(self, parent: str):
         items_to_upload = []
         for document_uuid in self.documents:
             document = self.api.documents[document_uuid]
             items_to_upload.append(document)
-            document.parent = "trash"
+            document.parent = parent
         for document_collection_uuid in self.document_collections:
             document_collection = self.api.document_collections[document_collection_uuid]
             items_to_upload.append(document_collection)
-            document_collection.parent = "trash"
+            document_collection.parent = parent
         self.api.upload_many_documents(items_to_upload)
-        self.documents.clear()
-        self.document_collections.clear()
+        self.deselect()
+
+    def trash(self):
+        self.move_to('trash')
+
+    def delete_context(self, ideal_position):
+        return DeleteContextMenu(self.main_menu, ideal_position)
 
 
 class TopBarSelectMulti(TopBarSelectOne):
     BUTTONS = (
         {
+            "text": "Deselect",
+            "icon": "x_medium",
+            "action": "deselect"
+        }, {
             "text": "Favorite",
             "icon": "star",
             "action": "favorite"
         }, {
+            "text": "Duplicate",
+            "icon": "duplicate",
+            "action": "duplicate"
+        }, {
             "text": "Trash",
             "icon": "trashcan",
-            "action": "trash"
-        }, {
-            "text": "Delete",
-            "icon": "trashcan",
-            "action": "delete_confirm"
+            "action": "trash",
+            "context_menu": 'delete_context',
+            "context_icon": "small_chevron_down"
         }, {
             "text": "Move",
             "icon": "move",
-            "action": None
+            "action": "move"
         },
     )
     DELETE_MESSAGE = "Are you sure you want to delete these items?"
+    ALIGN = 'right'
+
+
+class TopBarSelectMove(TopBarSelectOne):
+    BUTTONS = (
+        {
+            "text": "Cancel move",
+            "icon": "x_medium",
+            "action": "cancel"
+        }, {
+            "text": "Deselect",
+            "icon": "x_medium",
+            "action": "deselect"
+        }, TopBar.ADD_FOLDER, {
+            "text": "Move here",
+            "icon": "move",
+            "action": "finalize_move"
+        }, {
+            "text": "Duplicate here",
+            "icon": "duplicate",
+            "action": "duplicate_here"
+        },
+    )
+    ALIGN = 'right'
+
+    def cancel(self):
+        self.main_menu.move_mode = False
+
+    def finalize_move(self):
+        self.move_to(self.main_menu.navigation_parent)
+
+    def duplicate_here(self):
+        super().duplicate()
+
+    # noinspection PyProtectedMember
+    def create_collection(self):
+        self.main_menu._bar.create_collection()
 
 
 class SideBar(ContextMenu):
@@ -523,11 +614,13 @@ class MainMenu(pe.ChildContext):
         # reversed is equivalent to descending
         # obviously, non reversed is ascending
         self.current_sorting_reverse = True
+        self.move_mode = False
         super().__init__(parent)
         parent.main_menu = self  # Assign myself as the main menu
         self._bar = TopBar(self)
         self._bar_one = TopBarSelectOne(self)
         self._bar_multi = TopBarSelectMulti(self)
+        self._bar_move = TopBarSelectMove(self)
 
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
@@ -564,7 +657,11 @@ class MainMenu(pe.ChildContext):
     @property
     def bar(self):
         selected_items = len(self.doc_view.selected_documents) + len(self.doc_view.selected_document_collections)
-        if selected_items == 1:
+        if selected_items > 0 and self.move_mode:
+            return self._bar_move
+        elif self.move_mode:
+            self.move_mode = False
+        elif selected_items == 1:
             return self._bar_one
         elif selected_items > 1:
             return self._bar_multi

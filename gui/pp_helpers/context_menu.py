@@ -18,7 +18,7 @@ class ContextMenu(ContextBar, ABC):
         super().__init__(parent)
 
     def pre_loop(self):
-        pe.draw.rect(Defaults.BACKGROUND, self.rect)
+        pe.draw.rect(Defaults.SELECTED if self.INVERT else Defaults.BACKGROUND, self.rect)
         pe.button.action(self.rect, name=f'context_menu<{id(self)}>.blank_space')
         if self.ENABLE_OUTLINE:
             pe.draw.rect(Defaults.LINE_GRAY, self.rect, self.ratios.line)

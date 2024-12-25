@@ -2,7 +2,7 @@ from functools import lru_cache
 
 import pygameextra as pe
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 from gui.defaults import Defaults
 
 
@@ -10,7 +10,7 @@ class ContextBar(pe.ChildContext, ABC):
     LAYER = pe.AFTER_LOOP_LAYER
     TEXT_COLOR = Defaults.TEXT_COLOR_T
     TEXT_COLOR_INVERTED = Defaults.TEXT_COLOR_H
-    BUTTONS: Tuple[dict] = ()
+    BUTTONS: Tuple[Dict[str, Optional[str]]] = ()
     INVERT = False
 
     # definitions from GUI
