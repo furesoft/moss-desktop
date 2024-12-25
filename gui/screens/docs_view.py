@@ -18,6 +18,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
     def __init__(self, gui: 'GUI', area):
         self.AREA = area
         self.texts: Dict[str, pe.Text] = {}
+        self.selected_documents = set()
+        self.selected_document_collections = set()
         self.x_padding_collections = 0
         self.x_padding_documents = 0
         self.last_width = None
@@ -49,6 +51,9 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 self.texts[uuid] = pe.Text(shortened_text, *font_details
                                            , (0, 0),
                                            Defaults.DOCUMENT_TITLE_COLOR)
+                self.texts[uuid + '_inverted'] = pe.Text(shortened_text, *font_details
+                                           , (0, 0),
+                                           Defaults.DOCUMENT_TITLE_COLOR_INVERTED)
                 self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name, *font_details, (0, 0),
                                                      Defaults.DOCUMENT_TITLE_COLOR)
 
@@ -176,7 +181,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 else:
                     document_sync_operation = None
                 render_document(self.gui, rect, self.texts, document, document_sync_operation,
-                                self.scale)
+                                self.scale, self.select_document, document.uuid in self.selected_documents)
 
             x += self.document_width + self.gui.ratios.main_menu_document_padding
             if x + self.document_width > self.width and i + 1 < len(self.documents):
@@ -184,6 +189,12 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 y += full_document_height
             if y > self.height:
                 break
+
+    def select_document(self, document_uuid: str):
+        if document_uuid in self.selected_documents:
+            self.selected_documents.remove(document_uuid)
+        else:
+            self.selected_documents.add(document_uuid)
 
     @property
     def document_width(self):

@@ -101,10 +101,11 @@ def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
 
 
 def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
-                    document_sync_operation: DocumentSyncProgress = None, scale=1):
+                    document_sync_operation: DocumentSyncProgress = None, scale=1, select_document=None,
+                    selected: bool = False):
     # Check if the document is being debugged and keep the debug menu open
 
-    title_text = texts.get(document.uuid)
+    title_text = texts.get(document.uuid+('_inverted' if selected else ''))
     if not title_text:
         return
 
@@ -113,6 +114,16 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
 
     action = document.ensure_download_and_callback
     data = lambda: PreviewHandler.clear_for(document.uuid, lambda: open_document(gui, document.uuid))
+    action_set = {
+        'l_click': {
+            'action': action,
+            'args': data
+        },
+        'r_click': {
+            'action': select_document,
+            'args': document.uuid
+        }
+    }
     disabled = document.downloading
 
     # Start downloading the document if it's not available and not downloading
@@ -121,14 +132,21 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     if gui.config.download_everything and not document.available and not document.downloading:
         document.ensure_download_and_callback(lambda: PreviewHandler.clear_for(document.uuid))
 
+    if selected:
+        selection_rect = rect.inflate(gui.ratios.main_menu_x_padding, gui.ratios.main_menu_x_padding)
+        selection_rect.height += title_text.rect.height + gui.ratios.main_menu_x_padding + gui.ratios.line * 2
+        pe.draw.rect(Defaults.SELECTED, selection_rect)
+        pe.draw.rect(Defaults.BACKGROUND, rect)
+
     render_button_using_text(
         gui, title_text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=document.uuid + '_title_hover',
         hover_draw_action=render_full_document_title,
         hover_draw_data=(gui, texts, document.uuid),
-        action=action,
-        data=data,
+        action=None,
+        data=None,
+        action_set=action_set,
         disabled=document.provision or disabled
     )
 
@@ -171,13 +189,13 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         Defaults.DOCUMENT_GRAY,
         rect, gui.ratios.pixel(2)
     )
+
     # Render the button
     pe.button.rect(
         rect,
         Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
         name=document.uuid,
-        action=action,
-        data=data,
+        action_set=action_set,
         disabled=document.provision or disabled
     )
 
