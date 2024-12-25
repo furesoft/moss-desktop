@@ -51,6 +51,7 @@ class ConfigDict(TypedDict):
     uri: str
     discovery_uri: str
     last_root: Union[None, str]
+    last_guide: str
     pdf_render_mode: PDF_RENDER_MODES
     notebook_render_mode: NOTEBOOK_RENDER_MODES
     download_everything: bool
@@ -74,6 +75,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'last_root': None,
+    'last_guide': 'welcome',
     'pdf_render_mode': 'pymupdf',
     'notebook_render_mode': 'rm_lines_svg_inker',
     'download_everything': False,
@@ -325,6 +327,8 @@ class GUI(pe.GameContext):
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
         if self.screens.queue[-1].handle_event != self.handle_event:
             self.screens.queue[-1].handle_event(e)
+        if self.config.debug and pe.event.key_DOWN(pe.K_s):
+            self.surface.save_to_file("screenshot.png")
         super().handle_event(e)
 
     def quit_check(self):
