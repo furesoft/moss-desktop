@@ -165,6 +165,7 @@ class GUI(pe.GameContext):
 
         self.AREA = (self.WIDTH * self.config.scale, self.HEIGHT * self.config.scale)
         self.dirty_config = False
+        self.screenshot = False
 
         atexit.register(self.save_config_if_dirty)
         setattr(pe.settings, 'config', self.config)
@@ -310,6 +311,9 @@ class GUI(pe.GameContext):
                     rect.x += button.display_reference.pos[0]
                     rect.y += button.display_reference.pos[1]
                 pe.draw.rect((*pe.colors.red, 50), rect, 2)
+        if self.screenshot:
+            self.surface.save_to_file("screenshot.png")
+            self.screenshot = False
         # A little memory leak check
         # print(sum(sys.getsizeof(document.content_data) for document in self.api.documents.values()))
         super().end_loop()
@@ -328,8 +332,9 @@ class GUI(pe.GameContext):
         if self.screens.queue[-1].handle_event != self.handle_event:
             self.screens.queue[-1].handle_event(e)
         if self.config.debug and pe.event.key_DOWN(pe.K_s):
-            self.surface.save_to_file("screenshot.png")
+            self.screenshot = True
         super().handle_event(e)
+
 
     def quit_check(self):
         self.running = False
