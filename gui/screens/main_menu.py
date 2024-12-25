@@ -11,7 +11,7 @@ from gui.cloud_action_helper import import_files_to_cloud, import_notebook_pages
 from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt, notebook_prompt
 from gui.pp_helpers import ContextMenu, ContextBar
-from gui.pp_helpers.popups import ConfirmPopup
+from gui.pp_helpers.popups import ConfirmPopup, WarningPopup
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.guides import Guides
@@ -216,7 +216,9 @@ class TopBarSelectOne(MainMenuContextBar):
         self.popups.put(ConfirmPopup(self.parent_context, "Delete", self.DELETE_MESSAGE, self.delete))
 
     def delete(self):
-        pass
+        self.popups.put(WarningPopup(
+            self.parent_context, "Feature not ready",
+            "Please note delete is not ready yet\nBut it would have occurred if it was ready."))
 
     @property
     def documents(self):
