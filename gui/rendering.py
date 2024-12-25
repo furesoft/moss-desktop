@@ -166,11 +166,15 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         gui, title_text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=document.uuid + '_title_hover',
-        hover_draw_action=render_full_document_title,
-        hover_draw_data=(gui, texts, document.uuid),
         action=None,
         data=None,
-        action_set=action_set,
+        action_set={
+            **action_set,
+            'hover_draw': {
+                'action': render_full_document_title,
+                'args': (gui, texts, document.uuid)
+            }
+        },
         disabled=document.provision or disabled
     )
 
