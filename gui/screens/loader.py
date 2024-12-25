@@ -64,6 +64,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
         'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
+        'rotate_inverted': os.path.join(Defaults.ICON_DIR, 'rotate_inverted.svg'),
         'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
         'burger_inverted': os.path.join(Defaults.ICON_DIR, 'burger_inverted.svg'),
         'filter': os.path.join(Defaults.ICON_DIR, 'filter.svg'),

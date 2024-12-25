@@ -110,6 +110,18 @@ class MainMenuContextBar(ContextBar):
             self.popups.queue[0]()
             if self.popups.queue[0].closed:
                 self.popups.get()
+        if self.INVERT:
+            self.main_menu.resync_icon_inverted.display(self.main_menu.resync_rect.topleft)
+        else:
+            self.main_menu.resync_icon.display(self.main_menu.resync_rect.topleft)
+        pe.button.rect(
+            self.ratios.pad_button_rect(self.main_menu.resync_rect),
+            Defaults.TRANSPARENT_COLOR,
+            Defaults.BUTTON_ACTIVE_COLOR_INVERTED if self.INVERT else Defaults.BUTTON_ACTIVE_COLOR,
+            action=self.main_menu.refresh, name='main_menu.refresh',
+            disabled=(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR)
+            if self.main_menu.loading or self.api.sync_notifiers != 0 else False
+        )
 
     def finalize_button_rect(self, buttons, width, height):
         width += (len(self.BUTTONS) - 2) * self.ratios.main_menu_bar_padding
@@ -491,6 +503,7 @@ class MainMenu(pe.ChildContext):
     file_sync_operation: Union[None, FileSyncProgress]
 
     resync_icon: pe.Image
+    resync_icon_inverted: pe.Image
     resync_rect: pe.Rect
     hamburger_icon: pe.Image
     hamburger_rect: pe.Rect
@@ -543,6 +556,9 @@ class MainMenu(pe.ChildContext):
         self.get_items()
 
         self.document_sync_operations: Dict[str, DocumentSyncProgress] = {}
+
+        self.resync_icon = self.icons['rotate']
+        self.resync_icon_inverted = self.icons['rotate_inverted']
         self.rect_calculations()
 
     @property
@@ -674,13 +690,6 @@ class MainMenu(pe.ChildContext):
 
         render_header(self.parent_context, self.texts, self.set_parent, self.path_queue)
 
-        self.resync_icon.display(self.resync_rect.topleft)
-        pe.button.rect(
-            self.ratios.pad_button_rect(self.resync_rect),
-            Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
-            action=self.refresh, name='main_menu.refresh',
-            disabled=Defaults.BUTTON_DISABLED_LIGHT_COLOR if self.loading or self.api.sync_notifiers != 0 else False
-        )
         self.doc_view()
 
     @property
@@ -743,7 +752,6 @@ class MainMenu(pe.ChildContext):
 
     def rect_calculations(self):
         # Handle sync refresh button rect
-        self.resync_icon = self.icons['rotate']
         self.resync_rect = pe.Rect(0, 0, *self.resync_icon.size)
         padded = self.resync_rect.copy()
         padded.size = (self.ratios.main_menu_top_height,) * 2
