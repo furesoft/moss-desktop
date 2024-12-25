@@ -31,6 +31,7 @@ def threaded(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         Thread(target=func, args=args, kwargs=kwargs).start()
+
     return wrapper
 
 
@@ -88,6 +89,33 @@ class TopBar(ContextBar):
             "disabled": True
         }
     )
+
+    def __init__(self, parent):
+        if parent.api.offline_mode:
+            for button in self.BUTTONS:
+                if button['action'] in ['create_notebook', 'create_collection', 'import_action']:
+                    button['disabled'] = True
+        super().__init__(parent)
+        if self.api.offline_mode:
+            self.offline_error_text = pe.Text(
+                "You are offline!",
+                Defaults.MAIN_MENU_BAR_FONT, parent.ratios.main_menu_bar_size,
+                colors=Defaults.TEXT_ERROR_COLOR
+            )
+            self.update_offline_error_text()
+
+    def update_offline_error_text(self):
+        self.offline_error_text.rect.bottomright = (self.width - self.ratios.main_menu_button_margin, self.ratios.main_menu_top_height)
+
+    def handle_scales(self):
+        super().handle_scales()
+        if self.api.offline_mode:
+            self.update_offline_error_text()
+
+    def post_loop(self):
+        super().post_loop()
+        if self.api.offline_mode:
+            self.offline_error_text.display()
 
     def finalize_button_rect(self, buttons, width, height):
         width += (len(self.BUTTONS) - 2) * self.ratios.main_menu_bar_padding

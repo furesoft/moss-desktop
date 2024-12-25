@@ -74,6 +74,7 @@ class Defaults:
     BACKGROUND = pe.colors.white
 
     TEXT_COLOR = (pe.colors.black, BACKGROUND)
+    TEXT_ERROR_COLOR = (pe.colors.red, None)
     TEXT_COLOR_CODE = (pe.colors.darkaqua, None)
     TEXT_COLOR_LINK = (pe.colors.darkblue, None)
     DOCUMENT_TITLE_COLOR = ((20, 20, 20), TEXT_COLOR[1])
