@@ -193,6 +193,11 @@ class API:
         # We need to upload the content, metadata, rm file, file list and update root
         # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
         # API tampering, so we wanna follow their upload cycle
+        if self.offline_mode:
+            progress.total = 1
+            progress.done = 1
+            return
+
         progress.total += 2  # Getting root / Uploading root
 
         root = self.get_root()  # root info
