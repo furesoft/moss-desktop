@@ -171,7 +171,7 @@ class TopBarSelectOne(MainMenuContextBar):
         {
             "text": "Rename",
             "icon": "text_edit",
-            "action": None
+            "action": "rename"
         }, {
             "text": "Favorite",
             "icon": "star",
@@ -194,6 +194,22 @@ class TopBarSelectOne(MainMenuContextBar):
             "action": None
         },
     )
+
+    def rename(self):
+        NameFieldScreen(self.parent_context, "Rename", self.single_item.metadata.visible_name, self._rename, None,
+                        submit_text='Finish rename')
+
+    @threaded
+    def _rename(self, new_name: str):
+        self.single_item.metadata.visible_name = new_name
+        self.api.upload(self.single_item)
+
+    @property
+    def single_item(self) -> Union[Document, DocumentCollection]:
+        if len(self.main_menu.doc_view.selected_documents) > 0:
+            return self.api.documents[next(iter(self.main_menu.doc_view.selected_documents))]
+        else:
+            return self.api.document_collections[next(iter(self.main_menu.doc_view.selected_document_collections))]
 
     def trash(self):
         items_to_upload = []
