@@ -102,7 +102,7 @@ class PreviewHandler:
 
         base_img: pe.Surface = None
 
-        if document.content.file_type == 'pdf':
+        if document.content.file_type in ('pdf', 'epub'):
             if page_id == 'index-error':
                 page = Page.new_pdf_redirect(0, 'index-error', 'index-error')
             else:

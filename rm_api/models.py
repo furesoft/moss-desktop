@@ -610,7 +610,7 @@ class DocumentCollection:
 class Document:
     unknown_file_types = set()
     KNOWN_FILE_TYPES = [
-        'pdf', 'notebook'
+        'pdf', 'notebook', 'epub'
     ]
     CONTENT_FILE_TYPES = [
         'pdf', 'rm', 'epub', 'pagedata', '-metadata.json'
