@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class Popup(pe.ChildContext, ButtonReadyMixin, TitledMixin):
     LAYER = pe.AFTER_LOOP_LAYER
-    COLOR = (*Defaults.TRANSPARENT_COLOR[:3], 100)
+    COLOR = (*Defaults.TRANSPARENT_COLOR[:3], 175)
     TITLE_COLORS = Defaults.TEXT_COLOR_H
     CLOSE_TEXT = "Close"
     BUTTON_TEXTS = {
@@ -50,6 +50,7 @@ class Popup(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         self.description.display()
         render_button_using_text(self.parent_context, self.texts['close'], outline=self.ratios.outline,
                                  inactive_color=Defaults.BACKGROUND,
+                                 active_color=Defaults.BUTTON_ACTIVE_COLOR_INVERTED,
                                  action=self.close, name=f'popup_{id(self)}_close', text_infront=True)
 
 
@@ -83,6 +84,7 @@ class ConfirmPopup(Popup):
 
         render_button_using_text(self.parent_context, self.texts['confirm'], outline=self.ratios.outline,
                                  inactive_color=Defaults.BACKGROUND,
+                                 active_color=Defaults.BUTTON_ACTIVE_COLOR_INVERTED,
                                  action=self.ok, name=f'popup_{id(self)}_confirm', text_infront=True)
 
 
