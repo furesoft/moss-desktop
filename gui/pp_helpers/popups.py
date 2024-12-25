@@ -51,7 +51,7 @@ class Popup(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         self.description.display()
         render_button_using_text(self.parent_context, self.texts['close'], outline=self.ratios.outline,
                                  inactive_color=Defaults.BACKGROUND,
-                                 action=self.close, name=f'popup_{id(self)}_close')
+                                 action=self.close, name=f'popup_{id(self)}_close', text_infront=True)
 
 
 class WarningPopup(Popup):
