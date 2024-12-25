@@ -170,7 +170,7 @@ class SideBar(ContextMenu):
         },
         {
             "text": "Filter by",
-            "icon": "trashcan",
+            "icon": "filter",
             "action": None,
             "inverted_id": "filter",
             "disabled": True,

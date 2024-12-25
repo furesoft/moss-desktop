@@ -61,6 +61,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
         'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
         'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
+        'filter': os.path.join(Defaults.ICON_DIR, 'filter.svg'),
         'context_menu': os.path.join(Defaults.ICON_DIR, 'context_menu.svg'),
         'pencil': os.path.join(Defaults.ICON_DIR, 'pencil.svg'),
         'my_files': os.path.join(Defaults.ICON_DIR, 'my_files.svg'),
