@@ -65,10 +65,7 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                 ).strip().decode("utf-8")
 
                 if not branch:
-                    print("Not on any branch. Exiting.")
-                    return
-
-                print(f"Checking remote changes for branch: {branch}")
+                    raise GitCheckException("No branch found")
 
                 # Fetch remote changes
                 subprocess.run(["git", "fetch"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
