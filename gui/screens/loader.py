@@ -72,6 +72,9 @@ class Loader(pe.ChildContext, LogoMixin):
         'cog_inverted': os.path.join(Defaults.ICON_DIR, 'cog_inverted.svg'),
         'heart': os.path.join(Defaults.ICON_DIR, 'heart.svg'),
         'compass': os.path.join(Defaults.ICON_DIR, 'compass.svg'),
+        'duplicate': os.path.join(Defaults.ICON_DIR, 'duplicate.svg'),
+        'text_edit': os.path.join(Defaults.ICON_DIR, 'text_edit.svg'),
+        'move': os.path.join(Defaults.ICON_DIR, 'move.svg'),
         'discord_qr_code': ResizedIcon(os.path.join(Defaults.IMAGES_DIR, 'discord_qr_code.png'), 0.1),
 
         # 'screenshot': 'Screenshot_20241023_162027.png',

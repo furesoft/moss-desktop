@@ -62,39 +62,20 @@ class ImportContextMenu(ContextMenu):
         self.close()
 
 
-class TopBar(ContextBar):
-    BUTTONS = (
-        {
-            "text": "Menu",
-            "icon": "burger",
-            "action": 'open_menu'
-        },
-        {
-            "text": "Notebook",
-            "icon": "notebook_add",
-            "action": 'create_notebook'
-        }, {
-            "text": "Folder",
-            "icon": "folder_add",
-            "action": 'create_collection'
-        }, {
-            "text": "Import",
-            "icon": "import",
-            "action": 'import_action',
-            "context_menu": 'import_context',
-            "context_icon": "small_chevron_down"
-        }, {
-            "text": "Export",
-            "icon": "export",
-            "action": None,
-            "disabled": True
-        }
-    )
+class MainMenuContextBar(ContextBar):
+    ONLINE_ACTIONS = ()
 
     def __init__(self, parent):
+        self.BUTTONS = (
+            {
+                "text": "Menu",
+                "icon": "burger",
+                "action": 'open_menu'
+            }, *self.BUTTONS
+        )
         if parent.api.offline_mode:
             for button in self.BUTTONS:
-                if button['action'] in ['create_notebook', 'create_collection', 'import_action']:
+                if button['action'] in self.ONLINE_ACTIONS:
                     button['disabled'] = True
         super().__init__(parent)
         if self.api.offline_mode:
@@ -130,6 +111,35 @@ class TopBar(ContextBar):
             button.area.left = x
             x = button.area.right + self.ratios.main_menu_bar_padding
 
+    def open_menu(self):
+        self.main_menu.hamburger()
+
+
+class TopBar(MainMenuContextBar):
+    BUTTONS = (
+        {
+            "text": "Notebook",
+            "icon": "notebook_add",
+            "action": 'create_notebook'
+        }, {
+            "text": "Folder",
+            "icon": "folder_add",
+            "action": 'create_collection'
+        }, {
+            "text": "Import",
+            "icon": "import",
+            "action": 'import_action',
+            "context_menu": 'import_context',
+            "context_icon": "small_chevron_down"
+        }, {
+            "text": "Export",
+            "icon": "export",
+            "action": None,
+            "disabled": True
+        }
+    )
+    ONLINE_ACTIONS = ['create_notebook', 'create_collection', 'import_action']
+
     def create_notebook(self):
         NameFieldScreen(self.parent_context, "New Notebook", "", self._create_notebook, None,
                         submit_text='Create notebook')
@@ -154,8 +164,36 @@ class TopBar(ContextBar):
     def import_context(self, ideal_position):
         return ImportContextMenu(self.main_menu, ideal_position)
 
-    def open_menu(self):
-        self.main_menu.hamburger()
+
+
+class TopBarSelectOne(MainMenuContextBar):
+    BUTTONS = (
+        {
+            "text": "Rename",
+            "icon": "text_edit",
+            "action": None
+        }, {
+            "text": "Favorite",
+            "icon": "star",
+            "action": None
+        }, {
+            "text": "Duplicate",
+            "icon": "duplicate",
+            "action": None
+        }, {
+            "text": "Trash",
+            "icon": "trashcan",
+            "action": None
+        }, {
+            "text": "Delete",
+            "icon": "trashcan",
+            "action": None
+        }, {
+            "text": "Move",
+            "icon": "move",
+            "action": None
+        },
+    )
 
 
 class SideBar(ContextMenu):
@@ -356,7 +394,9 @@ class MainMenu(pe.ChildContext):
         self.current_sorting_reverse = True
         super().__init__(parent)
         parent.main_menu = self  # Assign myself as the main menu
-        self.bar = TopBar(self)
+        self._bar = TopBar(self)
+        self._bar_one = TopBarSelectOne(self)
+
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
 
@@ -385,6 +425,10 @@ class MainMenu(pe.ChildContext):
 
         self.document_sync_operations: Dict[str, DocumentSyncProgress] = {}
         self.rect_calculations()
+
+    @property
+    def bar(self):
+        return self._bar
 
     @property
     def navigation_parent(self):
