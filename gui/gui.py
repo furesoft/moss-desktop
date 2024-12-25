@@ -50,6 +50,7 @@ class ConfigDict(TypedDict):
     wait_for_everything_to_load: bool
     uri: str
     discovery_uri: str
+    last_root: Union[None, str]
     pdf_render_mode: PDF_RENDER_MODES
     notebook_render_mode: NOTEBOOK_RENDER_MODES
     download_everything: bool
@@ -72,6 +73,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
+    'last_root': None,
     'pdf_render_mode': 'pymupdf',
     'notebook_render_mode': 'rm_lines_svg_inker',
     'download_everything': False,

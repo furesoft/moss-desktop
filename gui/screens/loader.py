@@ -126,6 +126,9 @@ class Loader(pe.ChildContext, LogoMixin):
         self.loading_feedback = 0
         self.loading_complete_marker = 0
         self.api.get_documents(progress)
+        if self.config.last_root != self.api.last_root:
+            self.config.last_root = self.api.last_root
+            self.parent_context.dirty_config = True
         self.files_to_load = None
         if not self.current_progress:
             self.current_progress = 1

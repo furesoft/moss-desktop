@@ -55,6 +55,7 @@ class API:
         self.sync_file_path = sync_file_path
         if self.sync_file_path is not None:
             os.makedirs(self.sync_file_path, exist_ok=True)
+        self.last_root = None
         self.document_storage_uri = None
         self.document_notifications_uri = None
         self._upload_lock = threading.Lock()
