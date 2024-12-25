@@ -183,6 +183,8 @@ class GUI(pe.GameContext):
         self.ctrl_hold = False
         self._import_screen: Union[ImportScreen, None] = None
         self.main_menu: Union['MainMenu', None] = None
+        from gui.screens.version_checker import VersionChecker
+
         if self.api.token:
             from gui.screens.loader import Loader
             self.screens.put(Loader(self))
@@ -192,6 +194,7 @@ class GUI(pe.GameContext):
         if not pe.settings.indev and not self.config.debug and not self.config.portable_mode and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
+        self.screens.put(VersionChecker(self))
         self.running = True
         self.doing_fake_screen_refresh = False
         self.reset_fake_screen_refresh = True

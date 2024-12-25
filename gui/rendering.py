@@ -235,7 +235,6 @@ def render_button_using_text(
         outline_color: Union[Tuple[int, int, int], Tuple[int, int, int, int]] = Defaults.OUTLINE_COLOR,
         **kwargs
 ):
-    text.display()
     if not rect:
         rect = gui.ratios.pad_button_rect(text.rect)
     pe.button.rect(
@@ -249,6 +248,7 @@ def render_button_using_text(
     )
     if outline is not None and outline > 0:
         pe.draw.rect(outline_color, rect, outline)
+    text.display()
     return rect
 
 
