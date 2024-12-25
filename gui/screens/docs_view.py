@@ -159,9 +159,9 @@ class DocumentTreeViewer(ScrollableView, ABC):
         x = self.x_padding_documents
 
         # Rendering the documents
-        full_document_heigth = self.document_height + self.gui.ratios.main_menu_document_height_distance
+        full_document_height = self.document_height + self.gui.ratios.main_menu_document_height_distance
         for i, document in enumerate(self.gui.main_menu.get_sorted_documents(self.documents.values())):
-            if y + full_document_heigth > 0:
+            if y + full_document_height > 0:
                 # Render the document
                 rect = pe.Rect(
                     x, y,
@@ -181,7 +181,7 @@ class DocumentTreeViewer(ScrollableView, ABC):
             x += self.document_width + self.gui.ratios.main_menu_document_padding
             if x + self.document_width > self.width and i + 1 < len(self.documents):
                 x = self.x_padding_documents
-                y += full_document_heigth
+                y += full_document_height
             if y > self.height:
                 break
 
