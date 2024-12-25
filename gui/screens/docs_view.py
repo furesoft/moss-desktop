@@ -39,6 +39,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 shortened_text = dynamic_text(document_collection.metadata.visible_name, *font_details,
                                               self.document_width if self.mode == 'grid' else self.width)
                 self.texts[uuid] = pe.Text(shortened_text, *font_details, (0, 0), Defaults.TEXT_COLOR)
+                self.texts[uuid + '_inverted'] = pe.Text(shortened_text, *font_details, (0, 0),
+                                                         Defaults.TEXT_COLOR_H)
                 self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
                                                      *font_details, (0, 0), Defaults.TEXT_COLOR)
 
@@ -140,7 +142,9 @@ class DocumentTreeViewer(ScrollableView, ABC):
         for i, document_collection in enumerate(
                 self.gui.main_menu.get_sorted_document_collections(self.document_collections.values())):
             render_collection(self.gui, document_collection, self.texts,
-                              self.gui.main_menu.set_parent, x, y, document_collection_width)
+                              self.gui.main_menu.set_parent, x, y, document_collection_width,
+                              self.select_document_collection,
+                              document_collection.uuid in self.selected_document_collections)
 
             if self.mode == 'grid':
                 x += self.document_width + self.gui.ratios.main_menu_document_padding
@@ -195,6 +199,12 @@ class DocumentTreeViewer(ScrollableView, ABC):
             self.selected_documents.remove(document_uuid)
         else:
             self.selected_documents.add(document_uuid)
+
+    def select_document_collection(self, document_collection_uuid: str):
+        if document_collection_uuid in self.selected_document_collections:
+            self.selected_document_collections.remove(document_collection_uuid)
+        else:
+            self.selected_document_collections.add(document_collection_uuid)
 
     @property
     def document_width(self):

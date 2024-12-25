@@ -28,21 +28,38 @@ def render_full_text(gui: 'GUI', text: pe.Text):
     FullTextPopup.create(gui, text, text)()
 
 
-def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[str, pe.Text], callback, x, y, width):
-    icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
-    icon.display((x, y))
+def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[str, pe.Text], callback, x, y, width,
+                      select_collection=None, selected=False):
+    icon_key = 'folder' if collection.has_items else 'folder_empty'
+    invert_icon_key = ('_inverted' if selected else '')
+    if selected:
+        icon_key += '_inverted'
+    icon = gui.icons[icon_key]
+
     try:
-        text = texts[collection.uuid]
+        text = texts[collection.uuid + invert_icon_key]
     except KeyError:
         return
     text.rect.midleft = (x, y)
     text.rect.x += icon.width + gui.ratios.main_menu_folder_padding
     text.rect.y += icon.height // 1.5
-    text.display()
 
     extra_x = text.rect.right + gui.ratios.main_menu_folder_padding
-    star_icon = gui.icons['star']
-    tag_icon = gui.icons['tag']
+    star_icon = gui.icons['star' + invert_icon_key]
+    tag_icon = gui.icons['tag' + invert_icon_key]
+
+    rect = pe.rect.Rect(
+        x, y,
+        width -
+        gui.ratios.main_menu_folder_padding,
+        icon.height
+    )
+    rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
+    if selected:
+        pe.draw.rect(Defaults.SELECTED, rect)
+
+    icon.display((x, y))
+    text.display()
 
     # Draw the star icon
     if collection.metadata.pinned:
@@ -52,20 +69,27 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
         tag_icon.display((extra_x, text.rect.centery - tag_icon.width // 2))
         extra_x += tag_icon.width + gui.ratios.main_menu_folder_padding
 
-    rect = pe.rect.Rect(
-        x, y,
-        width -
-        gui.ratios.main_menu_folder_padding,
-        icon.height
-    )
-    rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
+
     render_button_using_text(
         gui, text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=collection.uuid + '_title_hover',
-        hover_draw_action=render_full_collection_title,
-        hover_draw_data=(gui, texts, collection.uuid, rect),
-        action=callback, data=collection.uuid,
+        action=None,
+        data=None,
+        action_set={
+            'l_click': {
+                'action': callback,
+                'args': collection.uuid
+            },
+            'r_click': {
+                'action': select_collection,
+                'args': collection.uuid
+            },
+            'hover_draw': {
+                'action': render_full_collection_title,
+                'args': (gui, texts, collection.uuid, rect)
+            }
+        },
         rect=rect
     )
     # pe.button.rect(
@@ -105,7 +129,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
                     selected: bool = False):
     # Check if the document is being debugged and keep the debug menu open
 
-    title_text = texts.get(document.uuid+('_inverted' if selected else ''))
+    title_text = texts.get(document.uuid + ('_inverted' if selected else ''))
     if not title_text:
         return
 

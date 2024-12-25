@@ -558,6 +558,10 @@ class DocumentCollection:
     def parent(self):
         return self.metadata.parent
 
+    @parent.setter
+    def parent(self, value):
+        self.metadata.parent = value
+
     @property
     def content(self):
         return json.dumps({
