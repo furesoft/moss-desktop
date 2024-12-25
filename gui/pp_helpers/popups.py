@@ -41,7 +41,6 @@ class Popup(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         if isinstance(event, ResizeEvent):
             self.handle_texts()
 
-
     def loop(self):
         if self.closed:
             return
@@ -52,6 +51,39 @@ class Popup(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         render_button_using_text(self.parent_context, self.texts['close'], outline=self.ratios.outline,
                                  inactive_color=Defaults.BACKGROUND,
                                  action=self.close, name=f'popup_{id(self)}_close', text_infront=True)
+
+
+class ConfirmPopup(Popup):
+    CLOSE_TEXT = "Cancel"
+    BUTTON_TEXTS = {
+        'confirm': "Confirm",
+        'close': "",
+    }
+
+    def __init__(self, parent: "GUI", title: str, description: str, confirm_action=None, cancel_action=None):
+        super().__init__(parent, title, description)
+        self.confirm_action = confirm_action
+        self.cancel_action = cancel_action
+
+    def _close(self):
+        super().close()
+
+    def close(self):
+        if self.cancel_action:
+            self.cancel_action()
+        self._close()
+
+    def ok(self):
+        if self.confirm_action:
+            self.confirm_action()
+        self._close()
+
+    def loop(self):
+        super().loop()
+
+        render_button_using_text(self.parent_context, self.texts['confirm'], outline=self.ratios.outline,
+                                 inactive_color=Defaults.BACKGROUND,
+                                 action=self.ok, name=f'popup_{id(self)}_confirm', text_infront=True)
 
 
 class WarningPopup(Popup):

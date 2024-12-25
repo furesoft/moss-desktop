@@ -1,5 +1,6 @@
 import os.path
 import subprocess
+from queue import Queue
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
@@ -32,7 +33,7 @@ class VersionChecker(pe.ChildContext, LogoMixin):
         else:
             self.versions = None
         super().__init__(parent)
-        self.warnings = []
+        self.warnings = Queue()
         self.initialize_logo_and_line()
         self.api.add_hook('version_checker_resize_check', self.resize_check_hook)
 
@@ -48,7 +49,7 @@ class VersionChecker(pe.ChildContext, LogoMixin):
         if self.versions is not None:
             # Ensure PygameExtra is up to date
             if pe.__version__ != self.versions['pygameextra']:
-                self.warnings.append(WarningPopup(
+                self.warnings.put(WarningPopup(
                     self.parent_context,
                     "PygameExtra is outdated",
                     f"You are running from source, the main package that {APP_NAME} uses is outdated\n"
@@ -73,7 +74,7 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                 # Compare local and remote branch
                 status = subprocess.check_output(["git", "status", "-sb"]).strip().decode('utf-8')
                 if '[behind' in status:
-                    self.warnings.append(WarningPopup(
+                    self.warnings.put(WarningPopup(
                         self.parent_context,
                         "New commits available!",
                         "There are new commits available for this branch.\n"
@@ -81,7 +82,7 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                         "Do not report issues unless you have pulled the changes!"
                     ))
                 elif '[ahead' in status and not self.config.debug:
-                    self.warnings.append(WarningPopup(
+                    self.warnings.put(WarningPopup(
                         self.parent_context,
                         "You've created new commits!",
                         "Can't wait for you to share them!\n"
@@ -89,7 +90,7 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                         "Do not report issues unless you have pushed these changes!"
                     ))
             except (FileNotFoundError, GitCheckException):
-                self.warnings.append(WarningPopup(
+                self.warnings.put(WarningPopup(
                     self.parent_context,
                     "Failed to check for updates.",
                     "Failed to check for updates, please check manually for any new commits."
@@ -104,9 +105,9 @@ class VersionChecker(pe.ChildContext, LogoMixin):
         self.logo.display()
         if not self.checked:
             self.check()
-        if self.warnings:
-            self.warnings[0]()
-            if self.warnings[0].closed:
-                self.warnings.pop(0)
+        if len(self.warnings.queue) > 0:
+            self.warnings.queue[0]()
+            if self.warnings.queue[0].closed:
+                self.warnings.get()
         else:
             self.close()

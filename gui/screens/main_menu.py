@@ -11,6 +11,7 @@ from gui.cloud_action_helper import import_files_to_cloud, import_notebook_pages
 from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt, notebook_prompt
 from gui.pp_helpers import ContextMenu, ContextBar
+from gui.pp_helpers.popups import ConfirmPopup
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.guides import Guides
@@ -73,6 +74,7 @@ class MainMenuContextBar(ContextBar):
                 "action": 'open_menu'
             }, *self.BUTTONS
         )
+        self.popups = Queue()
         if parent.api.offline_mode:
             for button in self.BUTTONS:
                 if button['action'] in self.ONLINE_ACTIONS:
@@ -97,12 +99,17 @@ class MainMenuContextBar(ContextBar):
 
     def pre_loop(self):
         super().pre_loop()
-        pe.draw.rect(Defaults.SELECTED if self.INVERT else Defaults.BACKGROUND, (0, 0, self.width, self.ratios.main_menu_top_height))
+        pe.draw.rect(Defaults.SELECTED if self.INVERT else Defaults.BACKGROUND,
+                     (0, 0, self.width, self.ratios.main_menu_top_height))
 
     def post_loop(self):
         super().post_loop()
         if self.api.offline_mode:
             self.offline_error_text.display()
+        if len(self.popups.queue) > 0:
+            self.popups.queue[0]()
+            if self.popups.queue[0].closed:
+                self.popups.get()
 
     def finalize_button_rect(self, buttons, width, height):
         width += (len(self.BUTTONS) - 2) * self.ratios.main_menu_bar_padding
@@ -191,18 +198,25 @@ class TopBarSelectOne(MainMenuContextBar):
         }, {
             "text": "Delete",
             "icon": "trashcan",
-            "action": None
+            "action": "delete_confirm"
         }, {
             "text": "Move",
             "icon": "move",
             "action": None
         },
     )
+    DELETE_MESSAGE = "Are you sure you want to delete this item?"
     INVERT = True
 
     def __init__(self, parent):
         super().__init__(parent)
         self.is_favorite = False
+
+    def delete_confirm(self):
+        self.popups.put(ConfirmPopup(self.parent_context, "Delete", self.DELETE_MESSAGE, self.delete))
+
+    def delete(self):
+        pass
 
     @property
     def documents(self):
@@ -288,13 +302,14 @@ class TopBarSelectMulti(TopBarSelectOne):
         }, {
             "text": "Delete",
             "icon": "trashcan",
-            "action": None
+            "action": "delete_confirm"
         }, {
             "text": "Move",
             "icon": "move",
             "action": None
         },
     )
+    DELETE_MESSAGE = "Are you sure you want to delete these items?"
 
 
 class SideBar(ContextMenu):
