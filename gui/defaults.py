@@ -99,7 +99,6 @@ class Defaults:
 
     # Colors
     OUTLINE_COLOR = pe.colors.black
-    INVERTED_COLOR = pe.colors.black
     RED = (255, 50, 50)
 
     # Key bindings

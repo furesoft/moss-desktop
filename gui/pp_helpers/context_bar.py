@@ -61,7 +61,8 @@ class ContextBar(pe.ChildContext, ABC):
                         'hover_draw': None,
                         'hover': None
                     },
-                    disabled=disabled,
+                    disabled=(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR)
+                    if disabled else False,
                     name=f'context_bar<{id(self)}>.button_{i}'
                 )
             ))
@@ -154,10 +155,11 @@ class ContextBar(pe.ChildContext, ABC):
     def loop(self):
         for button, button_meta, button_text, button_text_inverted in self.button_data_zipped:
             if inverted_id := button_meta.get('inverted_id'):
-                if is_inverted := (self.INVERT or inverted_id == self.currently_inverted):
-                    pe.draw.rect(Defaults.INVERTED_COLOR, button.area)
+                is_inverted = (self.INVERT or inverted_id == self.currently_inverted)
             else:
                 is_inverted = self.INVERT
+            if is_inverted:
+                pe.draw.rect(Defaults.SELECTED, button.area)
             pe.settings.game_context.buttons.append(button)
             if is_inverted:
                 button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
@@ -200,7 +202,7 @@ class ContextBar(pe.ChildContext, ABC):
                     context_icon.display(button_meta['small_chevron_down_icon_rect'].topleft)
 
             if button.disabled:
-                pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
+                pe.draw.rect(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
 
             if context_menu := button_meta.get('_context_menu'):
                 if context_menu.is_closed:

@@ -248,6 +248,7 @@ class TopBarSelectOne(MainMenuContextBar):
             "action": "move"
         },
     )
+    ONLINE_ACTIONS = ('rename', 'favorite', 'duplicate', 'trash', 'move')
     DELETE_MESSAGE = "Are you sure you want to delete this item?"
     INVERT = True
     INCLUDE_MENU = False
@@ -385,6 +386,7 @@ class TopBarTrash(MainMenuContextBar):
             "action": 'delete_confirm'
         },
     )
+    ONLINE_ACTIONS = ('delete_confirm',)
     ALIGN = 'right'
 
     def delete(self):
