@@ -1,5 +1,6 @@
 import time
 from abc import abstractmethod, ABC
+from copy import deepcopy
 from functools import lru_cache, wraps
 from queue import Queue
 from threading import Lock, Thread
@@ -17,7 +18,7 @@ from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
-from rm_api.models import Document, DocumentCollection
+from rm_api.models import Document, DocumentCollection, make_uuid
 
 from gui.defaults import Defaults
 from gui.helpers import shorten_path
@@ -271,10 +272,27 @@ class TopBarSelectOne(MainMenuContextBar):
     def move(self):
         self.main_menu.move_mode = True
 
-    def duplicate(self):
-        self.popups.put(WarningPopup(
-            self.parent_context, "Feature not ready",
-            "Please note duplicate is not ready yet\nBut it would have occurred if it was ready."))
+    def duplicate(self, here: bool = False):
+        items_to_upload: List[Union[Document, DocumentCollection]] = []
+        for document_uuid in self.documents:
+            document = self.api.documents[document_uuid]
+            items_to_upload.append(deepcopy(document))
+            items_to_upload[-1].uuid = make_uuid()
+            items_to_upload[-1].provision = True
+            if here:
+                items_to_upload[-1].parent = self.main_menu.navigation_parent
+            items_to_upload[-1].metadata.visible_name += " copy"
+
+        for document_collection_uuid in self.document_collections:
+            document_collection = self.api.document_collections[document_collection_uuid]
+            items, collection = document_collection.duplicate(self.api)
+            items_to_upload.extend(items)
+            items_to_upload.append(collection)
+            if here:
+                items_to_upload[-1].parent = self.main_menu.navigation_parent
+            items_to_upload[-1].metadata.visible_name += " copy"
+        self.api.upload_many_documents(items_to_upload)
+        self.deselect()
 
     def deselect(self):
         self.documents.clear()
@@ -448,7 +466,7 @@ class TopBarSelectMove(TopBarSelectOne):
         self.move_to(self.main_menu.navigation_parent)
 
     def duplicate_here(self):
-        super().duplicate()
+        super().duplicate(here=True)
 
     # noinspection PyProtectedMember
     def create_collection(self):

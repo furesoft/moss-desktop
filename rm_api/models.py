@@ -1,15 +1,12 @@
 import json
 import os.path
-import string
 import threading
 import time
 import uuid
 from copy import copy, deepcopy
 from functools import lru_cache
-import random
 from hashlib import sha256
 from io import BytesIO
-from sqlite3.dbapi2 import Timestamp
 from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple, Dict
 
 from colorama import Fore
@@ -48,11 +45,15 @@ def try_to_load_int(rm_value: str):
 
 
 class File:
-    def __init__(self, file_hash: str, file_uuid: str, content_count: str, file_size: str, rm_filename=None):
+    def __init__(self, file_hash: str, file_uuid: str, content_count: str, file_size: Union[str, int],
+                 rm_filename=None):
         self.hash = file_hash
         self.uuid = file_uuid
         self.content_count = int(content_count)
-        self.size = int(file_size)
+        if isinstance(file_size, str):
+            self.size = int(file_size)
+        else:
+            self.size = file_size
         self.rm_filename = rm_filename or file_uuid
 
     @classmethod
@@ -232,7 +233,6 @@ class Content:
         "margins": 180,
         "orientation": "portrait",
         "pageCount": 0,
-        "pages": [],
         "textScale": 1,
         "formatVersion": 1,
         "transform": {
@@ -577,13 +577,16 @@ class DocumentCollection:
     def content(self):
         return json.dumps({
             'tags': [tag.to_rm_json() for tag in self.tags]
-        })
+        }, indent=4)
 
     @property
     def files(self):
+        content_data = self.content_data
+        metadata = content_data[f'{self.uuid}.metadata']
+        content = content_data[f'{self.uuid}.content']
         return [
-            File(self.metadata.hash, f'{self.uuid}.metadata', 0, len(self.metadata.to_dict())),
-            File(make_hash(self.content), f'{self.uuid}.content', 0, len(self.content)),
+            File(make_hash(metadata), f'{self.uuid}.metadata', 0, len(metadata)),
+            File(make_hash(content), f'{self.uuid}.content', 0, len(content)),
         ]
 
     @property
@@ -643,6 +646,42 @@ class DocumentCollection:
                 count += 1
         return count
 
+    @classmethod
+    def __copy(cls, document_collection: 'DocumentCollection', shallow: bool = True):
+        # Duplicate content and metadata
+        tags = [
+            Tag(tag.to_rm_json()) for tag in document_collection.tags
+        ]
+        raw_metadata = document_collection.metadata.to_dict()
+        metadata = Metadata(raw_metadata, make_hash(json.dumps(raw_metadata, indent=4)))
+
+        new = cls(tags, metadata, document_collection.uuid)
+        return new
+
+    def __copy__(self):
+        return self.__copy(self)
+
+    def __deepcopy__(self, memo=None):
+        return self.__copy(self, shallow=False)
+
+    def duplicate(self, api: 'API'):
+        my_items: List[Union[Document, DocumentCollection]] = []
+        my_copy = deepcopy(self)
+        my_copy.uuid = make_uuid()
+        for document in api.documents.values():
+            if document.parent == self.uuid:
+                my_items.append(deepcopy(document))
+                my_items[-1].uuid = make_uuid()
+                my_items[-1].parent = my_copy.uuid
+                my_items[-1].provision = True
+        for document_collection in api.document_collections.values():
+            if document_collection.parent == self.uuid:
+                sub_items, sub_copy = document_collection.duplicate(api)
+                my_items.extend(sub_items)
+                sub_copy.parent = my_copy.uuid
+                my_items.append(sub_copy)
+        return my_items, my_copy
+
 
 class Document:
     unknown_file_types = set()
@@ -661,7 +700,7 @@ class Document:
         self.content = content
         self.metadata = metadata
         self.files = files
-        self.uuid = uuid
+        self._uuid = uuid
         self.content_data = {}
         self.files_available = self.check_files_availability()
         self.downloading = False
@@ -671,6 +710,17 @@ class Document:
                 not self.content.file_type in self.unknown_file_types:
             self.unknown_file_types.add(self.content.file_type)
             print(f'{Fore.RED}Unknown file type: {self.content.file_type}{Fore.RESET}')
+
+    @property
+    def uuid(self):
+        return self._uuid
+
+    @uuid.setter
+    def uuid(self, value):
+        old_uuid = self._uuid
+        self._uuid = value
+        for file in self.files:
+            file.uuid = file.uuid.replace(old_uuid, value)
 
     @property
     def content_files(self):
@@ -928,4 +978,4 @@ class Document:
         return len(self.content.c_pages.pages)
 
     def get_read(self):
-        return round((self.metadata.last_opened_page / self.get_page_count()) * 100)
+        return round((self.metadata.last_opened_page / max(1, self.get_page_count())) * 100)
