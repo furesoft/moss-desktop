@@ -618,6 +618,21 @@ class DocumentCollection:
     def check_files_availability(self):
         return {}
 
+    def unload_files(self):
+        pass
+
+    def recurse(self, api: 'API'):
+        """Recursively get all the documents in the collection"""
+        items = []
+        for document in api.documents.values():
+            if document.parent == self.uuid:
+                items.append(document)
+        for collection in api.document_collections.values():
+            if collection.parent == self.uuid:
+                items.extend(collection.recurse(api))
+                items.append(collection)
+        return items
+
 
 class Document:
     unknown_file_types = set()

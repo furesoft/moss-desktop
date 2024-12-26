@@ -260,9 +260,13 @@ class TopBarSelectOne(MainMenuContextBar):
         self.popups.put(ConfirmPopup(self.parent_context, "Delete", self.DELETE_MESSAGE, self.delete))
 
     def delete(self):
-        self.popups.put(WarningPopup(
-            self.parent_context, "Feature not ready",
-            "Please note delete is not ready yet\nBut it would have occurred if it was ready."))
+        items = self.both_as_items
+        sub_items = []
+        for item in items:
+            if isinstance(item, DocumentCollection):
+                sub_items.extend(item.recurse(self.api))
+        self.api.delete_many_documents(items + sub_items)
+        self.deselect()
 
     def move(self):
         self.main_menu.move_mode = True
@@ -287,6 +291,10 @@ class TopBarSelectOne(MainMenuContextBar):
     @property
     def both(self):
         return tuple(self.documents) + tuple(self.document_collections)
+
+    @property
+    def both_as_items(self):
+        return [self.get_item(uuid) for uuid in self.both]
 
     def post_loop(self):
         super().post_loop()
@@ -362,7 +370,18 @@ class TopBarTrash(MainMenuContextBar):
     ALIGN = 'right'
 
     def delete(self):
-        pass
+        items = [
+            item for item in self.api.documents.values() if item.parent == 'trash'
+        ]
+
+        for collection in self.api.document_collections.values():
+            if collection.parent != 'trash':
+                continue
+            items.extend(collection.recurse(self.api))
+            items.append(collection)
+
+        self.api.delete_many_documents(items)
+
 
     def delete_confirm(self):
         self.popups.put(ConfirmPopup(self.parent_context,
@@ -632,7 +651,7 @@ class MainMenu(pe.ChildContext):
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
         # reversed is equivalent to descending
-        # obviously, non reversed is ascending
+        # obviously, non-reversed is ascending
         self.current_sorting_reverse = True
         self.move_mode = False
         super().__init__(parent)
