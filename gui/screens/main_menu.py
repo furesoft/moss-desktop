@@ -622,7 +622,6 @@ class MainMenu(pe.ChildContext):
     doc_view: MainMenuDocView
 
     def __init__(self, parent: 'GUI'):
-        self._navigation_parent = parent.config.last_opened_folder
         self.document_collections = {}
         self.documents = {}
         self.texts: Dict[str, pe.Text] = {}
@@ -638,6 +637,10 @@ class MainMenu(pe.ChildContext):
         self.move_mode = False
         super().__init__(parent)
         parent.main_menu = self  # Assign myself as the main menu
+        # Update the location properly by setting it
+        self.menu_location = self.menu_location
+
+        # Initialize the top bars
         self._bar = TopBar(self)
         self._bar_one = TopBarSelectOne(self)
         self._bar_multi = TopBarSelectMulti(self)
@@ -723,8 +726,9 @@ class MainMenu(pe.ChildContext):
 
     @menu_location.setter
     def menu_location(self, value):
-        self.config.main_menu_menu_location = value
-        self.parent_context.dirty_config = True
+        if self.config.main_menu_menu_location != value:
+            self.config.main_menu_menu_location = value
+            self.parent_context.dirty_config = True
         if value == 'trash':
             self.navigation_parent = 'trash'
         elif value == 'my_files':
