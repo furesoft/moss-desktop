@@ -2,7 +2,6 @@ import os.path
 
 import gui
 
-
 gui.APP_NAME = "Moss & Melora"
 
 

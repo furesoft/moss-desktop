@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+import requests
+
 if TYPE_CHECKING:
     from rm_api import API
 
@@ -50,10 +52,15 @@ def refresh_token(api: 'API', token: str):
     if not token:
         if api.require_token:
             return refresh_token(api, get_token(api))
-    response = api.session.post(
-        TOKEN_REFRESH_URL.format(api.uri),
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    try:
+        response = requests.post(
+            TOKEN_REFRESH_URL.format(api.uri),
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=1,
+        )
+    except (TimeoutError, requests.exceptions.ConnectionError):
+        api.offline_mode = True
+        return None
     if response.status_code != 200:
         if api.require_token:
             return refresh_token(api, get_token(api))

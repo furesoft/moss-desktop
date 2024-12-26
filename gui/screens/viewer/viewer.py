@@ -160,7 +160,7 @@ class DocumentRenderer(pe.ChildContext):
         self.handle_navigation(event)
 
     def load(self):
-        if self.document.content.file_type == 'pdf':
+        if self.document.content.file_type in ('pdf', 'epub'):
             if self.config.pdf_render_mode == 'cef' and CEFpygame:
                 self.loading += 1
                 self.renderer = PDF_CEF_Viewer(self)

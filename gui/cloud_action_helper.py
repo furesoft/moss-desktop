@@ -2,7 +2,6 @@ import io
 import pygameextra as pe
 import os
 from PIL import Image
-from PyPDF2 import PdfWriter
 
 from rm_api import Document
 from typing import TYPE_CHECKING, List
@@ -26,9 +25,22 @@ def import_pdf_to_cloud(gui: 'GUI', file_path):
     gui.import_screen.add_item(document)
 
 
+def import_epub_to_cloud(gui: 'GUI', file_path):
+    epub_data = FileHandle(file_path)
+
+    parent = gui.main_menu.navigation_parent
+    name = os.path.basename(file_path).rsplit('.', 1)[0]  # remove .pdf from the end
+
+    document = Document.new_epub(gui.api, name, epub_data, parent)
+
+    document.check()
+
+    gui.import_screen.add_item(document)
+
+
 def import_files_to_cloud(gui: 'GUI', files):
     files = tuple(
-        file for file in files if file.endswith('.pdf')
+        file for file in files if file.endswith('.pdf') or file.endswith('.epub')
     )
 
     gui.import_screen.predefine_item(len(files))
@@ -36,6 +48,9 @@ def import_files_to_cloud(gui: 'GUI', files):
     for file in files:
         if file.endswith('.pdf'):
             import_pdf_to_cloud(gui, file)
+        if file.endswith('.epub'):
+            import_epub_to_cloud(gui, file)
+
 
 def import_notebook_pages_to_cloud(gui: 'GUI', files: List[str], title: str):
     parent = gui.main_menu.navigation_parent
@@ -48,8 +63,6 @@ def import_notebook_pages_to_cloud(gui: 'GUI', files: List[str], title: str):
     document.check()
 
     gui.import_screen.add_item(document)
-
-    
 
 
 def surfaces_to_pdf(surfaces: List[pe.Surface]):

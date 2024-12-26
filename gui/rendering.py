@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING, Dict, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Tuple, Union, Optional
 import pygameextra as pe
 
 from gui.defaults import Defaults
@@ -28,21 +28,38 @@ def render_full_text(gui: 'GUI', text: pe.Text):
     FullTextPopup.create(gui, text, text)()
 
 
-def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[str, pe.Text], callback, x, y, width):
-    icon = gui.icons['folder_inverted'] if collection.has_items else gui.icons['folder']
-    icon.display((x, y))
+def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[str, pe.Text], callback, x, y, width,
+                      select_collection=None, selected=False):
+    icon_key = 'folder' if collection.has_items else 'folder_empty'
+    invert_icon_key = ('_inverted' if selected else '')
+    if selected:
+        icon_key += '_inverted'
+    icon = gui.icons[icon_key]
+
     try:
-        text = texts[collection.uuid]
+        text = texts[collection.uuid + invert_icon_key]
     except KeyError:
         return
     text.rect.midleft = (x, y)
     text.rect.x += icon.width + gui.ratios.main_menu_folder_padding
     text.rect.y += icon.height // 1.5
-    text.display()
 
     extra_x = text.rect.right + gui.ratios.main_menu_folder_padding
-    star_icon = gui.icons['star']
-    tag_icon = gui.icons['tag']
+    star_icon = gui.icons['star' + invert_icon_key]
+    tag_icon = gui.icons['tag' + invert_icon_key]
+
+    rect = pe.rect.Rect(
+        x, y,
+        width -
+        gui.ratios.main_menu_folder_padding,
+        icon.height
+    )
+    rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
+    if selected:
+        pe.draw.rect(Defaults.SELECTED, rect.inflate(gui.ratios.main_menu_x_padding * 0.75, 0))
+
+    icon.display((x, y))
+    text.display()
 
     # Draw the star icon
     if collection.metadata.pinned:
@@ -52,20 +69,26 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
         tag_icon.display((extra_x, text.rect.centery - tag_icon.width // 2))
         extra_x += tag_icon.width + gui.ratios.main_menu_folder_padding
 
-    rect = pe.rect.Rect(
-        x, y,
-        width -
-        gui.ratios.main_menu_folder_padding,
-        icon.height
-    )
-    rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
     render_button_using_text(
         gui, text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=collection.uuid + '_title_hover',
-        hover_draw_action=render_full_collection_title,
-        hover_draw_data=(gui, texts, collection.uuid, rect),
-        action=callback, data=collection.uuid,
+        action=None,
+        data=None,
+        action_set={
+            'l_click': {
+                'action': callback,
+                'args': collection.uuid
+            },
+            'r_click': {
+                'action': select_collection,
+                'args': collection.uuid
+            },
+            'hover_draw': {
+                'action': render_full_collection_title,
+                'args': (gui, texts, collection.uuid, rect)
+            }
+        },
         rect=rect
     )
     # pe.button.rect(
@@ -101,18 +124,43 @@ def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
 
 
 def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
-                    document_sync_operation: DocumentSyncProgress = None, scale=1):
+                    document_sync_operation: DocumentSyncProgress = None, scale=1, select_document=None,
+                    selected: bool = False):
     # Check if the document is being debugged and keep the debug menu open
 
-    title_text = texts.get(document.uuid)
+    inverse_key = '_inverted' if selected else ''
+    title_text = texts.get(document.uuid + inverse_key)
     if not title_text:
         return
+    sub_text: Optional[pe.Text]
+    if document.content.file_type == 'notebook':
+        sub_text = texts.get(f'page_count_{document.get_page_count()}{inverse_key}')
+    elif document.content.file_type == 'pdf':
+        sub_text = texts.get(
+            f'page_of_{document.metadata.last_opened_page + 1}_{document.get_page_count()}{inverse_key}')
+    elif document.content.file_type == 'epub':
+        sub_text = texts.get(f'page_read_{document.get_read()}{inverse_key}')
+    else:
+        sub_text = None
 
     title_text.rect.topleft = rect.bottomleft
     title_text.rect.top += gui.ratios.main_menu_document_title_height_margin
+    if sub_text:
+        sub_text.rect.left = title_text.rect.left
+        sub_text.rect.top = title_text.rect.bottom + gui.ratios.main_menu_document_title_padding
 
     action = document.ensure_download_and_callback
     data = lambda: PreviewHandler.clear_for(document.uuid, lambda: open_document(gui, document.uuid))
+    action_set = {
+        'l_click': {
+            'action': action,
+            'args': data
+        },
+        'r_click': {
+            'action': select_document,
+            'args': document.uuid
+        }
+    }
     disabled = document.downloading
 
     # Start downloading the document if it's not available and not downloading
@@ -121,16 +169,29 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     if gui.config.download_everything and not document.available and not document.downloading:
         document.ensure_download_and_callback(lambda: PreviewHandler.clear_for(document.uuid))
 
+    if selected:
+        selection_rect = rect.inflate(gui.ratios.main_menu_x_padding, gui.ratios.main_menu_x_padding)
+        selection_rect.height += title_text.rect.height + gui.ratios.main_menu_x_padding + gui.ratios.line * 2
+        pe.draw.rect(Defaults.SELECTED, selection_rect)
+        pe.draw.rect(Defaults.BACKGROUND, rect)
+
     render_button_using_text(
         gui, title_text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
         name=document.uuid + '_title_hover',
-        hover_draw_action=render_full_document_title,
-        hover_draw_data=(gui, texts, document.uuid),
-        action=action,
-        data=data,
+        action=None,
+        data=None,
+        action_set={
+            **action_set,
+            'hover_draw': {
+                'action': render_full_document_title,
+                'args': (gui, texts, document.uuid)
+            }
+        },
         disabled=document.provision or disabled
     )
+    if sub_text:
+        sub_text.display()
 
     # Render the notebook icon
     preview = PreviewHandler.get_preview(document, rect.size)
@@ -171,13 +232,13 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         Defaults.DOCUMENT_GRAY,
         rect, gui.ratios.pixel(2)
     )
+
     # Render the button
     pe.button.rect(
         rect,
         Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
         name=document.uuid,
-        action=action,
-        data=data,
+        action_set=action_set,
         disabled=document.provision or disabled
     )
 
@@ -232,10 +293,12 @@ def render_button_using_text(
         name: str = None, action=None, data=None,
         rect: pe.Rect = None,
         outline: int = None,
+        text_infront: bool = False,
         outline_color: Union[Tuple[int, int, int], Tuple[int, int, int, int]] = Defaults.OUTLINE_COLOR,
         **kwargs
 ):
-    text.display()
+    if not text_infront:
+        text.display()
     if not rect:
         rect = gui.ratios.pad_button_rect(text.rect)
     pe.button.rect(
@@ -249,6 +312,8 @@ def render_button_using_text(
     )
     if outline is not None and outline > 0:
         pe.draw.rect(outline_color, rect, outline)
+    if text_infront:
+        text.display()
     return rect
 
 

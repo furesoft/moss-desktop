@@ -2,7 +2,7 @@ from functools import lru_cache
 
 import pygameextra as pe
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 from gui.defaults import Defaults
 
 
@@ -10,7 +10,8 @@ class ContextBar(pe.ChildContext, ABC):
     LAYER = pe.AFTER_LOOP_LAYER
     TEXT_COLOR = Defaults.TEXT_COLOR_T
     TEXT_COLOR_INVERTED = Defaults.TEXT_COLOR_H
-    BUTTONS: Tuple[dict] = ()
+    BUTTONS: Tuple[Dict[str, Optional[str]]] = ()
+    INVERT = False
 
     # definitions from GUI
     icons: Dict[str, pe.Image]
@@ -59,7 +60,8 @@ class ContextBar(pe.ChildContext, ABC):
                         'hover_draw': None,
                         'hover': None
                     },
-                    disabled=disabled,
+                    disabled=(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR)
+                    if disabled else False,
                     name=f'context_bar<{id(self)}>.button_{i}'
                 )
             ))
@@ -120,7 +122,7 @@ class ContextBar(pe.ChildContext, ABC):
 
             # Position the context icons with padding
             for icon_key in (
-            'context_menu', 'chevron_right', 'chevron_down', 'small_chevron_right', 'small_chevron_down'):
+                    'context_menu', 'chevron_right', 'chevron_down', 'small_chevron_right', 'small_chevron_down'):
                 context_icon = self.icons[icon_key]
                 context_icon_rect = pe.Rect(0, 0, *context_icon.size)
 
@@ -152,15 +154,16 @@ class ContextBar(pe.ChildContext, ABC):
     def loop(self):
         for button, button_meta, button_text, button_text_inverted in self.button_data_zipped:
             if inverted_id := button_meta.get('inverted_id'):
-                if is_inverted := (inverted_id == self.currently_inverted):
-                    pe.draw.rect(Defaults.INVERTED_COLOR, button.area)
+                is_inverted = (self.INVERT or inverted_id == self.currently_inverted)
             else:
-                is_inverted = False
-            pe.settings.game_context.buttons.append(button)
+                is_inverted = self.INVERT
             if is_inverted:
-                button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
-            elif not button_meta['action']:
+                pe.draw.rect(Defaults.SELECTED, button.area)
+            pe.settings.game_context.buttons.append(button)
+            if not button_meta['action']:
                 button.active_resource = Defaults.TRANSPARENT_COLOR
+            elif is_inverted:
+                button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
             else:
                 button.active_resource = Defaults.BUTTON_ACTIVE_COLOR
             pe.button.check_hover(button)
@@ -198,7 +201,8 @@ class ContextBar(pe.ChildContext, ABC):
                     context_icon.display(button_meta['small_chevron_down_icon_rect'].topleft)
 
             if button.disabled:
-                pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
+                pe.draw.rect(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR,
+                             button.area)
 
             if context_menu := button_meta.get('_context_menu'):
                 if context_menu.is_closed:

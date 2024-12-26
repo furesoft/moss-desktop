@@ -2,13 +2,14 @@ from abc import abstractmethod, ABC
 from math import ceil
 
 import pygameextra as pe
-from typing import TYPE_CHECKING, Literal, Dict
+from typing import TYPE_CHECKING, Dict
 
 from gui.defaults import Defaults
 from gui.helpers import dynamic_text
 from gui.literals import MAIN_MENU_MODES
 from gui.rendering import render_document, render_collection
 from gui.screens.scrollable_view import ScrollableView
+from rm_api import DocumentCollection, Document
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -18,6 +19,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
     def __init__(self, gui: 'GUI', area):
         self.AREA = area
         self.texts: Dict[str, pe.Text] = {}
+        self.selected_documents = set()
+        self.selected_document_collections = set()
         self.x_padding_collections = 0
         self.x_padding_documents = 0
         self.last_width = None
@@ -25,32 +28,80 @@ class DocumentTreeViewer(ScrollableView, ABC):
         super().__init__(gui)
 
     def handle_texts(self):
-        document_collections = dict(self.document_collections)
-        documents = dict(self.documents)
+        document_collections: Dict[str, DocumentCollection] = dict(self.document_collections)
+        documents: Dict[str, Document] = dict(self.documents)
 
         # Preparing the document collection texts
         font_details = (Defaults.FOLDER_TITLE_FONT, self.gui.ratios.document_tree_view_folder_title_size)
+        item_counts = set()
         for uuid, document_collection in document_collections.items():
+            item_counts.add(document_collection.get_item_count(self.gui.api))
             if self.texts.get(uuid) is None or self.texts[
                 uuid + '_full'
             ].text != document_collection.metadata.visible_name:
+                width_reduction = self.gui.ratios.main_menu_document_padding
+                if document_collection.metadata.pinned:
+                    width_reduction += self.gui.icons['star'].width + self.gui.ratios.main_menu_folder_padding
+                if document_collection.tags and self.mode == 'grid':
+                    width_reduction += self.gui.icons['tag'].width + self.gui.ratios.main_menu_folder_padding
                 shortened_text = dynamic_text(document_collection.metadata.visible_name, *font_details,
-                                              self.document_width if self.mode == 'grid' else self.width)
+                                              (self.document_width if self.mode == 'grid' else self.width)
+                                              - width_reduction
+                                              )
                 self.texts[uuid] = pe.Text(shortened_text, *font_details, (0, 0), Defaults.TEXT_COLOR)
+                self.texts[uuid + '_inverted'] = pe.Text(shortened_text, *font_details, (0, 0),
+                                                         Defaults.TEXT_COLOR_H)
                 self.texts[uuid + '_full'] = pe.Text(document_collection.metadata.visible_name,
                                                      *font_details, (0, 0), Defaults.TEXT_COLOR)
 
         # Preparing the document texts
         font_details = (Defaults.DOCUMENT_TITLE_FONT, self.gui.ratios.document_tree_view_document_title_size)
+        page_counts = set()
+        page_of_counts = set()
+        pages_read = set()
         for uuid, document in documents.items():
+            if document.content.file_type == 'notebook':
+                page_counts.add(document.get_page_count())
+            elif document.content.file_type == 'pdf':
+                page_of_counts.add((document.metadata.last_opened_page + 1, document.get_page_count()))
+            elif document.content.file_type == 'epub':
+                pages_read.add(document.get_read())
             if self.texts.get(uuid) is None or self.texts[uuid + '_full'].text != document.metadata.visible_name:
                 shortened_text = dynamic_text(document.metadata.visible_name, *font_details,
                                               self.document_width if self.mode == 'grid' else self.width)
-                self.texts[uuid] = pe.Text(shortened_text, *font_details
-                                           , (0, 0),
+                self.texts[uuid] = pe.Text(shortened_text, *font_details, (0, 0),
                                            Defaults.DOCUMENT_TITLE_COLOR)
+                self.texts[uuid + '_inverted'] = pe.Text(shortened_text, *font_details
+                                                         , (0, 0),
+                                                         Defaults.DOCUMENT_TITLE_COLOR_INVERTED)
                 self.texts[uuid + '_full'] = pe.Text(document.metadata.visible_name, *font_details, (0, 0),
                                                      Defaults.DOCUMENT_TITLE_COLOR)
+
+        # Handle small texts
+        font_details = (Defaults.DOCUMENT_TITLE_FONT, self.gui.ratios.document_tree_view_small_info_size)
+        for item_count in item_counts:
+            self.texts[f'item_count_{item_count}'] = pe.Text(f'{item_count} items', *font_details,
+                                                             (0, 0), Defaults.TEXT_COLOR)
+            self.texts[f'item_count_{item_count}_inverse'] = pe.Text(f'{item_count} items', *font_details,
+                                                                     (0, 0), Defaults.TEXT_COLOR_H)
+
+        for page_count in page_counts:
+            self.texts[f'page_count_{page_count}'] = pe.Text(f'{page_count} pages', *font_details,
+                                                             (0, 0), Defaults.TEXT_COLOR)
+            self.texts[f'page_count_{page_count}_inverse'] = pe.Text(f'{page_count} pages', *font_details,
+                                                                     (0, 0), Defaults.TEXT_COLOR_H)
+
+        for page_of, pages in page_of_counts:
+            self.texts[f'page_of_{page_of}_{pages}'] = pe.Text(f'Page {page_of} of {pages}', *font_details,
+                                                               (0, 0), Defaults.TEXT_COLOR)
+            self.texts[f'page_of_{page_of}_{pages}_inverse'] = pe.Text(f'Page {page_of} of {pages}', *font_details,
+                                                                       (0, 0), Defaults.TEXT_COLOR_H)
+
+        for page_read in pages_read:
+            self.texts[f'page_read_{page_read}'] = pe.Text(f'{page_read}% read', *font_details,
+                                                           (0, 0), Defaults.TEXT_COLOR)
+            self.texts[f'page_read_{page_read}_inverse'] = pe.Text(f'{page_read}% read', *font_details,
+                                                                   (0, 0), Defaults.TEXT_COLOR_H)
 
     @property
     @abstractmethod
@@ -135,7 +186,9 @@ class DocumentTreeViewer(ScrollableView, ABC):
         for i, document_collection in enumerate(
                 self.gui.main_menu.get_sorted_document_collections(self.document_collections.values())):
             render_collection(self.gui, document_collection, self.texts,
-                              self.gui.main_menu.set_parent, x, y, document_collection_width)
+                              self.gui.main_menu.set_parent, x, y, document_collection_width,
+                              self.select_document_collection,
+                              document_collection.uuid in self.selected_document_collections)
 
             if self.mode == 'grid':
                 x += self.document_width + self.gui.ratios.main_menu_document_padding
@@ -159,9 +212,9 @@ class DocumentTreeViewer(ScrollableView, ABC):
         x = self.x_padding_documents
 
         # Rendering the documents
-        full_document_heigth = self.document_height + self.gui.ratios.main_menu_document_height_distance
+        full_document_height = self.document_height + self.gui.ratios.main_menu_document_height_distance
         for i, document in enumerate(self.gui.main_menu.get_sorted_documents(self.documents.values())):
-            if y + full_document_heigth > 0:
+            if y + full_document_height > 0:
                 # Render the document
                 rect = pe.Rect(
                     x, y,
@@ -176,14 +229,26 @@ class DocumentTreeViewer(ScrollableView, ABC):
                 else:
                     document_sync_operation = None
                 render_document(self.gui, rect, self.texts, document, document_sync_operation,
-                                self.scale)
+                                self.scale, self.select_document, document.uuid in self.selected_documents)
 
             x += self.document_width + self.gui.ratios.main_menu_document_padding
             if x + self.document_width > self.width and i + 1 < len(self.documents):
                 x = self.x_padding_documents
-                y += full_document_heigth
+                y += full_document_height
             if y > self.height:
                 break
+
+    def select_document(self, document_uuid: str):
+        if document_uuid in self.selected_documents:
+            self.selected_documents.remove(document_uuid)
+        else:
+            self.selected_documents.add(document_uuid)
+
+    def select_document_collection(self, document_collection_uuid: str):
+        if document_collection_uuid in self.selected_document_collections:
+            self.selected_document_collections.remove(document_collection_uuid)
+        else:
+            self.selected_document_collections.add(document_collection_uuid)
 
     @property
     def document_width(self):

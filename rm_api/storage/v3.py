@@ -3,18 +3,16 @@ import base64
 import json
 import os
 from hashlib import sha256
-from traceback import format_exc, print_exc
+from traceback import format_exc
 
 import aiohttp
-import httpx
 from aiohttp import ClientTimeout
 from colorama import Fore, Style
 from crc32c import crc32c
 from functools import lru_cache
 from json import JSONDecodeError
 
-from httpx import HTTPTransport
-from urllib3 import PoolManager, Retry
+from urllib3 import Retry
 
 import rm_api.models as models
 from typing import TYPE_CHECKING, Union, Tuple, List

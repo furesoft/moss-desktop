@@ -4,11 +4,9 @@ Code originally from https://github.com/lschwetlick/maxio through
 https://github.com/chemag/maxio .
 """
 import io
-import logging
-import string
 from pathlib import Path
 
-from typing import Iterable, Union
+from typing import Union
 
 from rm_lines.inker.document_size_tracker import DocumentSizeTracker, NotebookSizeTracker
 

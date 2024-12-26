@@ -11,8 +11,6 @@ from rm_api.notifications.models import SyncCompleted, NewDocuments
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
 
-from gui.gui import APP_NAME
-
 if TYPE_CHECKING:
     from gui.gui import GUI
     from rm_api import API
@@ -24,14 +22,25 @@ class ReusedIcon:
         self.scale = scale
 
 
+class ResizedIcon:
+    def __init__(self, item: str, scale: float):
+        self.item = item
+        self.scale = scale
+
+
 class Loader(pe.ChildContext, LogoMixin):
     TO_LOAD = {
         # Icons and Images
         'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
-        'folder_add': os.path.join(Defaults.ICON_DIR, 'folder_add.svg'),
         'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
+        'folder_add': os.path.join(Defaults.ICON_DIR, 'folder_add.svg'),
+        'folder_add_inverted': os.path.join(Defaults.ICON_DIR, 'folder_add_inverted.svg'),
+        'folder_empty': os.path.join(Defaults.ICON_DIR, 'folder_empty.svg'),
+        'folder_empty_inverted': os.path.join(Defaults.ICON_DIR, 'folder_empty_inverted.svg'),
         'star': os.path.join(Defaults.ICON_DIR, 'star.svg'),
         'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
+        'star_empty': os.path.join(Defaults.ICON_DIR, 'star_empty.svg'),
+        'star_empty_inverted': os.path.join(Defaults.ICON_DIR, 'star_empty_inverted.svg'),
         'tag': os.path.join(Defaults.ICON_DIR, 'tag.svg'),
         'tag_inverted': os.path.join(Defaults.ICON_DIR, 'tag_inverted.svg'),
         'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
@@ -55,16 +64,32 @@ class Loader(pe.ChildContext, LogoMixin):
         'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
         'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
+        'rotate_inverted': os.path.join(Defaults.ICON_DIR, 'rotate_inverted.svg'),
         'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
+        'burger_inverted': os.path.join(Defaults.ICON_DIR, 'burger_inverted.svg'),
+        'filter': os.path.join(Defaults.ICON_DIR, 'filter.svg'),
         'context_menu': os.path.join(Defaults.ICON_DIR, 'context_menu.svg'),
         'pencil': os.path.join(Defaults.ICON_DIR, 'pencil.svg'),
         'my_files': os.path.join(Defaults.ICON_DIR, 'my_files.svg'),
         'my_files_inverted': os.path.join(Defaults.ICON_DIR, 'my_files_inverted.svg'),
         'trashcan': os.path.join(Defaults.ICON_DIR, 'trashcan.svg'),
         'trashcan_inverted': os.path.join(Defaults.ICON_DIR, 'trashcan_inverted.svg'),
+        'trashcan_delete': os.path.join(Defaults.ICON_DIR, 'trashcan_delete.svg'),
+        'trashcan_delete_inverted': os.path.join(Defaults.ICON_DIR, 'trashcan_delete_inverted.svg'),
         'cog': os.path.join(Defaults.ICON_DIR, 'cog.svg'),
         'cog_inverted': os.path.join(Defaults.ICON_DIR, 'cog_inverted.svg'),
         'heart': os.path.join(Defaults.ICON_DIR, 'heart.svg'),
+        'compass': os.path.join(Defaults.ICON_DIR, 'compass.svg'),
+        'compass_inverted': os.path.join(Defaults.ICON_DIR, 'compass_inverted.svg'),
+        'duplicate': os.path.join(Defaults.ICON_DIR, 'duplicate.svg'),
+        'duplicate_inverted': os.path.join(Defaults.ICON_DIR, 'duplicate_inverted.svg'),
+        'text_edit': os.path.join(Defaults.ICON_DIR, 'text_edit.svg'),
+        'text_edit_inverted': os.path.join(Defaults.ICON_DIR, 'text_edit_inverted.svg'),
+        'move': os.path.join(Defaults.ICON_DIR, 'move.svg'),
+        'move_inverted': os.path.join(Defaults.ICON_DIR, 'move_inverted.svg'),
+        'x_medium': os.path.join(Defaults.ICON_DIR, 'x_medium.svg'),
+        'x_medium_inverted': os.path.join(Defaults.ICON_DIR, 'x_medium_inverted.svg'),
+        'discord_qr_code': ResizedIcon(os.path.join(Defaults.IMAGES_DIR, 'discord_qr_code.png'), 0.1),
 
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
@@ -99,6 +124,8 @@ class Loader(pe.ChildContext, LogoMixin):
             if isinstance(item, ReusedIcon):
                 self.icons[key] = self.icons[item.key].copy()
                 self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
+            elif isinstance(item, ResizedIcon):
+                self.load_image(key, item.item, item.scale)
             elif not isinstance(item, str):
                 continue
             elif item.endswith('.svg'):
@@ -108,6 +135,7 @@ class Loader(pe.ChildContext, LogoMixin):
                 self.load_image(key, item, 0.5)
             elif item.endswith('.png'):
                 self.load_image(key, item)
+
             else:
                 self.load_data(key, item)
             self.items_loaded += 1
@@ -126,10 +154,14 @@ class Loader(pe.ChildContext, LogoMixin):
         self.loading_feedback = 0
         self.loading_complete_marker = 0
         self.api.get_documents(progress)
+        if self.config.last_root != self.api.last_root:
+            self.config.last_root = self.api.last_root
+            self.parent_context.dirty_config = True
         self.files_to_load = None
         if not self.current_progress:
             self.current_progress = 1
         self.api.spread_event(NewDocuments())
+
         self.loading_complete_marker = time.time()
 
     def load_image(self, key, file, multiplier: float = 1):

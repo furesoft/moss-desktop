@@ -1,8 +1,45 @@
 from functools import lru_cache
+from typing import Optional
 
+from gui.pp_helpers import ContextMenu
 from .common import INJECTOR_COLOR
 from gui import GUI
 import pygameextra as pe
+
+
+class MeloraContextMenu(ContextMenu):
+    INVERT = True
+
+    def __init__(self, parent, injector: 'Injector'):
+        self.injector = injector
+        self.gui = injector.gui
+        self.BUTTONS = [{
+            "text": "Melora Menu, press M to close",
+            "icon": "compass",
+            "action": None
+        }]
+        for extension_id, extension in self.injector.extensions.items():
+            for action_name, action_function in extension.ACTIONS.items():
+                text = f'{extension.SHORT}: {action_name}'
+
+                self.BUTTONS.append({
+                    "text": text,
+                    "icon": "cog",
+                    "action": f'ACTION={extension_id}/{action_name}'
+                })
+        super().__init__(parent, (0, self.gui.ratios.main_menu_top_height))
+
+    def __getattr__(self, item):
+        if item.startswith("ACTION="):
+            extension_id, action_name = item[7:].split("/")
+
+            def action_plus_close():
+                getattr(self.injector.extensions[extension_id],
+                        self.injector.extensions[extension_id].ACTIONS[action_name])()
+                self.close()
+
+            return action_plus_close
+        return super().__getattr__(item)
 
 
 class InjectorMenu(pe.ChildContext):
@@ -12,43 +49,25 @@ class InjectorMenu(pe.ChildContext):
     def __init__(self, injector: 'Injector'):
         self.injector = injector
         self.gui = injector.parent_context
-        self.rect = None
+        self.open: Optional[MeloraContextMenu] = None
         super().__init__(injector.parent_context)
 
-    def pre_loop(self):
-        self.rect = pe.Rect(0, 0, self.width // 2, self.height - self.gui.ratios.bottom_bar_height - self.gui.ratios.main_menu_top_height)
-        self.rect.right = self.width + self.width * (1 - self.injector.t)
-        self.rect.top += self.height * (1 - self.injector.t)
-        self.rect.top += self.gui.ratios.main_menu_top_height
-        pe.button.action(self.rect, name='injector_menu')
-        pe.draw.rect(INJECTOR_COLOR, self.rect)
+    def handle_event(self, e):
+        if pe.event.key_DOWN(pe.K_m):
+            if self.open:
+                self.open = None
+            else:
+                self.open = MeloraContextMenu(self, self.injector)
 
     @property
     def defaults(self):
         from gui.defaults import Defaults
         return Defaults
 
-    @lru_cache
-    def get_text(self, text):
-        return pe.Text(text, self.defaults.MONO_FONT, self.gui.ratios.pixel(20), colors=self.defaults.TEXT_COLOR_H)
-
     def loop(self):
-        from gui.rendering import render_button_using_text
-        y = int(self.rect.top)
-        button_height = self.gui.ratios.bottom_bar_height  # Just using the bottom bar height here
-        for extension_id, extension in self.injector.extensions.items():
-            for action_name, action_function in extension.ACTIONS.items():
-                text = self.get_text(f'{extension.SHORT}: {action_name}')
-
-                pe.button.rect(
-                    (self.rect.x, y, self.rect.width, button_height),
-                    self.defaults.TRANSPARENT_COLOR, self.defaults.BUTTON_ACTIVE_COLOR,
-                    text,
-                    action=getattr(extension, action_function),
-                    name=f'{extension_id}_{action_name}'
-                )
-                y += button_height
-
-    def post_loop(self):
-        if self.rect.collidepoint(*pe.mouse.pos()):
-            self.injector.hover_hold()
+        if not self.open:
+            return
+        if self.open.is_closed:
+            self.open = None
+        else:
+            self.open()

@@ -1,16 +1,13 @@
 import json
 import os.path
-import string
 import threading
 import time
 import uuid
 from copy import copy, deepcopy
 from functools import lru_cache
-import random
 from hashlib import sha256
 from io import BytesIO
-from sqlite3.dbapi2 import Timestamp
-from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Tuple, Dict
+from typing import List, TYPE_CHECKING, Generic, T, Union, TypedDict, Dict
 
 from colorama import Fore
 
@@ -48,11 +45,15 @@ def try_to_load_int(rm_value: str):
 
 
 class File:
-    def __init__(self, file_hash: str, file_uuid: str, content_count: str, file_size: str, rm_filename=None):
+    def __init__(self, file_hash: str, file_uuid: str, content_count: str, file_size: Union[str, int],
+                 rm_filename=None):
         self.hash = file_hash
         self.uuid = file_uuid
         self.content_count = int(content_count)
-        self.size = int(file_size)
+        if isinstance(file_size, str):
+            self.size = int(file_size)
+        else:
+            self.size = file_size
         self.rm_filename = rm_filename or file_uuid
 
     @classmethod
@@ -174,7 +175,7 @@ class CPages:
 
     def __init__(self, c_pages: dict):
         self.__c_pages = c_pages
-        self.pages = [Page(page) for page in c_pages['pages']]
+        self.pages = [Page(page) for page in c_pages['pages'] if not page.get('deleted')]
         self.original = TimestampedValue(c_pages['original'])
         self.last_opened = TimestampedValue(c_pages['lastOpened'])
         self.uuids = c_pages['uuids']
@@ -226,14 +227,12 @@ class Content:
             "ThicknessScale": "",
             "LastFinelinerv2Size": "1"
         },
-        "fileType": "pdf",
         "fontName": "",
         "lastOpenedPage": 0,
         "lineHeight": -1,
         "margins": 180,
         "orientation": "portrait",
         "pageCount": 0,
-        "pages": [],
         "textScale": 1,
         "formatVersion": 1,
         "transform": {
@@ -247,6 +246,14 @@ class Content:
             "m32": 0,
             "m33": 1
         }
+    }
+    PDF_CONTENT_TEMPLATE = {
+        "fileType": "pdf",
+        **CONTENT_TEMPLATE,
+    }
+    EPUB_CONTENT_TEMPLATE = {
+        "fileType": "epub",
+        **CONTENT_TEMPLATE,
     }
 
     def __init__(self, content: dict, content_hash: str, show_debug: bool = False):
@@ -366,7 +373,11 @@ class Content:
 
     @classmethod
     def new_pdf(cls):
-        return cls(cls.CONTENT_TEMPLATE, make_hash(json.dumps(cls.CONTENT_TEMPLATE, indent=4)))
+        return cls(cls.PDF_CONTENT_TEMPLATE, make_hash(json.dumps(cls.PDF_CONTENT_TEMPLATE, indent=4)))
+
+    @classmethod
+    def new_epub(cls):
+        return cls(cls.EPUB_CONTENT_TEMPLATE, make_hash(json.dumps(cls.EPUB_CONTENT_TEMPLATE, indent=4)))
 
     def to_dict(self) -> dict:
         return {
@@ -396,12 +407,11 @@ class Content:
         while True:
             chars[target] = increment_char(chars[target])
 
-            
-            do_n = chars[target-flag_z] == 'n' if flag_z else chars[target] == 'n' 
+            do_n = chars[target - flag_z] == 'n' if flag_z else chars[target] == 'n'
             if do_n:
                 n_count = 0
-                n_index = target-flag_z if flag_z else target
-                while n_index >=0:
+                n_index = target - flag_z if flag_z else target
+                while n_index >= 0:
                     if chars[n_index] == 'n':
                         n_count += 1
                     else:
@@ -422,11 +432,11 @@ class Content:
                     target += 1
                     z_index += 1
                 chars[z_index] = char_first if z_index == target else 'a'
-                if chars[z_index-1] == 'z':
+                if chars[z_index - 1] == 'z':
                     z_index -= 1
                 else:
-                    chars[z_index-1] = increment_char(chars[z_index-1])
-                
+                    chars[z_index - 1] = increment_char(chars[z_index - 1])
+
                 flag_z += 1
 
     def check(self, document: 'Document'):
@@ -447,6 +457,7 @@ class Content:
             Page.new_pdf_redirect(i, next(index))
             for i in range(page_count)
         ]
+        self.c_pages.original.value = page_count
 
     def parse_create_new_pdf_content_file(self, document: 'Document'):
         """Creates the c_pages data for a pdf that wasn't indexed"""
@@ -558,17 +569,24 @@ class DocumentCollection:
     def parent(self):
         return self.metadata.parent
 
+    @parent.setter
+    def parent(self, value):
+        self.metadata.parent = value
+
     @property
     def content(self):
         return json.dumps({
             'tags': [tag.to_rm_json() for tag in self.tags]
-        })
+        }, indent=4)
 
     @property
     def files(self):
+        content_data = self.content_data
+        metadata = content_data[f'{self.uuid}.metadata']
+        content = content_data[f'{self.uuid}.content']
         return [
-            File(self.metadata.hash, f'{self.uuid}.metadata', 0, len(self.metadata.to_dict())),
-            File(make_hash(self.content), f'{self.uuid}.content', 0, len(self.content)),
+            File(make_hash(metadata), f'{self.uuid}.metadata', 0, len(metadata)),
+            File(make_hash(content), f'{self.uuid}.content', 0, len(content)),
         ]
 
     @property
@@ -602,11 +620,73 @@ class DocumentCollection:
     def check_files_availability(self):
         return {}
 
+    def unload_files(self):
+        pass
+
+    def recurse(self, api: 'API'):
+        """Recursively get all the documents in the collection"""
+        items = []
+        for document in dict(api.documents).values():
+            if document.parent == self.uuid:
+                items.append(document)
+        for collection in dict(api.document_collections).values():
+            if collection.parent == self.uuid:
+                items.extend(collection.recurse(api))
+                items.append(collection)
+        return items
+
+    def get_item_count(self, api: 'API'):
+        """Get the number of items in the collection"""
+        count = 0
+        for document in dict(api.documents).values():
+            if document.parent == self.uuid:
+                count += 1
+        for collection in dict(api.document_collections).values():
+            if collection.parent == self.uuid:
+                count += 1
+        return count
+
+    @classmethod
+    def __copy(cls, document_collection: 'DocumentCollection', shallow: bool = True):
+        # Duplicate content and metadata
+        tags = [
+            Tag(tag.to_rm_json()) for tag in document_collection.tags
+        ]
+        raw_metadata = document_collection.metadata.to_dict()
+        metadata = Metadata(raw_metadata, make_hash(json.dumps(raw_metadata, indent=4)))
+
+        new = cls(tags, metadata, document_collection.uuid)
+        return new
+
+    def __copy__(self):
+        return self.__copy(self)
+
+    def __deepcopy__(self, memo=None):
+        return self.__copy(self, shallow=False)
+
+    def duplicate(self, api: 'API'):
+        my_items: List[Union[Document, DocumentCollection]] = []
+        my_copy = deepcopy(self)
+        my_copy.uuid = make_uuid()
+        for document in api.documents.values():
+            if document.parent == self.uuid:
+                my_items.append(deepcopy(document))
+                my_items[-1].uuid = make_uuid()
+                my_items[-1].parent = my_copy.uuid
+                my_items[-1].provision = True
+        for document_collection in api.document_collections.values():
+            if document_collection.parent == self.uuid:
+                sub_items, sub_copy = document_collection.duplicate(api)
+                my_items.extend(sub_items)
+                sub_copy.parent = my_copy.uuid
+                my_items.append(sub_copy)
+        return my_items, my_copy
+
 
 class Document:
     unknown_file_types = set()
     KNOWN_FILE_TYPES = [
-        'pdf', 'notebook'
+        'pdf', 'notebook', 'epub'
     ]
     CONTENT_FILE_TYPES = [
         'pdf', 'rm', 'epub', 'pagedata', '-metadata.json'
@@ -620,7 +700,7 @@ class Document:
         self.content = content
         self.metadata = metadata
         self.files = files
-        self.uuid = uuid
+        self._uuid = uuid
         self.content_data = {}
         self.files_available = self.check_files_availability()
         self.downloading = False
@@ -630,6 +710,17 @@ class Document:
                 not self.content.file_type in self.unknown_file_types:
             self.unknown_file_types.add(self.content.file_type)
             print(f'{Fore.RED}Unknown file type: {self.content.file_type}{Fore.RESET}')
+
+    @property
+    def uuid(self):
+        return self._uuid
+
+    @uuid.setter
+    def uuid(self, value):
+        old_uuid = self._uuid
+        self._uuid = value
+        for file in self.files:
+            file.uuid = file.uuid.replace(old_uuid, value)
 
     @property
     def content_files(self):
@@ -649,6 +740,10 @@ class Document:
 
     # noinspection PyTypeChecker
     def _download_files(self, callback=None):
+        if self.api.offline_mode:
+            if callback is not None:
+                callback()
+            return
         self.downloading = True
         for file in self.files:
             if file.uuid not in self.content_files:
@@ -732,7 +827,8 @@ class Document:
         self.content.check(self)
 
     @classmethod
-    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None, page_count: int = 1, notebook_data: List[Union[bytes, FileHandle]] = []) -> 'Document':
+    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None, page_count: int = 1,
+                     notebook_data: List[Union[bytes, FileHandle]] = []) -> 'Document':
         metadata = Metadata.new(name, parent)
         content = Content.new_notebook(api.author_id, page_count)
 
@@ -749,7 +845,7 @@ class Document:
             *notebook_data,
             *[
                 blank_notebook
-                for _ in range(min(1, page_count-len(notebook_data)))
+                for _ in range(min(1, page_count - len(notebook_data)))
             ]
         ]
 
@@ -789,6 +885,39 @@ class Document:
             content_uuid: content.hash,
             metadata_uuid: metadata.hash,
             pdf_uuid: make_hash(pdf_data)
+        }
+
+        document = cls(api, content, metadata, [
+            File(content_hashes[key], key, 0, len(content))
+            for key, content in content_data.items()
+        ], document_uuid)
+
+        document.content_data = content_data
+        document.files_available = document.check_files_availability()
+
+        return document
+
+    @classmethod
+    def new_epub(cls, api: 'API', name: str, epub_data: bytes, parent: str = None, document_uuid: str = None):
+        if document_uuid is None:
+            document_uuid = make_uuid()
+        content = Content.new_epub()
+        metadata = Metadata.new(name, parent)
+
+        content_uuid = f'{document_uuid}.content'
+        metadata_uuid = f'{document_uuid}.metadata'
+        epub_uuid = f'{document_uuid}.epub'
+
+        content_data = {
+            content_uuid: json.dumps(content.to_dict(), indent=4),
+            metadata_uuid: json.dumps(metadata.to_dict(), indent=4),
+            epub_uuid: epub_data
+        }
+
+        content_hashes = {
+            content_uuid: content.hash,
+            metadata_uuid: metadata.hash,
+            epub_uuid: make_hash(epub_data)
         }
 
         document = cls(api, content, metadata, [
@@ -844,3 +973,9 @@ class Document:
         document.files_available = document.check_files_availability()
 
         return document
+
+    def get_page_count(self):
+        return len(self.content.c_pages.pages)
+
+    def get_read(self):
+        return round((self.metadata.last_opened_page / max(1, self.get_page_count())) * 100)

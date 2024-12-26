@@ -1,11 +1,10 @@
 import atexit
 import json
 import os
-import sys
 import time
 from numbers import Number
 from os import makedirs
-from typing import TypedDict, Literal, Union, TYPE_CHECKING
+from typing import TypedDict, Union, TYPE_CHECKING
 
 import appdirs
 import pygameextra as pe
@@ -25,9 +24,9 @@ try:
 except Exception:
     CEFpygame = None
 try:
-    import pymupdf 
+    import pymupdf
 except Exception:
-    pymupdf  = None
+    pymupdf = None
 
 from rm_api import API
 from .aspect_ratio import Ratios
@@ -50,6 +49,8 @@ class ConfigDict(TypedDict):
     wait_for_everything_to_load: bool
     uri: str
     discovery_uri: str
+    last_root: Union[None, str]
+    last_guide: str
     pdf_render_mode: PDF_RENDER_MODES
     notebook_render_mode: NOTEBOOK_RENDER_MODES
     download_everything: bool
@@ -72,6 +73,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'wait_for_everything_to_load': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
+    'last_root': None,
+    'last_guide': 'welcome',
     'pdf_render_mode': 'pymupdf',
     'notebook_render_mode': 'rm_lines_svg_inker',
     'download_everything': False,
@@ -140,7 +143,7 @@ def load_config() -> ConfigType:
     if config['pdf_render_mode'] == 'cef' and CEFpygame is None:
         print(f"{Fore.YELLOW}Cef is not installed or is not compatible with your python version.{Fore.RESET}")
         config['pdf_render_mode'] = 'pymupdf'
-    if config['pdf_render_mode'] == 'pymupdf' and not pymupdf :
+    if config['pdf_render_mode'] == 'pymupdf' and not pymupdf:
         print(f"{Fore.YELLOW}PyMuPDF is not installed or is not compatible with your python version.{Fore.RESET}")
         config['pdf_render_mode'] = 'retry'
     return Box(config)
@@ -161,6 +164,7 @@ class GUI(pe.GameContext):
 
         self.AREA = (self.WIDTH * self.config.scale, self.HEIGHT * self.config.scale)
         self.dirty_config = False
+        self.screenshot = False
 
         atexit.register(self.save_config_if_dirty)
         setattr(pe.settings, 'config', self.config)
@@ -175,6 +179,7 @@ class GUI(pe.GameContext):
         except FailedToRefreshToken:
             os.remove(Defaults.TOKEN_FILE_PATH)
             self.api = API(**self.api_kwargs)
+        self.api.last_root = self.config.last_root
         self.api.debug = self.config.debug
         self.screens = Queue()
         self.ratios = Ratios(self.config.scale)
@@ -183,7 +188,9 @@ class GUI(pe.GameContext):
         self.ctrl_hold = False
         self._import_screen: Union[ImportScreen, None] = None
         self.main_menu: Union['MainMenu', None] = None
-        if self.api.token:
+        from gui.screens.version_checker import VersionChecker
+
+        if self.api.token or self.api.offline_mode:
             from gui.screens.loader import Loader
             self.screens.put(Loader(self))
         else:
@@ -192,6 +199,7 @@ class GUI(pe.GameContext):
         if not pe.settings.indev and not self.config.debug and not self.config.portable_mode and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
+        self.screens.put(VersionChecker(self))
         self.running = True
         self.doing_fake_screen_refresh = False
         self.reset_fake_screen_refresh = True
@@ -292,7 +300,6 @@ class GUI(pe.GameContext):
 
         if self.doing_fake_screen_refresh:
             self.fake_screen_refresh()
-            
 
     def end_loop(self):
         if self.config.debug_button_rects:
@@ -302,6 +309,9 @@ class GUI(pe.GameContext):
                     rect.x += button.display_reference.pos[0]
                     rect.y += button.display_reference.pos[1]
                 pe.draw.rect((*pe.colors.red, 50), rect, 2)
+        if self.screenshot:
+            self.surface.save_to_file("screenshot.png")
+            self.screenshot = False
         # A little memory leak check
         # print(sum(sys.getsizeof(document.content_data) for document in self.api.documents.values()))
         super().end_loop()
@@ -309,6 +319,9 @@ class GUI(pe.GameContext):
     @property
     def center(self):
         return self.width // 2, self.height // 2
+
+    def extra_event(self, e):
+        pass
 
     def handle_event(self, e: pe.event.Event):
         if pe.event.key_DOWN(pe.K_LCTRL) or pe.event.key_DOWN(pe.K_RCTRL):
@@ -319,6 +332,9 @@ class GUI(pe.GameContext):
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
         if self.screens.queue[-1].handle_event != self.handle_event:
             self.screens.queue[-1].handle_event(e)
+        if self.config.debug and pe.event.key_DOWN(pe.K_s):
+            self.screenshot = True
+        self.extra_event(e)
         super().handle_event(e)
 
     def quit_check(self):

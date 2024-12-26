@@ -1,5 +1,4 @@
 import os.path
-import sys
 import __main__
 
 from gui import USER_DATA_DIR
@@ -38,6 +37,7 @@ class Defaults:
 
     HTML_DIR = os.path.join(ASSET_DIR, 'html')
     ICON_DIR = os.path.join(ASSET_DIR, 'icons')
+    IMAGES_DIR = os.path.join(ASSET_DIR, 'images')
     DATA_DIR = os.path.join(ASSET_DIR, 'data')
     FONT_DIR = os.path.join(ASSET_DIR, 'fonts')
 
@@ -56,7 +56,6 @@ class Defaults:
     ROBOTO_MEDIUM_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
     TITLE_FONT = os.path.join(FONT_DIR, 'Morrison-SemiBold.ttf')
 
-
     PATH_FONT = ROBOTO_REGULAR_FONT
     FOLDER_TITLE_FONT = TITLE_FONT
     DOCUMENT_TITLE_FONT = TITLE_FONT
@@ -70,16 +69,20 @@ class Defaults:
     MAIN_MENU_PROGRESS_FONT = MONO_FONT
     CODE_FONT = MONO_FONT
     DEBUG_FONT = MONO_FONT
+    GUIDES_FONT = ROBOTO_REGULAR_FONT
 
     BACKGROUND = pe.colors.white
 
     TEXT_COLOR = (pe.colors.black, BACKGROUND)
+    SELECTED = (10, 10, 10)
+    TEXT_ERROR_COLOR = (pe.colors.red, None)
     TEXT_COLOR_CODE = (pe.colors.darkaqua, None)
     TEXT_COLOR_LINK = (pe.colors.darkblue, None)
-    DOCUMENT_TITLE_COLOR = ((20, 20, 20), TEXT_COLOR[1])
-    DOCUMENT_SUBTITLE_COLOR = ((100, 100, 100), TEXT_COLOR[1])
+    DOCUMENT_TITLE_COLOR = ((20, 20, 20), BACKGROUND)
+    DOCUMENT_TITLE_COLOR_INVERTED = ((235, 235, 235), SELECTED)
+    DOCUMENT_SUBTITLE_COLOR = ((100, 100, 100), BACKGROUND)
     TEXT_COLOR_T = (TEXT_COLOR[0], None)
-    TEXT_COLOR_H = (TEXT_COLOR[1], None)
+    TEXT_COLOR_H = (BACKGROUND, None)
     CODE_COLOR = ((120, 120, 120), None)
     LINE_GRAY = (88, 88, 88)
     LINE_GRAY_LIGHT = (167, 167, 167)
@@ -94,7 +97,6 @@ class Defaults:
 
     # Colors
     OUTLINE_COLOR = pe.colors.black
-    INVERTED_COLOR = pe.colors.black
     RED = (255, 50, 50)
 
     # Key bindings

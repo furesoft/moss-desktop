@@ -1,8 +1,6 @@
 import base64
 from functools import lru_cache
 import os
-import threading
-import time
 import pygameextra as pe
 
 # noinspection PyBroadException
@@ -113,7 +111,6 @@ class PDF_CEF_Viewer(AbstractRenderer):
     def close(self):
         if self.pdf:
             self.pdf.exit_app()
-
 
     # def next(self):
     #     if self.pdf:

@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 from traceback import print_exc
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import requests
 import colorama
@@ -55,6 +55,8 @@ class API:
         self.sync_file_path = sync_file_path
         if self.sync_file_path is not None:
             os.makedirs(self.sync_file_path, exist_ok=True)
+        self.last_root = None
+        self.offline_mode = False
         self.document_storage_uri = None
         self.document_notifications_uri = None
         self._upload_lock = threading.Lock()
@@ -97,7 +99,7 @@ class API:
         return self._use_new_sync
 
     def connect_to_notifications(self):
-        if self.connected_to_notifications:
+        if self.connected_to_notifications or self.offline_mode:
             return
         self.check_for_document_notifications()
         handle_notifications(self)
@@ -149,6 +151,8 @@ class API:
         del self._hook_list[hook_id]
 
     def check_for_document_storage(self):
+        if self.offline_mode:
+            return
         if not self.document_storage_uri:
             uri = get_document_storage_uri(self)
             if not uri:
@@ -162,10 +166,11 @@ class API:
 
             self.document_storage_uri = uri
 
-    def upload(self, document: Document, callback=None, unload: bool = False):
+    def upload(self, document: Union[Document, DocumentCollection], callback=None, unload: bool = False):
         self.upload_many_documents([document], callback, unload)
 
-    def upload_many_documents(self, documents: List[Document], callback=None, unload: bool = False):
+    def upload_many_documents(self, documents: List[Union[Document, DocumentCollection]], callback=None,
+                              unload: bool = False):
         self.sync_notifiers += 1
         self._upload_lock.acquire()
         upload_event = FileSyncProgress()
@@ -185,11 +190,39 @@ class API:
             self._upload_lock.release()
             self.sync_notifiers -= 1
 
-    def _upload_document_contents(self, documents: List[Document], progress: FileSyncProgress):
+    def delete(self, document: Union[Document, DocumentCollection], callback=None, unload: bool = True):
+        self.delete_many_documents([document], callback, unload)
+
+    def delete_many_documents(self, documents: List[Union[Document, DocumentCollection]], callback=None,
+                              unload: bool = True):
+        self.sync_notifiers += 1
+        self._upload_lock.acquire()
+        upload_event = FileSyncProgress()
+        self.spread_event(upload_event)
+        try:
+            self._delete_document_contents(documents, upload_event)
+        except:
+            print_exc()
+        finally:
+            upload_event.finished = True
+            if unload:
+                for document in documents:
+                    document.unload_files()
+            time.sleep(.1)
+            self._upload_lock.release()
+            self.sync_notifiers -= 1
+
+    def _upload_document_contents(self, documents: List[Union[Document, DocumentCollection]],
+                                  progress: FileSyncProgress):
         # We need to upload the content, metadata, rm file, file list and update root
         # This is the order that remarkable expects the upload to happen in, anything else and they might detect it as
-        # API tampering, so we wanna follow their upload cycle
-        progress.total += 2  # Getting root / Uploading root
+        # API tampering, so we want to follow their upload cycle
+        if self.offline_mode:
+            progress.total = 1
+            progress.done = 1
+            return
+
+        progress.total += 2  # Getting root / Updating root
 
         root = self.get_root()  # root info
 
@@ -346,6 +379,62 @@ class API:
             document.content_data.clear()
             document.files_available = document.check_files_availability()
             document.provision = False
+
+        if self.sync_notifiers <= 1:
+            self.spread_event(SyncRefresh())
+
+    def _delete_document_contents(self, documents: List[Union[Document, DocumentCollection]],
+                                  progress: FileSyncProgress):
+        # We need to remove the documents from the root and upload the new root
+
+        if self.offline_mode:
+            progress.total = 1
+            progress.done = 1
+            return
+
+        progress.total += 2  # Getting root / Updating root
+
+        root = self.get_root()  # root info
+
+        _, files = get_file(self, root['hash'])
+        progress.done += 1  # Got root
+
+        new_root = {
+            "broadcast": True,
+            "generation": root['generation']
+        }
+
+        uuids = [document.uuid for document in documents]
+
+        new_root_files = [
+            file
+            for file in files
+            if file.uuid not in uuids
+        ]  # Include all the old data without this data
+
+        # Prepare the root file
+        root_sync_operation = DocumentSyncProgress('root', progress)
+        root_file_content = ['3\n']
+        root_file_hash = sha256()
+        for file in sorted(new_root_files, key=lambda file: file.uuid):
+            root_file_content.append(file.to_root_line())
+            root_file_hash.update(bytes.fromhex(file.hash))
+
+        root_file_content = ''.join(root_file_content).encode()
+        root_file = File(root_file_hash.hexdigest(), f"root.docSchema", len(new_root_files), len(root_file_content))
+        new_root['hash'] = root_file.hash
+
+        put_file(self, root_file, root_file_content, root_sync_operation)
+
+        # Update the root
+        try:
+            update_root(self, new_root)
+        except RootUploadFailure:
+            self.log("Sync root failed, this is fine if you decided to sync on another device / start a secondary sync")
+            progress.done = -1
+            progress.total = 0
+            self._upload_document_contents(documents, progress)
+        progress.done += 1  # Update done finally matching done/total
 
         if self.sync_notifiers <= 1:
             self.spread_event(SyncRefresh())

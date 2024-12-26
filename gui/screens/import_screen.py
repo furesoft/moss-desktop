@@ -1,6 +1,4 @@
-import datetime
 import threading
-import time
 from datetime import timedelta
 from typing import Dict, TYPE_CHECKING, List
 
@@ -14,7 +12,7 @@ from gui.rendering import render_button_using_text, render_full_text
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.mixins import ButtonReadyMixin, TitledMixin
 from gui.screens.viewer import DocumentViewer
-from rm_api import Document, make_uuid
+from rm_api import Document
 
 if TYPE_CHECKING:
     from gui import GUI

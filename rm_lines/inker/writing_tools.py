@@ -186,7 +186,7 @@ class Pencil(Pen):
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
         segment_width = 10 * ((((0.8 * self.base_width) + (0.5 * pressure / 255)) * (width / 3)) - (
-                    0.25 * self.direction_to_tilt(direction) ** 2.1) - (0.6 * (speed / 4) / 10))
+                0.25 * self.direction_to_tilt(direction) ** 2.1) - (0.6 * (speed / 4) / 10))
         # segment_width = 1.3*(((self.base_width * 0.4) * pressure) - 0.5 * ((self.direction_to_tilt(direction) ** 0.5)) + (0.5 * last_width))
         max_width = self.base_width * MAGIC_PENCIL_SIZE
         segment_width = segment_width if segment_width < max_width else max_width
@@ -227,8 +227,8 @@ class Brush(Pen):
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
         segment_width = 1.68 * (
-                    ((1 + (1.4 * pressure / 255)) * (width / 4)) - (0.5 * self.direction_to_tilt(direction)) - (
-                        (speed / 4) / 50))  # + (0.2 * last_width)
+                ((1 + (1.4 * pressure / 255)) * (width / 4)) - (0.5 * self.direction_to_tilt(direction)) - (
+                (speed / 4) / 50))  # + (0.2 * last_width)
         return segment_width
 
     def get_segment_color(self, speed, direction, width, pressure, last_width):
@@ -278,5 +278,5 @@ class Caligraphy(Pen):
 
     def get_segment_width(self, speed, direction, width, pressure, last_width):
         segment_width = 2.16 * (((1 + pressure / 255) * (width / 4)) - 0.3 * self.direction_to_tilt(direction)) + (
-                    0.1 * last_width)
+                0.1 * last_width)
         return segment_width

@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
 #        os: [ windows-latest, ubuntu-latest, macos-latest ]
-        os: [ windows-latest, ubuntu-latest ]
+        os: [ windows-latest ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,10 +35,16 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-${{ runner.os }}.txt
 
+      - name: Get pygame directory
+        shell: bash
+        run: |
+          PYGAME_DIR=$(python -c 'import os, pygameextra; print(os.path.dirname(pygameextra.pygame.__file__))')
+          echo "PYGAME_DIR=${PYGAME_DIR}" >> $GITHUB_ENV
+          
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
-          nuitka-version: ${{ matrix.os == 'macos-latest-large' && 'factory' || 'main' }}
+          nuitka-version: ${{ matrix.os == 'macos-latest' && 'factory' || 'main' }}
           script-name: moss.py
           mode: app
           disable-console: ${{ github.ref == 'refs/heads/main' }}
@@ -53,8 +59,10 @@ jobs:
             assets=assets
           include-data-files: |
             LICENSE=LICENSE
+            ${{ env.PYGAME_DIR }}/libpng16-16.dll=libpng16-16.dll
           nofollow-import-to: |
             pymupdf.mupdf
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
