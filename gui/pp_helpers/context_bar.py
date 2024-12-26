@@ -160,10 +160,10 @@ class ContextBar(pe.ChildContext, ABC):
             if is_inverted:
                 pe.draw.rect(Defaults.SELECTED, button.area)
             pe.settings.game_context.buttons.append(button)
-            if is_inverted:
-                button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
-            elif not button_meta['action']:
+            if not button_meta['action']:
                 button.active_resource = Defaults.TRANSPARENT_COLOR
+            elif is_inverted:
+                button.active_resource = Defaults.BUTTON_ACTIVE_COLOR_INVERTED
             else:
                 button.active_resource = Defaults.BUTTON_ACTIVE_COLOR
             pe.button.check_hover(button)

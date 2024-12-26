@@ -320,6 +320,9 @@ class GUI(pe.GameContext):
     def center(self):
         return self.width // 2, self.height // 2
 
+    def extra_event(self, e):
+        pass
+
     def handle_event(self, e: pe.event.Event):
         if pe.event.key_DOWN(pe.K_LCTRL) or pe.event.key_DOWN(pe.K_RCTRL):
             self.ctrl_hold = True
@@ -331,6 +334,7 @@ class GUI(pe.GameContext):
             self.screens.queue[-1].handle_event(e)
         if self.config.debug and pe.event.key_DOWN(pe.K_s):
             self.screenshot = True
+        self.extra_event(e)
         super().handle_event(e)
 
     def quit_check(self):

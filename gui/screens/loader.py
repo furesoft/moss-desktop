@@ -80,6 +80,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'cog_inverted': os.path.join(Defaults.ICON_DIR, 'cog_inverted.svg'),
         'heart': os.path.join(Defaults.ICON_DIR, 'heart.svg'),
         'compass': os.path.join(Defaults.ICON_DIR, 'compass.svg'),
+        'compass_inverted': os.path.join(Defaults.ICON_DIR, 'compass_inverted.svg'),
         'duplicate': os.path.join(Defaults.ICON_DIR, 'duplicate.svg'),
         'duplicate_inverted': os.path.join(Defaults.ICON_DIR, 'duplicate_inverted.svg'),
         'text_edit': os.path.join(Defaults.ICON_DIR, 'text_edit.svg'),
