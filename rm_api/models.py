@@ -226,7 +226,6 @@ class Content:
             "ThicknessScale": "",
             "LastFinelinerv2Size": "1"
         },
-        "fileType": "pdf",
         "fontName": "",
         "lastOpenedPage": 0,
         "lineHeight": -1,
@@ -247,6 +246,14 @@ class Content:
             "m32": 0,
             "m33": 1
         }
+    }
+    PDF_CONTENT_TEMPLATE = {
+        "fileType": "pdf",
+        **CONTENT_TEMPLATE,
+    }
+    EPUB_CONTENT_TEMPLATE = {
+        "fileType": "epub",
+        **CONTENT_TEMPLATE,
     }
 
     def __init__(self, content: dict, content_hash: str, show_debug: bool = False):
@@ -366,7 +373,12 @@ class Content:
 
     @classmethod
     def new_pdf(cls):
-        return cls(cls.CONTENT_TEMPLATE, make_hash(json.dumps(cls.CONTENT_TEMPLATE, indent=4)))
+        return cls(cls.PDF_CONTENT_TEMPLATE, make_hash(json.dumps(cls.PDF_CONTENT_TEMPLATE, indent=4)))
+
+
+    @classmethod
+    def new_epub(cls):
+        return cls(cls.EPUB_CONTENT_TEMPLATE, make_hash(json.dumps(cls.EPUB_CONTENT_TEMPLATE, indent=4)))
 
     def to_dict(self) -> dict:
         return {
@@ -797,6 +809,40 @@ class Document:
             content_uuid: content.hash,
             metadata_uuid: metadata.hash,
             pdf_uuid: make_hash(pdf_data)
+        }
+
+        document = cls(api, content, metadata, [
+            File(content_hashes[key], key, 0, len(content))
+            for key, content in content_data.items()
+        ], document_uuid)
+
+        document.content_data = content_data
+        document.files_available = document.check_files_availability()
+
+        return document
+
+
+    @classmethod
+    def new_epub(cls, api: 'API', name: str, epub_data: bytes, parent: str = None, document_uuid: str = None):
+        if document_uuid is None:
+            document_uuid = make_uuid()
+        content = Content.new_epub()
+        metadata = Metadata.new(name, parent)
+
+        content_uuid = f'{document_uuid}.content'
+        metadata_uuid = f'{document_uuid}.metadata'
+        epub_uuid = f'{document_uuid}.epub'
+
+        content_data = {
+            content_uuid: json.dumps(content.to_dict(), indent=4),
+            metadata_uuid: json.dumps(metadata.to_dict(), indent=4),
+            epub_uuid: epub_data
+        }
+
+        content_hashes = {
+            content_uuid: content.hash,
+            metadata_uuid: metadata.hash,
+            epub_uuid: make_hash(epub_data)
         }
 
         document = cls(api, content, metadata, [
