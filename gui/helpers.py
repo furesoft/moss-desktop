@@ -27,32 +27,30 @@ def shorten_name(name, letters=16, max_length=20):
         return f'{first[:one_short]}...{last[len(last) - two_short:]}'
     return name
 
+def check_width(text: str, font: pe.pygame.Font):
+    metrics = font.metrics(text)
+    x = 0
+    for metric in metrics:
+        x += metric[4]
+    return x
 
-def text_width(text, font, fontsize):
-    return pe.Text(text, font, fontsize).rect.width
 
+def dynamic_text(name, font_filename, fontsize, width):
+    font = pe.text.get_font(font_filename, fontsize)
 
-def text_width(text, font, fontsize):
-    return pe.Text(text, font, fontsize).rect.width
-
-
-def dynamic_text(name, font, fontsize, width):
-    if text_width(name, font, fontsize) <= width:
+    if check_width(name, font) <= width:
         return name
 
-    ellipsis = "..."
-    max_length = len(name)
-    start_length = max_length // 2
-    end_length = max_length - start_length
+    center = len(name) // 2
+    left = center
+    right = center
 
-    while start_length > 0 and end_length > 0:
-        test_text = name[:start_length] + ellipsis + name[-end_length:]
-        if text_width(test_text, font, fontsize) <= width:
-            return test_text
-        start_length -= 1
-        end_length -= 1
+    while check_width(name[:left]+'...'+name[right:], font) > width:
+        left -= 1
+        right += 1
 
-    return ellipsis
+    return name[:left]+'...'+name[right:]
+
 
 
 def shorten_path(path, letters=26, max_length=30):

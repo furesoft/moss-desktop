@@ -9,6 +9,7 @@ from gui.helpers import dynamic_text
 from gui.literals import MAIN_MENU_MODES
 from gui.rendering import render_document, render_collection
 from gui.screens.scrollable_view import ScrollableView
+from rm_api import DocumentCollection, Document
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -27,8 +28,8 @@ class DocumentTreeViewer(ScrollableView, ABC):
         super().__init__(gui)
 
     def handle_texts(self):
-        document_collections = dict(self.document_collections)
-        documents = dict(self.documents)
+        document_collections: Dict[str, DocumentCollection] = dict(self.document_collections)
+        documents: Dict[str, Document] = dict(self.documents)
 
         # Preparing the document collection texts
         font_details = (Defaults.FOLDER_TITLE_FONT, self.gui.ratios.document_tree_view_folder_title_size)
@@ -36,8 +37,15 @@ class DocumentTreeViewer(ScrollableView, ABC):
             if self.texts.get(uuid) is None or self.texts[
                 uuid + '_full'
             ].text != document_collection.metadata.visible_name:
+                width_reduction = self.gui.ratios.main_menu_document_padding
+                if document_collection.metadata.pinned:
+                    width_reduction += self.gui.icons['star'].width + self.gui.ratios.main_menu_folder_padding
+                if document_collection.tags and self.mode == 'grid':
+                    width_reduction += self.gui.icons['tag'].width + self.gui.ratios.main_menu_folder_padding
                 shortened_text = dynamic_text(document_collection.metadata.visible_name, *font_details,
-                                              self.document_width if self.mode == 'grid' else self.width)
+                                              (self.document_width if self.mode == 'grid' else self.width)
+                                              - width_reduction
+                                              )
                 self.texts[uuid] = pe.Text(shortened_text, *font_details, (0, 0), Defaults.TEXT_COLOR)
                 self.texts[uuid + '_inverted'] = pe.Text(shortened_text, *font_details, (0, 0),
                                                          Defaults.TEXT_COLOR_H)
