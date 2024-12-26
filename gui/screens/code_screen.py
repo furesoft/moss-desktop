@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING
 from gui.events import ResizeEvent
 from rm_api.auth import FailedToGetToken
 from gui.defaults import Defaults
-from gui.screens.loader import Loader, APP_NAME
+from gui.screens.loader import Loader
+from gui.gui import APP_NAME
 
 if TYPE_CHECKING:
     from gui.gui import GUI
