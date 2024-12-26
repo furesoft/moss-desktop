@@ -16,7 +16,8 @@ class InjectorMenu(pe.ChildContext):
         super().__init__(injector.parent_context)
 
     def pre_loop(self):
-        self.rect = pe.Rect(0, 0, self.width // 2, self.height - self.gui.ratios.bottom_bar_height - self.gui.ratios.main_menu_top_height)
+        self.rect = pe.Rect(0, 0, self.width // 2,
+                            self.height - self.gui.ratios.bottom_bar_height - self.gui.ratios.main_menu_top_height)
         self.rect.right = self.width + self.width * (1 - self.injector.t)
         self.rect.top += self.height * (1 - self.injector.t)
         self.rect.top += self.gui.ratios.main_menu_top_height

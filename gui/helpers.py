@@ -27,6 +27,7 @@ def shorten_name(name, letters=16, max_length=20):
         return f'{first[:one_short]}...{last[len(last) - two_short:]}'
     return name
 
+
 def check_width(text: str, font: pe.pygame.Font):
     metrics = font.metrics(text)
     x = 0
@@ -45,12 +46,11 @@ def dynamic_text(name, font_filename, fontsize, width):
     left = center
     right = center
 
-    while check_width(name[:left]+'...'+name[right:], font) > width:
+    while check_width(name[:left] + '...' + name[right:], font) > width:
         left -= 1
         right += 1
 
-    return name[:left]+'...'+name[right:]
-
+    return name[:left] + '...' + name[right:]
 
 
 def shorten_path(path, letters=26, max_length=30):

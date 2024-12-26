@@ -62,7 +62,7 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
         self.injector.extensions[extension_instance.ID] = extension_instance
         extension_instance.load()
 
-    def enabled(self,  extension_id: str):
+    def enabled(self, extension_id: str):
         try:
             switches = self.gui.config.melora_extensions
         except BoxKeyError:
@@ -97,5 +97,3 @@ class InjectorLoader(pe.ChildContext, LogoMixin):
         progress_line.width *= self.progress
         pe.draw.rect(INJECTOR_COLOR, progress_line)
         pe.draw.rect(pe.colors.black, self.line_rect, 1)
-
-

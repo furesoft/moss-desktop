@@ -1,10 +1,9 @@
 import time
-from abc import abstractmethod, ABC
 from copy import deepcopy
-from functools import lru_cache, wraps
+from functools import wraps
 from queue import Queue
 from threading import Lock, Thread
-from typing import TYPE_CHECKING, Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
 import pygameextra as pe
 
@@ -12,7 +11,7 @@ from gui.cloud_action_helper import import_files_to_cloud, import_notebook_pages
 from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt, notebook_prompt
 from gui.pp_helpers import ContextMenu, ContextBar
-from gui.pp_helpers.popups import ConfirmPopup, WarningPopup
+from gui.pp_helpers.popups import ConfirmPopup
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.guides import Guides
@@ -401,7 +400,6 @@ class TopBarTrash(MainMenuContextBar):
             items.append(collection)
 
         self.api.delete_many_documents(items)
-
 
     def delete_confirm(self):
         self.popups.put(ConfirmPopup(self.parent_context,

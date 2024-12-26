@@ -4,13 +4,11 @@
 
 from __future__ import annotations
 
-import logging
 import typing as tp
 
 from .tagged_block_common import CrdtId
 from .crdt_sequence import CrdtSequenceItem
 from . import scene_items as si
-
 
 ROOT_ID = CrdtId(0, 1)
 

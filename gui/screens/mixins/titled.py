@@ -12,7 +12,7 @@ class TitledMixin:
     TITLE = "Title"
     ratios: 'Ratios'
     TITLE_COLORS = Defaults.TEXT_COLOR
-    
+
     def handle_title(self, title: str = None):
         self.title = pe.Text(title or self.TITLE, Defaults.MAIN_MENU_FONT, self.ratios.titled_mixin_title_size,
                              colors=self.TITLE_COLORS)

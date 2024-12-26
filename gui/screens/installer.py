@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import sys
 import threading
-from functools import lru_cache
 
 import pygameextra as pe
 from typing import TYPE_CHECKING, Dict

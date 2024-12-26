@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 from .tagged_block_common import CrdtId
 
-
 # If the type constraint is for a CrdtSequenceItem[Superclass], then a
 # CrdtSequenceItem[Subclass] would do, so it is covariant.
 

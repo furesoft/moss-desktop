@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Dict
 from gui.screens.mixins import LogoMixin
 from gui.defaults import Defaults
 
-
 if TYPE_CHECKING:
     from gui.gui import GUI
     from rm_api import API

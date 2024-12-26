@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from math import ceil
 
 import pygameextra as pe
-from typing import TYPE_CHECKING, Literal, Dict
+from typing import TYPE_CHECKING, Dict
 
 from gui.defaults import Defaults
 from gui.helpers import dynamic_text

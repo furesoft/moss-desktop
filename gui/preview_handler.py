@@ -13,9 +13,9 @@ from rm_api.storage.common import FileHandle
 from rm_api.storage.v3 import get_file_contents, check_file_exists
 
 try:
-    import pymupdf 
+    import pymupdf
 except ImportError:
-    pymupdf  = None
+    pymupdf = None
 
 MAY_CONTAIN_A_IMAGE = Union[None, pe.Image]
 
@@ -113,7 +113,7 @@ class PreviewHandler:
 
                 document.load_files_from_cache()
 
-                if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and pymupdf :
+                if pdf_file and (stream := document.content_data.get(pdf_file.uuid)) and pymupdf:
                     if isinstance(stream, FileHandle):
                         pdf = pymupdf.open(stream.file_path, filetype='pdf')
                     else:

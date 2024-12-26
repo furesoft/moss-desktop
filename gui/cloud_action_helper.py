@@ -2,7 +2,6 @@ import io
 import pygameextra as pe
 import os
 from PIL import Image
-from PyPDF2 import PdfWriter
 
 from rm_api import Document
 from typing import TYPE_CHECKING, List

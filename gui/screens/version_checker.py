@@ -14,6 +14,7 @@ from gui.gui import APP_NAME
 if TYPE_CHECKING:
     from gui.gui import GUI
 
+
 class GitCheckException(Exception):
     pass
 
@@ -95,7 +96,6 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                     "Failed to check for updates.",
                     "Failed to check for updates, please check manually for any new commits."
                 ))
-
 
     def close(self):
         self.api.remove_hook('version_checker_resize_check')

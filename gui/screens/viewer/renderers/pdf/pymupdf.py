@@ -1,15 +1,11 @@
-import base64
 from functools import lru_cache
-import os
-import threading
-import time
 import pygameextra as pe
 
 # noinspection PyBroadException
 try:
-    import pymupdf 
+    import pymupdf
 except Exception:
-    pymupdf  = None
+    pymupdf = None
 
 from gui.defaults import Defaults
 from ..shared_model import AbstractRenderer

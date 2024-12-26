@@ -1,5 +1,4 @@
 import os.path
-import sys
 import __main__
 
 from gui import USER_DATA_DIR
@@ -56,7 +55,6 @@ class Defaults:
     ROBOTO_REGULAR_FONT = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
     ROBOTO_MEDIUM_FONT = os.path.join(FONT_DIR, 'Roboto-Medium.ttf')
     TITLE_FONT = os.path.join(FONT_DIR, 'Morrison-SemiBold.ttf')
-
 
     PATH_FONT = ROBOTO_REGULAR_FONT
     FOLDER_TITLE_FONT = TITLE_FONT

@@ -1,11 +1,10 @@
 import atexit
 import json
 import os
-import sys
 import time
 from numbers import Number
 from os import makedirs
-from typing import TypedDict, Literal, Union, TYPE_CHECKING
+from typing import TypedDict, Union, TYPE_CHECKING
 
 import appdirs
 import pygameextra as pe
@@ -25,9 +24,9 @@ try:
 except Exception:
     CEFpygame = None
 try:
-    import pymupdf 
+    import pymupdf
 except Exception:
-    pymupdf  = None
+    pymupdf = None
 
 from rm_api import API
 from .aspect_ratio import Ratios
@@ -144,7 +143,7 @@ def load_config() -> ConfigType:
     if config['pdf_render_mode'] == 'cef' and CEFpygame is None:
         print(f"{Fore.YELLOW}Cef is not installed or is not compatible with your python version.{Fore.RESET}")
         config['pdf_render_mode'] = 'pymupdf'
-    if config['pdf_render_mode'] == 'pymupdf' and not pymupdf :
+    if config['pdf_render_mode'] == 'pymupdf' and not pymupdf:
         print(f"{Fore.YELLOW}PyMuPDF is not installed or is not compatible with your python version.{Fore.RESET}")
         config['pdf_render_mode'] = 'retry'
     return Box(config)
@@ -301,7 +300,6 @@ class GUI(pe.GameContext):
 
         if self.doing_fake_screen_refresh:
             self.fake_screen_refresh()
-            
 
     def end_loop(self):
         if self.config.debug_button_rects:
@@ -334,7 +332,6 @@ class GUI(pe.GameContext):
         if self.config.debug and pe.event.key_DOWN(pe.K_s):
             self.screenshot = True
         super().handle_event(e)
-
 
     def quit_check(self):
         self.running = False

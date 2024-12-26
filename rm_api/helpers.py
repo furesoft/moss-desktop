@@ -12,4 +12,3 @@ def get_pdf_page_count(pdf: bytes):
         reader = PdfReader(BytesIO(pdf))
 
     return len(reader.pages)
-

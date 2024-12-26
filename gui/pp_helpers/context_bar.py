@@ -21,7 +21,6 @@ class ContextBar(pe.ChildContext, ABC):
     texts: List[pe.Text]
     texts_inverted: List[pe.Text]
 
-
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
         self.texts_inverted = []
@@ -123,7 +122,7 @@ class ContextBar(pe.ChildContext, ABC):
 
             # Position the context icons with padding
             for icon_key in (
-            'context_menu', 'chevron_right', 'chevron_down', 'small_chevron_right', 'small_chevron_down'):
+                    'context_menu', 'chevron_right', 'chevron_down', 'small_chevron_right', 'small_chevron_down'):
                 context_icon = self.icons[icon_key]
                 context_icon_rect = pe.Rect(0, 0, *context_icon.size)
 
@@ -202,7 +201,8 @@ class ContextBar(pe.ChildContext, ABC):
                     context_icon.display(button_meta['small_chevron_down_icon_rect'].topleft)
 
             if button.disabled:
-                pe.draw.rect(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR, button.area)
+                pe.draw.rect(Defaults.BUTTON_DISABLED_COLOR if self.INVERT else Defaults.BUTTON_DISABLED_LIGHT_COLOR,
+                             button.area)
 
             if context_menu := button_meta.get('_context_menu'):
                 if context_menu.is_closed:

@@ -5,9 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from collections import defaultdict
 from dataclasses import dataclass, field
-import logging
 import typing as tp
 
 from . import scene_items as si

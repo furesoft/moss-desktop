@@ -1,4 +1,3 @@
-import gui
 from gui.gui import GUI
 from melora import melora_patch
 from melora.injector import Injector

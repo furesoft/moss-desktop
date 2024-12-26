@@ -11,8 +11,6 @@ from rm_api.notifications.models import SyncCompleted, NewDocuments
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
 
-from gui.gui import APP_NAME
-
 if TYPE_CHECKING:
     from gui.gui import GUI
     from rm_api import API
@@ -22,6 +20,7 @@ class ReusedIcon:
     def __init__(self, key: str, scale: float):
         self.key = key
         self.scale = scale
+
 
 class ResizedIcon:
     def __init__(self, item: str, scale: float):

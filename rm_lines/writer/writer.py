@@ -10,7 +10,6 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from io import BytesIO
-import logging
 import typing as tp
 
 from ..tagged_block_common import (

@@ -1,6 +1,5 @@
 import os
 import shutil
-import time
 import json
 from functools import lru_cache
 from traceback import print_exc
@@ -134,6 +133,7 @@ class DocumentDebugPopup(ContextMenu):
                 if self.config.format_raw_exports and is_json:
                     data = json.dumps(json.loads(data), indent=4, sort_keys=True).encode()
                 f.write(data)
+        self.close()
 
     def render_pages(self, important: bool = False):
         if important:
@@ -162,6 +162,8 @@ class DocumentDebugPopup(ContextMenu):
             except Exception as e:
                 print_exc()
             i += 1
+        self.close()
 
     def render_important(self):
-        return self.render_pages(True)
+        self.render_pages(True)
+        self.close()

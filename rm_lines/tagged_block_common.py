@@ -13,12 +13,11 @@ import logging
 import struct
 import typing as tp
 
-
 HEADER_V6 = b"reMarkable .lines file, version=6          "
 
 
 class TagType(enum.IntEnum):
-    "Tag type representing the type of following data."
+    """Tag type representing the type of following data."""
     ID = 0xF
     Length4 = 0xC
     Byte8 = 0x8
@@ -32,7 +31,7 @@ class UnexpectedBlockError(Exception):
 
 @dataclass(eq=True, order=True, frozen=True)
 class CrdtId:
-    "An identifier or timestamp."
+    """An identifier or timestamp."""
     part1: int
     part2: int
 
@@ -149,7 +148,7 @@ class DataStream:
         return result
 
     def write_bytes(self, b: bytes):
-        "Write bytes to underlying stream."
+        """Write bytes to underlying stream."""
         self.data.write(b)
 
     def _read_struct(self, pattern: str):
@@ -248,7 +247,7 @@ class DataStream:
         """Write a `CrdtId` to the data stream."""
         # Based on ddvk's reader.go
         # TODO: should be var unit?
-        if value.part1 >= 2**8 or value.part2 >= 2**64:
+        if value.part1 >= 2 ** 8 or value.part2 >= 2 ** 64:
             raise ValueError("CrdtId too large: %s" % value)
         self.write_uint8(value.part1)
         self.write_varuint(value.part2)
@@ -256,6 +255,7 @@ class DataStream:
 
 
 _T = tp.TypeVar("_T")
+
 
 # This makes sense to be frozen, since the value should not be changed without
 # updating the timestamp.

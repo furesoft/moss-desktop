@@ -164,7 +164,7 @@ class CodeScreen(pe.ChildContext):
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
                 action=webbrowser.open,
                 data=("https://my.remarkable.com/#desktop", 0, True),
-                name = 'code_screen.webopen<rm>'
+                name='code_screen.webopen<rm>'
             )
         else:
             pe.button.rect(
