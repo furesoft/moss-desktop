@@ -380,7 +380,7 @@ class TopBarSelectOne(MainMenuContextBar):
 class TopBarTrash(MainMenuContextBar):
     BUTTONS = (
         {
-            "text": "Clear Trash",
+            "text": "Empty",
             "icon": "trashcan_delete",
             "action": 'delete_confirm'
         },
