@@ -174,7 +174,7 @@ class CPages:
 
     def __init__(self, c_pages: dict):
         self.__c_pages = c_pages
-        self.pages = [Page(page) for page in c_pages['pages']]
+        self.pages = [Page(page) for page in c_pages['pages'] if not page.get('deleted')]
         self.original = TimestampedValue(c_pages['original'])
         self.last_opened = TimestampedValue(c_pages['lastOpened'])
         self.uuids = c_pages['uuids']
@@ -459,6 +459,7 @@ class Content:
             Page.new_pdf_redirect(i, next(index))
             for i in range(page_count)
         ]
+        self.c_pages.original.value = page_count
 
     def parse_create_new_pdf_content_file(self, document: 'Document'):
         """Creates the c_pages data for a pdf that wasn't indexed"""
@@ -913,3 +914,6 @@ class Document:
         document.files_available = document.check_files_availability()
 
         return document
+
+    def get_page_count(self):
+        return len(self.content.c_pages.pages)
