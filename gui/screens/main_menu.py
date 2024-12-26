@@ -351,6 +351,27 @@ class TopBarSelectOne(MainMenuContextBar):
         return DeleteContextMenu(self.main_menu, ideal_position)
 
 
+class TopBarTrash(MainMenuContextBar):
+    BUTTONS = (
+        {
+            "text": "Clear Trash",
+            "icon": "trashcan_delete",
+            "action": 'delete_confirm'
+        },
+    )
+    ALIGN = 'right'
+
+    def delete(self):
+        pass
+
+    def delete_confirm(self):
+        self.popups.put(ConfirmPopup(self.parent_context,
+                                     "Delete permanently?",
+                                     "Are you sure you want to clear the trash?\n"
+                                     "This action is irreversible.",
+                                     self.delete))
+
+
 class TopBarSelectMulti(TopBarSelectOne):
     BUTTONS = (
         {
@@ -621,6 +642,7 @@ class MainMenu(pe.ChildContext):
         self._bar_one = TopBarSelectOne(self)
         self._bar_multi = TopBarSelectMulti(self)
         self._bar_move = TopBarSelectMove(self)
+        self._bar_trash = TopBarTrash(self)
 
         if 'screenshot' in self.icons:
             self.icons['screenshot'].set_alpha(100)
@@ -665,6 +687,8 @@ class MainMenu(pe.ChildContext):
             return self._bar_one
         elif selected_items > 1:
             return self._bar_multi
+        if self.menu_location == 'trash':
+            return self._bar_trash
         return self._bar
 
     @property
