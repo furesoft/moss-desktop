@@ -418,7 +418,6 @@ class TopBarSelectMulti(TopBarSelectOne):
         },
     )
     DELETE_MESSAGE = "Are you sure you want to delete these items?"
-    ALIGN = 'right'
 
 
 class TopBarSelectMove(TopBarSelectOne):
@@ -441,7 +440,6 @@ class TopBarSelectMove(TopBarSelectOne):
             "action": "duplicate_here"
         },
     )
-    ALIGN = 'right'
 
     def cancel(self):
         self.main_menu.move_mode = False
@@ -869,6 +867,8 @@ class MainMenu(pe.ChildContext):
             self._bar.handle_scales()
             self._bar_one.handle_scales()
             self._bar_multi.handle_scales()
+            self._bar_move.handle_scales()
+            self._bar_trash.handle_scales()
             self.side_bar.handle_scales()
             self.doc_view.update_size()
         elif isinstance(event, NewDocuments):
