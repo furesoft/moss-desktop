@@ -66,6 +66,7 @@ class Ratios:
         self.main_menu_button_margin = self.main_menu_button_padding
         self.main_menu_my_files_size = int(24 * scale)
         self.main_menu_document_title_height_margin = int(8 * scale)
+        self.main_menu_document_title_padding = int(4 * scale)
         self.main_menu_document_cloud_padding = int(20 * scale)  # 10 on each size (left and right) / (top and bottom)
         self.main_menu_path_size = int(15.8 * scale)
         self.main_menu_bar_size = self.main_menu_path_size
@@ -78,6 +79,7 @@ class Ratios:
         self.document_tree_view_document_title_size = int(14 * scale)
         self.document_tree_view_folder_title_size = int(14 * scale)
         self.document_tree_view_list_text_height = int(60 * scale)
+        self.document_tree_view_small_info_size = int(12 * scale)
 
         # Document Viewer
         self.document_viewer_top_draggable_height = int(48 * scale)  # Accurate to device

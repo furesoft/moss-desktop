@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING, Dict, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Tuple, Union, Optional
 import pygameextra as pe
 
 from gui.defaults import Defaults
@@ -56,7 +56,7 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
     )
     rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
     if selected:
-        pe.draw.rect(Defaults.SELECTED, rect.inflate(gui.ratios.main_menu_x_padding*0.75, 0))
+        pe.draw.rect(Defaults.SELECTED, rect.inflate(gui.ratios.main_menu_x_padding * 0.75, 0))
 
     icon.display((x, y))
     text.display()
@@ -68,7 +68,6 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
     if collection.tags:
         tag_icon.display((extra_x, text.rect.centery - tag_icon.width // 2))
         extra_x += tag_icon.width + gui.ratios.main_menu_folder_padding
-
 
     render_button_using_text(
         gui, text,
@@ -129,12 +128,26 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
                     selected: bool = False):
     # Check if the document is being debugged and keep the debug menu open
 
-    title_text = texts.get(document.uuid + ('_inverted' if selected else ''))
+    inverse_key = '_inverted' if selected else ''
+    title_text = texts.get(document.uuid + inverse_key)
     if not title_text:
         return
+    sub_text: Optional[pe.Text]
+    if document.content.file_type == 'notebook':
+        sub_text = texts.get(f'page_count_{document.get_page_count()}{inverse_key}')
+    elif document.content.file_type == 'pdf':
+        sub_text = texts.get(
+            f'page_of_{document.metadata.last_opened_page + 1}_{document.get_page_count()}{inverse_key}')
+    elif document.content.file_type == 'epub':
+        sub_text = texts.get(f'page_read_{document.get_read()}{inverse_key}')
+    else:
+        sub_text = None
 
     title_text.rect.topleft = rect.bottomleft
     title_text.rect.top += gui.ratios.main_menu_document_title_height_margin
+    if sub_text:
+        sub_text.rect.left = title_text.rect.left
+        sub_text.rect.top = title_text.rect.bottom + gui.ratios.main_menu_document_title_padding
 
     action = document.ensure_download_and_callback
     data = lambda: PreviewHandler.clear_for(document.uuid, lambda: open_document(gui, document.uuid))
@@ -177,6 +190,8 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         },
         disabled=document.provision or disabled
     )
+    if sub_text:
+        sub_text.display()
 
     # Render the notebook icon
     preview = PreviewHandler.get_preview(document, rect.size)

@@ -375,7 +375,6 @@ class Content:
     def new_pdf(cls):
         return cls(cls.PDF_CONTENT_TEMPLATE, make_hash(json.dumps(cls.PDF_CONTENT_TEMPLATE, indent=4)))
 
-
     @classmethod
     def new_epub(cls):
         return cls(cls.EPUB_CONTENT_TEMPLATE, make_hash(json.dumps(cls.EPUB_CONTENT_TEMPLATE, indent=4)))
@@ -408,12 +407,11 @@ class Content:
         while True:
             chars[target] = increment_char(chars[target])
 
-            
-            do_n = chars[target-flag_z] == 'n' if flag_z else chars[target] == 'n' 
+            do_n = chars[target - flag_z] == 'n' if flag_z else chars[target] == 'n'
             if do_n:
                 n_count = 0
-                n_index = target-flag_z if flag_z else target
-                while n_index >=0:
+                n_index = target - flag_z if flag_z else target
+                while n_index >= 0:
                     if chars[n_index] == 'n':
                         n_count += 1
                     else:
@@ -434,11 +432,11 @@ class Content:
                     target += 1
                     z_index += 1
                 chars[z_index] = char_first if z_index == target else 'a'
-                if chars[z_index-1] == 'z':
+                if chars[z_index - 1] == 'z':
                     z_index -= 1
                 else:
-                    chars[z_index-1] = increment_char(chars[z_index-1])
-                
+                    chars[z_index - 1] = increment_char(chars[z_index - 1])
+
                 flag_z += 1
 
     def check(self, document: 'Document'):
@@ -625,14 +623,25 @@ class DocumentCollection:
     def recurse(self, api: 'API'):
         """Recursively get all the documents in the collection"""
         items = []
-        for document in api.documents.values():
+        for document in dict(api.documents).values():
             if document.parent == self.uuid:
                 items.append(document)
-        for collection in api.document_collections.values():
+        for collection in dict(api.document_collections).values():
             if collection.parent == self.uuid:
                 items.extend(collection.recurse(api))
                 items.append(collection)
         return items
+
+    def get_item_count(self, api: 'API'):
+        """Get the number of items in the collection"""
+        count = 0
+        for document in dict(api.documents).values():
+            if document.parent == self.uuid:
+                count += 1
+        for collection in dict(api.document_collections).values():
+            if collection.parent == self.uuid:
+                count += 1
+        return count
 
 
 class Document:
@@ -768,7 +777,8 @@ class Document:
         self.content.check(self)
 
     @classmethod
-    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None, page_count: int = 1, notebook_data: List[Union[bytes, FileHandle]] = []) -> 'Document':
+    def new_notebook(cls, api: 'API', name: str, parent: str = None, document_uuid: str = None, page_count: int = 1,
+                     notebook_data: List[Union[bytes, FileHandle]] = []) -> 'Document':
         metadata = Metadata.new(name, parent)
         content = Content.new_notebook(api.author_id, page_count)
 
@@ -785,7 +795,7 @@ class Document:
             *notebook_data,
             *[
                 blank_notebook
-                for _ in range(min(1, page_count-len(notebook_data)))
+                for _ in range(min(1, page_count - len(notebook_data)))
             ]
         ]
 
@@ -836,7 +846,6 @@ class Document:
         document.files_available = document.check_files_availability()
 
         return document
-
 
     @classmethod
     def new_epub(cls, api: 'API', name: str, epub_data: bytes, parent: str = None, document_uuid: str = None):
@@ -917,3 +926,6 @@ class Document:
 
     def get_page_count(self):
         return len(self.content.c_pages.pages)
+
+    def get_read(self):
+        return round((self.metadata.last_opened_page / self.get_page_count()) * 100)
