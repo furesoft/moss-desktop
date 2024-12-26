@@ -56,7 +56,7 @@ def render_collection(gui: 'GUI', collection: 'DocumentCollection', texts: Dict[
     )
     rect.inflate_ip(gui.ratios.main_menu_folder_margin_x, gui.ratios.main_menu_folder_margin_y)
     if selected:
-        pe.draw.rect(Defaults.SELECTED, rect)
+        pe.draw.rect(Defaults.SELECTED, rect.inflate(gui.ratios.main_menu_x_padding*0.75, 0))
 
     icon.display((x, y))
     text.display()
