@@ -978,4 +978,4 @@ class Document:
         return len(self.content.c_pages.pages)
 
     def get_read(self):
-        return round((self.metadata.last_opened_page / max(1, self.get_page_count())) * 100)
+        return round(((self.metadata.last_opened_page+1) / max(1, self.get_page_count())) * 100)
