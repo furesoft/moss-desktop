@@ -82,25 +82,25 @@ class DocumentTreeViewer(ScrollableView, ABC):
         for item_count in item_counts:
             self.texts[f'item_count_{item_count}'] = pe.Text(f'{item_count} items', *font_details,
                                                              (0, 0), Defaults.TEXT_COLOR)
-            self.texts[f'item_count_{item_count}_inverse'] = pe.Text(f'{item_count} items', *font_details,
+            self.texts[f'item_count_{item_count}_inverted'] = pe.Text(f'{item_count} items', *font_details,
                                                                      (0, 0), Defaults.TEXT_COLOR_H)
 
         for page_count in page_counts:
             self.texts[f'page_count_{page_count}'] = pe.Text(f'{page_count} pages', *font_details,
                                                              (0, 0), Defaults.TEXT_COLOR)
-            self.texts[f'page_count_{page_count}_inverse'] = pe.Text(f'{page_count} pages', *font_details,
+            self.texts[f'page_count_{page_count}_inverted'] = pe.Text(f'{page_count} pages', *font_details,
                                                                      (0, 0), Defaults.TEXT_COLOR_H)
 
         for page_of, pages in page_of_counts:
             self.texts[f'page_of_{page_of}_{pages}'] = pe.Text(f'Page {page_of} of {pages}', *font_details,
                                                                (0, 0), Defaults.TEXT_COLOR)
-            self.texts[f'page_of_{page_of}_{pages}_inverse'] = pe.Text(f'Page {page_of} of {pages}', *font_details,
+            self.texts[f'page_of_{page_of}_{pages}_inverted'] = pe.Text(f'Page {page_of} of {pages}', *font_details,
                                                                        (0, 0), Defaults.TEXT_COLOR_H)
 
         for page_read in pages_read:
             self.texts[f'page_read_{page_read}'] = pe.Text(f'{page_read}% read', *font_details,
                                                            (0, 0), Defaults.TEXT_COLOR)
-            self.texts[f'page_read_{page_read}_inverse'] = pe.Text(f'{page_read}% read', *font_details,
+            self.texts[f'page_read_{page_read}_inverted'] = pe.Text(f'{page_read}% read', *font_details,
                                                                    (0, 0), Defaults.TEXT_COLOR_H)
 
     @property
