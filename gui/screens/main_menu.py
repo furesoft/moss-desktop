@@ -177,7 +177,7 @@ class TopBar(MainMenuContextBar):
             "text": "Notebook",
             "icon": "notebook_add",
             "action": 'create_notebook'
-        }, ADD_FOLDER, {
+        }, dict(ADD_FOLDER), {
             "text": "Import",
             "icon": "import",
             "action": 'import_action',
@@ -448,7 +448,7 @@ class TopBarSelectMove(TopBarSelectOne):
             "text": "Deselect",
             "icon": "x_medium",
             "action": "deselect"
-        }, TopBar.ADD_FOLDER, {
+        }, dict(TopBar.ADD_FOLDER), {
             "text": "Move here",
             "icon": "move",
             "action": "finalize_move"
