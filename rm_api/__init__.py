@@ -176,8 +176,8 @@ class API:
         upload_event = FileSyncProgress()
         self.spread_event(upload_event)
         try:
-            for document in documents:
-                document.ensure_download()
+            # for document in documents:
+            #     document.ensure_download()
             self._upload_document_contents(documents, upload_event)
         except:
             print_exc()

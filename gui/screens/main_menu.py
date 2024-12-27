@@ -357,6 +357,7 @@ class TopBarSelectOne(MainMenuContextBar):
         else:
             return self.api.document_collections[uuid]
 
+    @threaded
     def move_to(self, parent: str):
         items_to_upload = []
         for document_uuid in self.documents:
