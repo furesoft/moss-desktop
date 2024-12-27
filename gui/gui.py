@@ -332,7 +332,7 @@ class GUI(pe.GameContext):
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
         if self.screens.queue[-1].handle_event != self.handle_event:
             self.screens.queue[-1].handle_event(e)
-        if self.config.debug and pe.event.key_DOWN(pe.K_s):
+        if self.config.debug and self.ctrl_hold and pe.event.key_DOWN(pe.K_s):
             self.screenshot = True
         self.extra_event(e)
         super().handle_event(e)
