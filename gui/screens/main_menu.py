@@ -260,22 +260,26 @@ class TopBarSelectOne(MainMenuContextBar):
     def delete_confirm(self):
         self.popups.put(ConfirmPopup(self.parent_context, "Delete", self.DELETE_MESSAGE, self.delete))
 
+    @threaded
     def delete(self):
         items = self.both_as_items
         sub_items = []
         for item in items:
             if isinstance(item, DocumentCollection):
                 sub_items.extend(item.recurse(self.api))
-        self.api.delete_many_documents(items + sub_items)
         self.deselect()
+        self.api.delete_many_documents(items + sub_items)
+
 
     def move(self):
         self.main_menu.move_mode = True
 
+    @threaded
     def duplicate(self, here: bool = False):
         items_to_upload: List[Union[Document, DocumentCollection]] = []
         for document_uuid in self.documents:
             document = self.api.documents[document_uuid]
+            document.ensure_download()
             items_to_upload.append(deepcopy(document))
             items_to_upload[-1].uuid = make_uuid()
             items_to_upload[-1].provision = True
@@ -291,8 +295,9 @@ class TopBarSelectOne(MainMenuContextBar):
             if here:
                 items_to_upload[-1].parent = self.main_menu.navigation_parent
             items_to_upload[-1].metadata.visible_name += " copy"
-        self.api.upload_many_documents(items_to_upload)
         self.deselect()
+        self.api.upload_many_documents(items_to_upload)
+
 
     def deselect(self):
         self.documents.clear()
@@ -322,6 +327,7 @@ class TopBarSelectOne(MainMenuContextBar):
                 button['icon'] = 'star_empty' if self.is_favorite else 'star'
                 break
 
+    @threaded
     def favorite(self):
         items_to_upload = []
         for document_uuid in self.documents:
@@ -332,8 +338,8 @@ class TopBarSelectOne(MainMenuContextBar):
             document_collection = self.api.document_collections[document_collection_uuid]
             items_to_upload.append(document_collection)
             document_collection.metadata.pinned = not self.is_favorite
-        self.api.upload_many_documents(items_to_upload)
         self.deselect()
+        self.api.upload_many_documents(items_to_upload)
 
     def rename(self):
         NameFieldScreen(self.parent_context, "Rename", self.single_item.metadata.visible_name, self._rename, None,
@@ -368,8 +374,8 @@ class TopBarSelectOne(MainMenuContextBar):
             document_collection = self.api.document_collections[document_collection_uuid]
             items_to_upload.append(document_collection)
             document_collection.parent = parent
-        self.api.upload_many_documents(items_to_upload)
         self.deselect()
+        self.api.upload_many_documents(items_to_upload)
 
     def trash(self):
         self.move_to('trash')
@@ -389,6 +395,7 @@ class TopBarTrash(MainMenuContextBar):
     ONLINE_ACTIONS = ('delete_confirm',)
     ALIGN = 'right'
 
+    @threaded
     def delete(self):
         items = [
             item for item in self.api.documents.values() if item.parent == 'trash'

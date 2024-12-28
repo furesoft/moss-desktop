@@ -721,6 +721,15 @@ class Document:
         self._uuid = value
         for file in self.files:
             file.uuid = file.uuid.replace(old_uuid, value)
+        for key in list(self.files_available.keys()):
+            file = self.files_available.pop(key)
+            key = key.replace(old_uuid, value)
+            self.files_available[key] = file
+        for key in list(self.content_data.keys()):
+            file = self.content_data.pop(key)
+            key = key.replace(old_uuid, value)
+            self.content_data[key] = file
+
 
     @property
     def content_files(self):
