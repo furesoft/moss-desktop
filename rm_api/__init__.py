@@ -227,8 +227,6 @@ class API:
         root = self.get_root()  # root info
 
         _, files = get_file(self, root['hash'])
-        print(files)
-        print('==========')
         progress.done += 1  # Got root
 
         new_root = {
@@ -317,6 +315,13 @@ class API:
 
             document_file_content = ''.join(document_file_content).encode()
             document_file.hash = document_file_hash.hexdigest()
+            print('===========')
+            print(document.uuid, document_file.hash)
+            print('...........')
+            print(document_file_content.decode('utf-8'))
+            print('===========')
+
+
 
             # Add the document file to the content_data
             content_datas[document_file.uuid] = document_file_content
@@ -324,7 +329,6 @@ class API:
 
         # Prepare the root file
         root_file_content = ['3\n']
-        print(new_root_files)
         root_file_hash = sha256()
         for file in sorted(new_root_files, key=lambda file: file.uuid):
             root_file_content.append(file.to_root_line())

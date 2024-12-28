@@ -279,10 +279,7 @@ class TopBarSelectOne(MainMenuContextBar):
         items_to_upload: List[Union[Document, DocumentCollection]] = []
         for document_uuid in self.documents:
             document = self.api.documents[document_uuid]
-            document.ensure_download()
-            items_to_upload.append(deepcopy(document))
-            items_to_upload[-1].uuid = make_uuid()
-            items_to_upload[-1].provision = True
+            items_to_upload.append(document.duplicate())
             if here:
                 items_to_upload[-1].parent = self.main_menu.navigation_parent
             items_to_upload[-1].metadata.visible_name += " copy"

@@ -21,8 +21,12 @@ if TYPE_CHECKING:
     from rm_api import API
 
 
+def now_time_int():
+    return int(time.time() * 1000)
+
+
 def now_time():
-    return str(int(time.time() * 1000))
+    return str(now_time_int())
 
 
 def make_uuid():
@@ -536,6 +540,9 @@ class Metadata:
             'parent': self.__metadata['parent'] or ''
         }
 
+    def modify_now(self):
+        self.last_modified = now_time_int()
+
 
 class Tag:
     def __init__(self, tag):
@@ -668,12 +675,11 @@ class DocumentCollection:
         my_items: List[Union[Document, DocumentCollection]] = []
         my_copy = deepcopy(self)
         my_copy.uuid = make_uuid()
+        my_copy.metadata.last_modified += 1
         for document in api.documents.values():
             if document.parent == self.uuid:
-                my_items.append(deepcopy(document))
-                my_items[-1].uuid = make_uuid()
+                my_items.append(document.duplicate())
                 my_items[-1].parent = my_copy.uuid
-                my_items[-1].provision = True
         for document_collection in api.document_collections.values():
             if document_collection.parent == self.uuid:
                 sub_items, sub_copy = document_collection.duplicate(api)
@@ -719,6 +725,9 @@ class Document:
     def uuid(self, value):
         old_uuid = self._uuid
         self._uuid = value
+        self._replace_uuids(old_uuid, value)
+
+    def _replace_uuids(self, old_uuid, value):
         for file in self.files:
             file.uuid = file.uuid.replace(old_uuid, value)
         for key in list(self.files_available.keys()):
@@ -729,7 +738,6 @@ class Document:
             file = self.content_data.pop(key)
             key = key.replace(old_uuid, value)
             self.content_data[key] = file
-
 
     @property
     def content_files(self):
@@ -987,4 +995,19 @@ class Document:
         return len(self.content.c_pages.pages)
 
     def get_read(self):
-        return round(((self.metadata.last_opened_page+1) / max(1, self.get_page_count())) * 100)
+        return round(((self.metadata.last_opened_page + 1) / max(1, self.get_page_count())) * 100)
+
+    def randomize_uuids(self):
+        for page in self.content.c_pages.pages:
+            old = page.id
+            new = make_uuid()
+            page.id = new
+            self._replace_uuids(old, new)
+        self.uuid = make_uuid()
+
+    def duplicate(self):
+        new = deepcopy(self)
+        new.randomize_uuids()
+        new.metadata.last_modified += 1
+        new.provision = True
+        return new
