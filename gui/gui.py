@@ -70,7 +70,7 @@ class ConfigDict(TypedDict):
 
 DEFAULT_CONFIG: ConfigDict = {
     'enable_fake_screen_refresh': False,
-    'wait_for_everything_to_load': True,
+    'wait_for_everything_to_load': False,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'last_root': None,
