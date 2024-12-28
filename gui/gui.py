@@ -79,7 +79,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'notebook_render_mode': 'rm_lines_svg_inker',
     'download_everything': False,
     'download_last_opened_page_to_make_preview': False,
-    'save_last_opened_folder': False,
+    'save_last_opened_folder': True,
     'last_opened_folder': None,
     'last_prompt_directory': None,
     'scale': .9,
