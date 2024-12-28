@@ -315,13 +315,6 @@ class API:
 
             document_file_content = ''.join(document_file_content).encode()
             document_file.hash = document_file_hash.hexdigest()
-            print('===========')
-            print(document.uuid, document_file.hash)
-            print('...........')
-            print(document_file_content.decode('utf-8'))
-            print('===========')
-
-
 
             # Add the document file to the content_data
             content_datas[document_file.uuid] = document_file_content
