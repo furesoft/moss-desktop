@@ -270,7 +270,6 @@ class TopBarSelectOne(MainMenuContextBar):
         self.deselect()
         self.api.delete_many_documents(items + sub_items)
 
-
     def move(self):
         self.main_menu.move_mode = True
 
@@ -294,7 +293,6 @@ class TopBarSelectOne(MainMenuContextBar):
             items_to_upload[-1].metadata.visible_name += " copy"
         self.deselect()
         self.api.upload_many_documents(items_to_upload)
-
 
     def deselect(self):
         self.documents.clear()
