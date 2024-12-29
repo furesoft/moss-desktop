@@ -276,14 +276,14 @@ class TopBarSelectOne(MainMenuContextBar):
     @threaded
     def duplicate(self, here: bool = False):
         items_to_upload: List[Union[Document, DocumentCollection]] = []
-        for document_uuid in self.documents:
+        for document_uuid in reversed(tuple(self.documents)):
             document = self.api.documents[document_uuid]
             items_to_upload.append(document.duplicate())
             if here:
                 items_to_upload[-1].parent = self.main_menu.navigation_parent
             items_to_upload[-1].metadata.visible_name += " copy"
 
-        for document_collection_uuid in self.document_collections:
+        for document_collection_uuid in reversed(tuple(self.document_collections)):
             document_collection = self.api.document_collections[document_collection_uuid]
             items, collection = document_collection.duplicate(self.api)
             items_to_upload.extend(items)

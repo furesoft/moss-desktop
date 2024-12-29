@@ -677,11 +677,11 @@ class DocumentCollection:
         my_copy.uuid = make_uuid()
         my_copy.metadata.last_modified = now_time_int()
         my_copy.metadata.created_time = now_time_int()
-        for document in api.documents.values():
+        for document in reversed(api.documents.values()):
             if document.parent == self.uuid:
                 my_items.append(document.duplicate())
                 my_items[-1].parent = my_copy.uuid
-        for document_collection in api.document_collections.values():
+        for document_collection in reversed(api.document_collections.values()):
             if document_collection.parent == self.uuid:
                 sub_items, sub_copy = document_collection.duplicate(api)
                 my_items.extend(sub_items)
