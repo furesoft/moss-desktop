@@ -1,4 +1,6 @@
+from functools import wraps
 from io import BytesIO
+from threading import Thread
 
 from PyPDF2 import PdfReader
 
@@ -12,3 +14,13 @@ def get_pdf_page_count(pdf: bytes):
         reader = PdfReader(BytesIO(pdf))
 
     return len(reader.pages)
+
+
+def threaded(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs, daemon=True)
+        thread.start()
+        return thread
+
+    return wrapper

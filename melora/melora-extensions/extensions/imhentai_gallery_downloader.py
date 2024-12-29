@@ -20,6 +20,7 @@ from gui.screens.name_field_screen import NameFieldScreen
 from melora.callback_document import CallbackDocument
 from melora.extension_base import ExtensionBase
 from rm_api import Document, FileSyncProgress
+from rm_api.helpers import threaded
 from rm_api.models import Page
 
 SITE_URL = 'https://imhentai.xxx'
@@ -29,16 +30,6 @@ DOWNLOAD_REQUEST_URL = f'{SITE_URL}/inc/dl_new.php'
 DOWNLOAD_REQUEST_PAGES = f'{SITE_URL}/downloads/{{}}/{{}}.js'
 DOWNLOAD_PAGE = 'https://m{}.imhentai.xxx/{}/{}/{}'
 GALLERY_URL = f'{SITE_URL}/gallery/{{}}'
-
-
-def threaded(fn):
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        thread = Thread(target=fn, args=args, kwargs=kwargs, daemon=True)
-        thread.start()
-        return thread
-
-    return wrapper
 
 
 def wrap_callback(fn, *args, **kwargs):

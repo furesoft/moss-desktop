@@ -1,5 +1,6 @@
 from melora.extension_base import ExtensionBase
 from rm_api import SyncRefresh
+from rm_api.helpers import threaded
 
 
 class Extension(ExtensionBase):
@@ -11,6 +12,7 @@ class Extension(ExtensionBase):
         "Reset root": "reset_root"
     }
 
+    @threaded
     def reset_root(self):
         self.api.reset_root()
         self.api.spread_event(SyncRefresh())
