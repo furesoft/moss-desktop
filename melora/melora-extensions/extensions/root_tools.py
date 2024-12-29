@@ -1,5 +1,5 @@
 from melora.extension_base import ExtensionBase
-from rm_api import NewDocuments
+from rm_api import SyncRefresh
 
 
 class Extension(ExtensionBase):
@@ -13,4 +13,7 @@ class Extension(ExtensionBase):
 
     def reset_root(self):
         self.api.reset_root()
-        self.api.spread_event(NewDocuments())
+        self.api.spread_event(SyncRefresh())
+
+    def save(self):
+        pass
