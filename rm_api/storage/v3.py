@@ -268,20 +268,7 @@ def get_documents_using_root(api: 'API', progress, root):
         from rm_api.storage.old_sync import update_root
         print(f"{Fore.RED}{Style.BRIGHT}AN ISSUE OCCURRED GETTING YOUR ROOT INDEX!{Fore.RESET}{Style.RESET_ALL}")
 
-        root = api.get_root()
-
-        new_root = {
-            "broadcast": True,
-            "generation": root['generation']
-        }
-
-        root_file_content = b'3\n'
-
-        root_file = models.File(models.make_hash(root_file_content), f"root.docSchema", 0, len(root_file_content))
-        new_root['hash'] = root_file.hash
-        put_file(api, root_file, root_file_content, DocumentSyncProgress(''))
-        update_root(api, new_root)
-        _, files = get_file(api, new_root['hash'])
+        api.reset_root()
     deleted_document_collections_list = set(api.document_collections.keys())
     deleted_documents_list = set(api.documents.keys())
     document_collections_with_items = set()

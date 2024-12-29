@@ -457,3 +457,19 @@ class API:
             if self.debug:
                 print(*args)
             logging.info(' '.join(map(str, args)))
+
+    def reset_root(self):
+        root = self.get_root()
+
+        new_root = {
+            "broadcast": True,
+            "generation": root['generation']
+        }
+
+        root_file_content = b'3\n'
+
+        root_file = models.File(models.make_hash(root_file_content), f"root.docSchema", 0, len(root_file_content))
+        new_root['hash'] = root_file.hash
+        put_file(self, root_file, root_file_content, DocumentSyncProgress(''))
+        update_root(self, new_root)
+        _, files = get_file(self, new_root['hash'])
