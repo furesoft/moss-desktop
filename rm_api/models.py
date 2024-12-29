@@ -675,7 +675,8 @@ class DocumentCollection:
         my_items: List[Union[Document, DocumentCollection]] = []
         my_copy = deepcopy(self)
         my_copy.uuid = make_uuid()
-        my_copy.metadata.last_modified += 1
+        my_copy.metadata.last_modified = now_time_int()
+        my_copy.metadata.created_time = now_time_int()
         for document in api.documents.values():
             if document.parent == self.uuid:
                 my_items.append(document.duplicate())
@@ -1008,6 +1009,7 @@ class Document:
     def duplicate(self):
         new = deepcopy(self)
         new.randomize_uuids()
-        new.metadata.last_modified += 1
+        new.metadata.last_modified = now_time_int()
+        new.metadata.created_time = now_time_int()
         new.provision = True
         return new
