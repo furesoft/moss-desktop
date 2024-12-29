@@ -14,7 +14,7 @@ class MeloraContextMenu(ContextMenu):
         self.injector = injector
         self.gui = injector.gui
         self.BUTTONS = [{
-            "text": "Melora Menu, press M to close",
+            "text": "Melora Menu, press Ctrl + M to close",
             "icon": "compass",
             "action": None
         }]
@@ -53,7 +53,7 @@ class InjectorMenu(pe.ChildContext):
         super().__init__(injector.parent_context)
 
     def handle_event(self, e):
-        if pe.event.key_DOWN(pe.K_m):
+        if self.gui.ctrl_hold and pe.event.key_DOWN(pe.K_m):
             if self.open:
                 self.open = None
             else:
