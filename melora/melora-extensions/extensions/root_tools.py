@@ -9,13 +9,19 @@ class Extension(ExtensionBase):
     SHORT = 'RT'
     AUTHOR = "RedTTG"
     ACTIONS = {
-        "Reset root": "reset_root"
+        "Reset root": "reset_root",
+        "Get current root": "get_root",
     }
 
     @threaded
     def reset_root(self):
         self.api.reset_root()
         self.api.spread_event(SyncRefresh())
+
+    @threaded
+    def get_root(self):
+        root = self.api.get_root()
+        print(root)
 
     def save(self):
         pass
