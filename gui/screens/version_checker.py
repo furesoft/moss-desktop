@@ -53,9 +53,10 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                 self.warnings.put(WarningPopup(
                     self.parent_context,
                     "PygameExtra is outdated",
-                    f"You are running from source, the main package that {APP_NAME} uses is outdated\n"
+                    f"You are running from source.\n"
+                    f"The main package that {APP_NAME} uses is outdated!\n"
                     f"Please update PygameExtra to {self.versions['pygameextra']}\n"
-                    "This should resolve any issues you may experience if you ignore this warning!\n\n"
+                    "This should resolve any issues you may experience\n\n"
                     "Do not report issues unless you have updated PygameExtra!"
                 ))
         if os.path.exists('.git'):

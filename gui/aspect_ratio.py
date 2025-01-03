@@ -104,7 +104,7 @@ class Ratios:
         self.titled_mixin_margin = int(8 * scale)
 
         # Popup
-        self.popup_description_size = int(20 * scale)
+        self.popup_description_size = int(15 * scale)
         self.popup_description_padding = int(10 * scale)
 
     def pixel(self, value):
