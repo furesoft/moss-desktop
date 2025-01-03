@@ -1,6 +1,6 @@
 ---
-description: Everything you need to get Moss running from source
 icon: code-pull-request
+description: Everything you need to get Moss running from source
 ---
 
 # Development and contribution
@@ -19,24 +19,24 @@ I cannot provide instructions for every operating system but generally you can f
 ### Installing packages
 
 There are a few things to install, these are the platform independent packages\
-You can install them by doing `pip install -r requirements.txt` \
+You can install them by doing `pip install -r requirements.txt`\
 \
 Furthermore install the platform specific packages, these are as follows
 
 #### Windows
 
-`pip install -r requirements-Windows.txt`&#x20;
+`pip install -r requirements-Windows.txt`
 
 #### Linux
 
-`pip install -r requirements-Linux.txt`&#x20;
+`pip install -r requirements-Linux.txt`
 
 #### MacOS
 
-`pip install -r requirements-macOS.txt`&#x20;
+`pip install -r requirements-macOS.txt`
 
 > If you plan to build Moss to an executable binary, also prepare the `nuitka` package too\
-> `pip install nuitka`&#x20;
+> `pip install nuitka`
 
 ## Running Moss from the source code
 
@@ -46,8 +46,7 @@ You can run moss with `python moss.py` it should start without issues, if you ge
 ### Development warning messages
 
 Moss will bring up a few messages to warn you if it detects that it's code is nearby.\
-One of these will become quickly obviously if you pulled newer changes, particularly if `pygameextra`  is noticed to have been bumped in the requirements file, you will see a warning to update it.\
-
+One of these will become quickly obviously if you pulled newer changes, particularly if `pygameextra` is noticed to have been bumped in the requirements file, you will see a warning to update it.\\
 
 <figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption><p>Moss complaining about pygameextra</p></figcaption></figure>
 
@@ -60,8 +59,7 @@ If you so desire you can remove this check and not push the commits.
 
 ## Using the Moss debug mode
 
-By enabling debug mode in the config file for Moss, you can toggle a few things, you can also define your own checks for debug mode by simply checking if it is turned on.\
-
+By enabling debug mode in the config file for Moss, you can toggle a few things, you can also define your own checks for debug mode by simply checking if it is turned on.\\
 
 ### Debug button rects
 
@@ -69,11 +67,9 @@ You may have also noticed the `debug_button_rects` option in the config, this is
 
 <figure><img src=".gitbook/assets/screenshot (2).png" alt="" width="506"><figcaption><p>Moss button rect debug</p></figcaption></figure>
 
-As you can this mode isn't necessarily pleasing but if your buttons are missing the red outline and you can see it showing up somewhere else it may help you figure out what's going on. \
+As you can this mode isn't necessarily pleasing but if your buttons are missing the red outline and you can see it showing up somewhere else it may help you figure out what's going on. \\
 
-
-You can test if the red box matches your button if your button has a hover color and the red outline triggers it then it means that's the thing that is wrong with your button.\
-
+You can test if the red box matches your button if your button has a hover color and the red outline triggers it then it means that's the thing that is wrong with your button.\\
 
 Please also keep in mind that all buttons are layered automatically and handled by `pygameextra`'s contexting system. If your button isn't working it may be that another button is on top of it, so make sure to properly order your buttons and place them properly with everything else.
 
@@ -93,14 +89,14 @@ Moss typically scales itself through a few steps
 
 Since the user can change the screen size at any time and some things rely on being centered or at the bottom of the screen, some things need to be _re-calibrated_ to the new size.\
 The top-most context of Moss handles the event for this, if it detects a change in resolution it will spread a `ResizeEvent` through the api object, which will happily transmit these custom events, you can subscribe to receive the api events by doing something like this:\
-`self.api.add_hook(f'my_class<{id(self)}>_resize', self.resize_check_hook)`&#x20;
+`self.api.add_hook(f'my_class<{id(self)}>_resize', self.resize_check_hook)`
 
 Of course, you can hook other api events or custom events, but most classes call it a resize\_hook since all they check is the resize event\
 Please note that if your class or screen can have multiple instances it's a good idea to add the object id in the name, also save this since it identifies your hook.\
 If your screen is closed or the object is no longer in use, it would be nice to remove your hook from the api, you can do so like this:\
 `self.api.remove_hook(self.my_hook_name)`
 
-Back to the resize event itself, it actually contains the new screen size, so you can use that directly or just call any functions that would have initially done the math anyway, but if you need, the event has a `new_size`  variable you can use.
+Back to the resize event itself, it actually contains the new screen size, so you can use that directly or just call any functions that would have initially done the math anyway, but if you need, the event has a `new_size` variable you can use.
 
 ## The API
 
@@ -112,7 +108,7 @@ Here's a little in-depth explanation into the api or more over, how your documen
 
 #### The importance of the root file
 
-The very top of your cloud is the root file, you'll see this mentioned here and there and it's one of the most important files, because it registers every single document and collection! What's worse is you can erase this file by telling the api that you want to use a nonexistent file as your root, typically Moss and the api object handle this, by cancelling the operation if they see anything wrong, if this happens Moss will crash before damaging the root file, but if it does then it will recreate it upon connecting and seeing this mishap.&#x20;
+The very top of your cloud is the root file, you'll see this mentioned here and there and it's one of the most important files, because it registers every single document and collection! What's worse is you can erase this file by telling the api that you want to use a nonexistent file as your root, typically Moss and the api object handle this, by cancelling the operation if they see anything wrong, if this happens Moss will crash before damaging the root file, but if it does then it will recreate it upon connecting and seeing this mishap.
 
 However now all your files are gone! Moss has a dirty way of fixing this by pretty much restoring from it's own memory. Run `root_fixer.py` it will look through and find all previous root files that Moss synced and saved, it'll sort them for you by last modified and you can pick whichever one you think is accurate.
 
@@ -123,7 +119,7 @@ But these items are more like pointers to individual lists for each item which a
 
 #### The document files
 
-If we look into one of the items in the root file and actually fetch that item it brings us into another list, but this time we can actually see identifiable files and even their extensions, this helps Moss and your tablet identify the files' data, there are a few main files that Moss must fetch, the rest can be fetched later and they are usually the pdf, epub, rm files that actually contain the document data, but what about your document information?
+If we look into one of the items in the root file and actually fetch that item it brings us into another list, but this time we can actually see identifiable files and even their extensions, this helps Moss and your tablet identify the files' data, there are a few main files that Moss must fetch, <mark style="color:yellow;">**the rest can be fetched later and they are usually the pdf, epub, rm files that actually contain the document data**</mark>, but what about your document information?
 
 1. The metadata file - This file is very basic and contains the very important data, which would be mainly needed by the main menu, like the name, modification time and other small things
 2. The content file - This file is much more complex and contains all the data, which the document renderer would need to be able to serve the document. Things like the document type, the template and index for each page, the tags, your last used pens, custom zoom levels and other minor things.
