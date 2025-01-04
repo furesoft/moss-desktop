@@ -15,6 +15,7 @@ class ContextMenu(ContextBar, ABC):
         self.is_closed = False
         self.waiting_for_let_go = True
         self.rect = pe.Rect(0, 0, 0, 0)
+
         super().__init__(parent)
 
     def pre_loop(self):
@@ -44,3 +45,7 @@ class ContextMenu(ContextBar, ABC):
             button.area.width = max_width
             y += button.area.height
         self.rect = pe.Rect(self.left, self.top, max_width, y - self.top)
+        self.rect.clamp_ip(pe.Rect(0, 0, self.width, self.height))
+        if self.left != self.rect.left or self.top != self.rect.top:
+            self.left, self.top = self.rect.topleft
+            self.finalize_button_rect(buttons, width, height)

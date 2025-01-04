@@ -66,6 +66,7 @@ class ConfigDict(TypedDict):
     add_ext_to_raw_exports: bool
     debug: bool
     portable_mode: bool
+    extensions: dict
 
 
 DEFAULT_CONFIG: ConfigDict = {
@@ -90,7 +91,8 @@ DEFAULT_CONFIG: ConfigDict = {
     'add_ext_to_raw_exports': True,
     'debug': False,
     'debug_button_rects': False,
-    'portable_mode': False
+    'portable_mode': False,
+    'extensions': {}
 }
 
 ConfigType = Box[ConfigDict]
@@ -171,6 +173,7 @@ class GUI(pe.GameContext):
         setattr(pe.settings, 'indev', False)
 
         from .defaults import Defaults
+        from .extension_manager import ExtensionManager
         self.BACKGROUND = Defaults.BACKGROUND
         super().__init__()
 
@@ -181,6 +184,7 @@ class GUI(pe.GameContext):
             self.api = API(**self.api_kwargs)
         self.api.last_root = self.config.last_root
         self.api.debug = self.config.debug
+        self.extension_manager = ExtensionManager(self)
         self.screens = Queue()
         self.ratios = Ratios(self.config.scale)
         self.icons = {}
@@ -209,6 +213,7 @@ class GUI(pe.GameContext):
         self.last_screen_count = 1
         self.api.add_hook('GUI', self.handle_api_event)
         pe.display.set_icon(Defaults.APP_ICON)
+        makedirs(Defaults.EXTENSIONS_DIR, exist_ok=True)
         makedirs(Defaults.THUMB_FILE_PATH, exist_ok=True)
 
     @property
@@ -365,3 +370,14 @@ class GUI(pe.GameContext):
             self._import_screen = None
         else:
             self._import_screen = screen
+
+    def reload(self):
+        self.extension_manager.reset()
+        for hook in list(self.api.hook_list.keys()):
+            if hook == 'GUI':
+                continue
+            self.api.remove_hook(hook)
+        self.screens.queue.clear()
+        from gui.screens.loader import Loader
+        self.screens.put(Loader(self))
+

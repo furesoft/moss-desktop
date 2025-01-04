@@ -14,6 +14,7 @@ from gui.screens.main_menu import MainMenu
 if TYPE_CHECKING:
     from gui.gui import GUI
     from rm_api import API
+    from gui.extension_manager import ExtensionManager
 
 
 class ReusedIcon:
@@ -100,6 +101,7 @@ class Loader(pe.ChildContext, LogoMixin):
     LAYER = pe.AFTER_LOOP_LAYER
     icons: Dict[str, pe.Image]
     api: 'API'
+    extension_manager: 'ExtensionManager'
     logo: pe.Text
     line_rect: pe.Rect
 
@@ -115,6 +117,7 @@ class Loader(pe.ChildContext, LogoMixin):
         self.last_progress = 0
         self.current_progress = 0
         self.initialized = False
+        self.to_load = len(self.TO_LOAD)
 
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()
@@ -140,9 +143,30 @@ class Loader(pe.ChildContext, LogoMixin):
                 self.load_data(key, item)
             self.items_loaded += 1
 
+        # Wait for extensions to load
+        while not self.extension_manager.extensions_loaded == self.extension_manager.extension_count:
+            pass
+
+        # Load extension data
+        self.to_load += len(self.extension_manager.extra_items)
+        for key, item in self.extension_manager.extra_items.items():
+            if item.endswith('.svg'):
+                self.load_image(key, item, 0.5)
+            elif item.endswith('.png'):
+                self.load_image(key, item)
+            else:
+                self.load_data(key, item)
+            self.items_loaded += 1
+
     def load(self):
         try:
             self._load()
+        except:
+            print_exc()
+
+    def load_extensions(self):
+        try:
+            self.extension_manager.load()
         except:
             print_exc()
 
@@ -177,22 +201,28 @@ class Loader(pe.ChildContext, LogoMixin):
             # Before we know the file count, just return 0 progress
             return 0
         try:
+            base_division_a = (
+                    self.extension_manager.extensions_loaded +
+                    self.items_loaded
+            )
+            base_division_b = (
+                    self.extension_manager.extension_count +
+                    self.to_load
+            )
             if not self.config.wait_for_everything_to_load:
-                self.current_progress = self.items_loaded / len(self.TO_LOAD)
+                self.current_progress = base_division_a / base_division_b
             else:
                 self.current_progress = (
-                                                self.items_loaded +
+                                                base_division_a +
                                                 self.files_loaded
                                         ) / (
-                                                len(self.TO_LOAD) +
+                                                base_division_b +
                                                 (self.files_to_load or self.files_loaded)
                                         )
         except ZeroDivisionError:
             self.current_progress = 0
         self.last_progress = self.last_progress + (self.current_progress - self.last_progress) / (self.FPS * .1)
-        if self.last_progress > .98:
-            self.last_progress = 1
-        elif not self.config.wait_for_everything_to_load and self.current_progress == 1 and self.last_progress < 0.9:
+        if not self.config.wait_for_everything_to_load and self.current_progress == 1 and self.last_progress < 0.9:
             self.last_progress = 0.9
         return self.last_progress
 
@@ -204,15 +234,22 @@ class Loader(pe.ChildContext, LogoMixin):
                          edge_rounding=self.ratios.loader_loading_bar_rounding)
             progress_rect = self.line_rect.copy()
             progress_rect.width *= progress
+            pe.draw.rect(Defaults.SELECTED, progress_rect, 0, edge_rounding=self.ratios.loader_loading_bar_rounding)
             if self.config.debug:
+                if self.extension_manager.extension_count:
+                    extensions_rect = self.line_rect.copy()
+                    extensions_rect.width *= (
+                            self.extension_manager.extensions_loaded / self.extension_manager.extension_count)
+                    pe.draw.rect(Defaults.TEXT_ERROR_COLOR[0], extensions_rect,
+                                 self.ratios.loader_loading_bar_thickness * 3,
+                                 edge_rounding=self.ratios.loader_loading_bar_rounding)
                 icons_rect = self.line_rect.copy()
                 icons_rect.width *= (self.items_loaded / len(self.TO_LOAD))
-                pe.draw.rect(Defaults.LINE_GRAY_LIGHT, icons_rect, self.ratios.loader_loading_bar_thickness * 3,
+                pe.draw.rect(Defaults.LINE_GRAY_LIGHT, icons_rect, self.ratios.loader_loading_bar_thickness * 2,
                              edge_rounding=self.ratios.loader_loading_bar_rounding)
-            pe.draw.rect(Defaults.SELECTED, progress_rect, 0, edge_rounding=self.ratios.loader_loading_bar_rounding)
 
     def post_loop(self):
-        if self.current_progress == 1 and self.last_progress == 1:
+        if self.current_progress == 1 and self.last_progress >= .98:
             self.screens.put(MainMenu(self.parent_context))
             self.api.connect_to_notifications()
             self.api.add_hook('loader', self.loader_hook)
@@ -224,5 +261,6 @@ class Loader(pe.ChildContext, LogoMixin):
     def pre_loop(self):
         if not self.initialized:
             threading.Thread(target=self.load, daemon=True).start()
+            threading.Thread(target=self.load_extensions, daemon=True).start()
             self.start_syncing()
             self.initialized = True

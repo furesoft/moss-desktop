@@ -475,6 +475,23 @@ class TopBarSelectMove(TopBarSelectOne):
     def create_collection(self):
         self.main_menu._bar.create_collection()
 
+class DebugContextMenu(ContextMenu):
+    BUTTONS = (
+        {
+            "text": "Global debug menu",
+            "icon": "cog",
+            "action": None
+        },
+        {
+            "text": "Hot reload",
+            "icon": "rotate",
+            "action": "hot_reload"
+        }
+    )
+
+    def hot_reload(self):
+        self.reload()
+
 
 class SideBar(ContextMenu):
     ENABLE_OUTLINE = False
@@ -533,6 +550,16 @@ class SideBar(ContextMenu):
         }
     )
 
+    def __init__(self, context, *args, **kwargs):
+        if context.config.debug:
+            self.BUTTONS = (*self.BUTTONS, {
+                "text": "DEBUG",
+                "icon": "cog",
+                "action": "debug",
+                "context_icon": "chevron_right",
+            })
+        super().__init__(context, *args, **kwargs)
+
     def pre_loop(self):
         super().pre_loop()
         pe.draw.line(Defaults.LINE_GRAY, self.rect.topright, self.rect.bottomright, self.ratios.seperator)
@@ -547,6 +574,13 @@ class SideBar(ContextMenu):
     def guides(self):
         self.screens.put(Guides(self.parent_context))
         self.close()
+
+    def debug(self):
+        self.handle_new_context_menu(self.debug_context_menu, len(self.BUTTONS) - 1)
+
+    def debug_context_menu(self, ideal_position):
+        ideal_position = (ideal_position[0] + self.rect.width, ideal_position[1])
+        return DebugContextMenu(self.main_menu, ideal_position)
 
     def finalize_button_rect(self, buttons, width, height):
         # Rescale the buttons

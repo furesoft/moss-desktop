@@ -33,6 +33,8 @@ def get_asset_path():
 class Defaults:
     BASE_ASSET_DIR, SCRIPT_DIR = get_asset_path()
     ASSET_DIR = os.path.join(BASE_ASSET_DIR, 'assets')
+    CONTENT_DIR = os.path.join(BASE_ASSET_DIR, 'content')
+    EXTENSIONS_DIR = os.path.join(CONTENT_DIR, 'extensions')
     INSTALLED = os.path.exists(os.path.join(BASE_ASSET_DIR, 'installed'))
 
     HTML_DIR = os.path.join(ASSET_DIR, 'html')

@@ -95,6 +95,10 @@ class API:
                             filemode='a')  # 'a' for append mode
         self.loop = asyncio.get_event_loop()
 
+    @property
+    def hook_list(self):
+        return self._hook_list
+
     def reconnect(self):
         self.connected_to_notifications = False
         self._use_new_sync = False
@@ -161,7 +165,10 @@ class API:
         self._hook_list[hook_id] = hook
 
     def remove_hook(self, hook_id):
-        del self._hook_list[hook_id]
+        try:
+            del self._hook_list[hook_id]
+        except KeyError:
+            pass
 
     def check_for_document_storage(self):
         if self.offline_mode:
@@ -465,9 +472,9 @@ class API:
                 uri = f'https://{uri}'
             self.document_notifications_uri = uri
 
-    def log(self, *args):
+    def log(self, *args, enable_print=True):
         with self.log_lock:
-            if self.debug:
+            if self.debug and enable_print:
                 print(*args)
             logging.info(' '.join(map(str, args)))
 
