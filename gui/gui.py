@@ -265,6 +265,7 @@ class GUI(pe.GameContext):
     def save_config(self):
         with open("config.json", "w") as f:
             json.dump(self.config, f, indent=4)
+        self.dirty_config = False
 
     def save_config_if_dirty(self):
         if not self.dirty_config:
@@ -294,8 +295,10 @@ class GUI(pe.GameContext):
             self.doing_fake_screen_refresh = False
 
     def post_loop(self):
+        if not self.running:
+            return
         if len(self.screens.queue) == 0:
-            self.running = False
+            self.quit_check()
             return
 
         if self.doing_fake_screen_refresh:
@@ -339,10 +342,12 @@ class GUI(pe.GameContext):
 
     def quit_check(self):
         self.running = False
+        if self.dirty_config:
+            self.save_config()
 
     def handle_api_event(self, e):
         if isinstance(e, APIFatal):
-            self.running = False
+            self.quit_check()
             self.api.log("A FATAL API ERROR OCCURRED, CRASHING!")
             raise AssertionError("A FATAL API ERROR OCCURRED, CRASHING!")
 
