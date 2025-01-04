@@ -84,7 +84,6 @@ class CodeScreen(ButtonReadyMixin, pe.ChildContext):
         self.handle_texts()
 
     def get_website_info(self):
-        print(self.config.uri)
         self.website_info = pe.Text(
             self.config.uri.replace('https://', '').replace('http://', ''),
             Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
