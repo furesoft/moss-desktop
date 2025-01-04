@@ -9,6 +9,11 @@ from pyperclip import paste as pyperclip_paste
 from typing import TYPE_CHECKING
 
 from gui.events import ResizeEvent
+from gui.pp_helpers.popups import WarningPopup, Popup, ConfirmPopup
+from gui.rendering import render_button_using_text
+from gui.screens.mixins import ButtonReadyMixin
+from gui.screens.name_field_screen import NameFieldScreen
+from rm_api import DEFAULT_REMARKABLE_URI, DEFAULT_REMARKABLE_DISCOVERY_URI
 from rm_api.auth import FailedToGetToken
 from gui.defaults import Defaults
 from gui.screens.loader import Loader
@@ -18,15 +23,29 @@ if TYPE_CHECKING:
     from gui.gui import GUI
 
 
-class CodeScreen(pe.ChildContext):
+class CloudPopup(ConfirmPopup):
+    CLOSE_TEXT = "Use remarkable cloud"
+    BUTTON_TEXTS = {
+        **ConfirmPopup.BUTTON_TEXTS,
+        'confirm': "Use custom cloud",
+    }
+
+
+class CodeScreen(ButtonReadyMixin, pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
     CODE_LENGTH = 8
     BACKSPACE_DELETE_DELAY = 0.3  # Initial backspace delay
     BACKSPACE_DELETE_SPEED = 0.05  # After initial backspace delay
     EVENT_HOOK_NAME = 'code_screen_resize_check'
 
+    BUTTON_TEXTS = {
+        'change': "I wanna change my cloud",
+    }
+
     parent_context: 'GUI'
     screens: Queue[pe.ChildContext]
+
+    website_info: pe.Text
 
     def __init__(self, parent: 'GUI'):
         super().__init__(parent)
@@ -51,11 +70,7 @@ class CodeScreen(pe.ChildContext):
             Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
             colors=Defaults.TEXT_COLOR_T
         )
-        self.website_info = pe.Text(
-            self.config.uri.replace('https://', '').replace('http://', ''),
-            Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
-            colors=Defaults.TEXT_COLOR_LINK if self.connecting_to_real_remarkable() else Defaults.TEXT_COLOR_T
-        )
+        self.get_website_info()
         self.share_icon = pe.Image(os.path.join(Defaults.ICON_DIR, 'share.svg'))
         self.update_code_text_positions()
         self.api.add_hook(self.EVENT_HOOK_NAME, self.resize_check_hook)
@@ -65,7 +80,16 @@ class CodeScreen(pe.ChildContext):
         self.checking_code = False
         self.hold_backspace = False
         self.hold_backspace_timer = None
-        self.ctrl_hold = False
+        self.warning: CloudPopup = None
+        self.handle_texts()
+
+    def get_website_info(self):
+        print(self.config.uri)
+        self.website_info = pe.Text(
+            self.config.uri.replace('https://', '').replace('http://', ''),
+            Defaults.LOGO_FONT, self.ratios.code_screen_info_size,
+            colors=Defaults.TEXT_COLOR_LINK if self.connecting_to_real_remarkable() else Defaults.TEXT_COLOR_T
+        )
 
     @property
     def logo_position(self):
@@ -86,6 +110,7 @@ class CodeScreen(pe.ChildContext):
         if isinstance(event, ResizeEvent):
             self.logo.rect.center = self.logo_position
             self.update_code_text_positions()
+            self.handle_texts()
 
     def add_character(self, char: str):
         if len(self.code) == self.CODE_LENGTH:
@@ -139,7 +164,10 @@ class CodeScreen(pe.ChildContext):
         self.checking_code = False
 
     def pre_loop(self):
-        # The background
+        if self.warning and self.warning.closed:
+            self.warning = None
+        elif self.warning:
+            self.warning()
 
         # Handling backspace
         if self.hold_backspace and time.time() - self.hold_backspace_timer > self.BACKSPACE_DELETE_SPEED and len(
@@ -189,8 +217,48 @@ class CodeScreen(pe.ChildContext):
                 self.code_text[i].display()
             x += underscore.rect.width + self.ratios.code_screen_spacing
 
+    def change_cloud(self):
+        self.warning = CloudPopup(
+            self.parent_context,
+            "Using custom cloud",
+            "Moss supports custom clouds like rmfakecloud by ddvk.\n"
+            "We have even communicated with ddvk for improved compatibility.\n"
+            "You can input the address of your cloud on the next screen\n"
+            "or use the remarkable cloud.", self.open_cloud_input, self.use_rm_cloud
+        )
+
+    def open_cloud_input(self):
+        NameFieldScreen(self.parent_context, "Input your cloud address", '', self._change_cloud, self.use_rm_cloud,
+                        submit_text="Set cloud address", cancel_text="Use remarkable cloud")
+
+    def use_rm_cloud(self):
+        self.set_cloud(DEFAULT_REMARKABLE_URI, DEFAULT_REMARKABLE_DISCOVERY_URI)
+
+    def _change_cloud(self, cloud):
+        self.set_cloud(cloud, cloud)
+
+
+    def set_cloud(self, uri, discovery_uri):
+        self.api.uri = uri
+        self.api.discovery_uri = discovery_uri
+
+        self.config.uri = uri
+        self.config.discovery_uri = discovery_uri
+
+        self.parent_context.dirty_config = True
+        self.get_website_info()
+        self.update_code_text_positions()
+        self.api.reconnect()
+
+
+
     def post_loop(self):
+        if not self.warning:
+            render_button_using_text(self.parent_context, self.texts['change'], action=self.change_cloud,
+                                     name='code_screen.change_cloud', outline=True)
+
         if not self.checking_code:
             return
+
         # Make a frozen paper effect
         pe.fill.transparency(pe.colors.white, 150)

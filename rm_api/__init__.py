@@ -27,6 +27,8 @@ from rm_api.storage.v3 import get_documents_using_root, get_file, get_file_conte
 
 colorama.init()
 
+DEFAULT_REMARKABLE_URI = "https://webapp.cloud.remarkable.com/"
+DEFAULT_REMARKABLE_DISCOVERY_URI = "https://service-manager-production-dot-remarkable-production.appspot.com/"
 
 class API:
     document_collections: Dict[str, DocumentCollection]
@@ -49,9 +51,8 @@ class API:
             self.author_id = make_uuid()
         else:
             self.author_id = author_id
-        self.uri = uri or os.environ.get("URI", "https://webapp.cloud.remarkable.com/")
-        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI",
-                                                             "https://service-manager-production-dot-remarkable-production.appspot.com/")
+        self.uri = uri or os.environ.get("URI", DEFAULT_REMARKABLE_URI)
+        self.discovery_uri = discovery_uri or os.environ.get("DISCOVERY_URI", DEFAULT_REMARKABLE_DISCOVERY_URI)
         self.sync_file_path = sync_file_path
         if self.sync_file_path is not None:
             os.makedirs(self.sync_file_path, exist_ok=True)
@@ -93,6 +94,18 @@ class API:
                             format='%(asctime)s - %(message)s',
                             filemode='a')  # 'a' for append mode
         self.loop = asyncio.get_event_loop()
+
+    def reconnect(self):
+        self.connected_to_notifications = False
+        self._use_new_sync = False
+        self.offline_mode = False
+        self.document_storage_uri = None
+        self.document_notifications_uri = None
+        if not self.uri.endswith("/"):
+            self.uri += "/"
+        if not self.discovery_uri.endswith("/"):
+            self.discovery_uri += "/"
+
 
     @property
     def use_new_sync(self):

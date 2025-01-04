@@ -47,7 +47,7 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
     EVENT_HOOK_NAME = 'name_field_screen_resize_check<{0}>'
 
     def __init__(self, gui: 'GUI', title, text='', on_submit=None, on_cancel=None, empty_ok: bool = False,
-                 submit_text: str = 'Submit'):
+                 submit_text: str = 'Submit', cancel_text: str = 'Cancel'):
         self.title = title
         self.empty_ok = empty_ok
         self.on_submit = on_submit
@@ -56,6 +56,7 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         super().__init__(gui)
 
         self.BUTTON_TEXTS['ok_button'] = submit_text
+        self.BUTTON_TEXTS['cancel'] = cancel_text
 
         self.handle_title(title)
         self.handle_texts()
@@ -76,16 +77,16 @@ class NameFieldScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
     def text(self):
         return self.field.text.text
 
-    def close(self):
+    def close(self, button=True):
         self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
-        if self.on_cancel:
+        if self.on_cancel and button:
             self.on_cancel()
         del self.screens.queue[-1]
 
     def ok(self):
         if self.on_submit:
             self.on_submit(self.text)
-        self.close()
+        self.close(False)
 
     def resize_check_hook(self, event):
         if isinstance(event, ResizeEvent):
