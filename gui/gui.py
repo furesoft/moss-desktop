@@ -301,10 +301,6 @@ class GUI(pe.GameContext):
         if self.doing_fake_screen_refresh:
             self.fake_screen_refresh()
 
-        if self.dirty_config:
-            self.save_config()
-            self.dirty_config = False
-
     def end_loop(self):
         if self.config.debug_button_rects:
             for button in self.buttons:
