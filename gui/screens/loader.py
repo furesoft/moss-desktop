@@ -177,7 +177,7 @@ class Loader(pe.ChildContext, LogoMixin):
             # Before we know the file count, just return 0 progress
             return 0
         try:
-            if not self.files_to_load or not self.config.wait_for_everything_to_load:
+            if not self.config.wait_for_everything_to_load:
                 self.current_progress = self.items_loaded / len(self.TO_LOAD)
             else:
                 self.current_progress = (
@@ -185,23 +185,31 @@ class Loader(pe.ChildContext, LogoMixin):
                                                 self.files_loaded
                                         ) / (
                                                 len(self.TO_LOAD) +
-                                                self.files_to_load
+                                                (self.files_to_load or self.files_loaded)
                                         )
         except ZeroDivisionError:
             self.current_progress = 0
         self.last_progress = self.last_progress + (self.current_progress - self.last_progress) / (self.FPS * .1)
         if self.last_progress > .98:
             self.last_progress = 1
+        elif not self.config.wait_for_everything_to_load and self.current_progress == 1 and self.last_progress < 0.9:
+            self.last_progress = 0.9
         return self.last_progress
 
     def loop(self):
         self.logo.display()
         progress = self.progress()
         if progress:
-            pe.draw.rect(pe.colors.black, self.line_rect, 1)
+            pe.draw.rect(Defaults.LINE_GRAY, self.line_rect, self.ratios.loader_loading_bar_thickness,
+                         edge_rounding=self.ratios.loader_loading_bar_rounding)
             progress_rect = self.line_rect.copy()
             progress_rect.width *= progress
-            pe.draw.rect(pe.colors.black, progress_rect, 0)
+            if self.config.debug:
+                icons_rect = self.line_rect.copy()
+                icons_rect.width *= (self.items_loaded / len(self.TO_LOAD))
+                pe.draw.rect(Defaults.LINE_GRAY_LIGHT, icons_rect, self.ratios.loader_loading_bar_thickness * 3,
+                             edge_rounding=self.ratios.loader_loading_bar_rounding)
+            pe.draw.rect(Defaults.SELECTED, progress_rect, 0, edge_rounding=self.ratios.loader_loading_bar_rounding)
 
     def post_loop(self):
         if self.current_progress == 1 and self.last_progress == 1:
