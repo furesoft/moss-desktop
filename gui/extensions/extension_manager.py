@@ -42,10 +42,7 @@ class ExtensionManager:
         self.opened_context_menus = []
         self._current_extension = None
         init_host_functions(self)
-        if self.gui.config.debug:
-            extism.set_log_file('extism.log', 'debug')
-        else:
-            extism.set_log_file('extism.log', 'error')
+        extism.set_log_file('extism.log', 'error')
 
     def reset(self):
         for extension_name, extension in self.extensions.items():
