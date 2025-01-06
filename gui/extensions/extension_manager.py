@@ -128,7 +128,12 @@ class ExtensionManager:
                 self.gui.config['extensions'][extension] = False
                 self.gui.dirty_config = True
             if self.gui.config['extensions'][extension]:
-                self.load_wasm(os.path.join(Defaults.EXTENSIONS_DIR, extension, f'{extension}.wasm'), extension)
+                try:
+                    self.load_wasm(os.path.join(Defaults.EXTENSIONS_DIR, extension, f'{extension}.wasm'), extension)
+                except ExtismError:
+                    self.error(f"Extension {extension} failed to load")
+                    self.extension_count -= 1
+                    print_exc()
             else:
                 self.extension_count -= 1
                 self.error(f"Extension {extension} is disabled, enable it in the config!")
