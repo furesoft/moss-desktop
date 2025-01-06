@@ -39,7 +39,7 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
             for button in context_menu.buttons
         )
 
-    extension_manager.log(f"Registered context menu {context_menu.key}")
+    extension_manager.log(f"Registered context menu {extension_manager.current_extension}.{context_menu.key}")
 
     extension_manager.context_menus[context_menu.key] = CustomContextMenu
 
@@ -49,4 +49,3 @@ def moss_gui_open_context_menu(key: str, x: int, y: int):
     context_menu_class: Type[ContextMenu] = extension_manager.context_menus[key]
     context_menu = context_menu_class(gui.main_menu, (x, y))
     gui.main_menu.context_menus[key] = context_menu
-    print(f"opened context menu {key} at {x}, {y}")

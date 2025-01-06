@@ -40,6 +40,7 @@ class ExtensionManager:
         self._reset()
         self.gui.api.add_hook(self.HOOK, self.handle_hook)
         self.opened_context_menus = []
+        self._current_extension = None
         init_host_functions(self)
         if self.gui.config.debug:
             extism.set_log_file('extism.log', 'debug')
@@ -47,7 +48,8 @@ class ExtensionManager:
             extism.set_log_file('extism.log', 'error')
 
     def reset(self):
-        for extension in self.extensions.values():
+        for extension_name, extension in self.extensions.items():
+            self.current_extension = extension_name
             try:
                 extension.call('unregister', b'')
             except ExtismError:
@@ -100,15 +102,17 @@ class ExtensionManager:
     def load_wasm_source(self, source: bytes, extension_name: str):
         extension = Plugin(source, True)
         try:
+            self.extensions[extension_name] = extension
+            self.current_extension = extension_name
             extension.call('register', b'',
                            lambda output: self.handle_register_output(output, extension_name))
             self.log(f"Registered extension {extension_name}")
         except ExtismError:
+            self.extensions.pop(extension_name)
             self.extension_count -= 1
             self.error(f"Extension {extension_name} failed to register")
             print_exc()
             return
-        self.extensions[extension_name] = extension
         self.extensions_loaded += 1
 
     def gather_extensions(self):
@@ -153,10 +157,25 @@ class ExtensionManager:
             'current_screen': self.gui.screens.queue[-1].__class__.__name__ if self.gui.screens.queue else "",
             'opened_context_menus': self.opened_context_menus
         }
-        for extension in self.extensions.values():
+        for extension_name, extension in self.extensions.items():
+            self.current_extension = extension_name
             try:
                 extension.call('extension_loop', json.dumps(state).encode())
             except ExtismError:
                 self.error(f"Extension {extension} failed to loop")
                 print_exc()
         self.opened_context_menus.clear()
+
+    @property
+    def current_extension(self):
+        return self._current_extension
+
+    @current_extension.setter
+    def current_extension(self, extension_key: str):
+        self._current_extension = extension_key
+
+    @property
+    def current_extism(self):
+        if not self.current_extension:
+            return None
+        return self.extensions[self.current_extension]
