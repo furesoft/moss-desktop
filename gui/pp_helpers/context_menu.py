@@ -1,10 +1,13 @@
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
 
 import pygameextra as pe
 from abc import ABC
 
 from gui.defaults import Defaults
 from gui.pp_helpers.context_bar import ContextBar
+
+if TYPE_CHECKING:
+    from gui.screens.main_menu import MainMenu
 
 
 class ContextMenu(ContextBar, ABC):
@@ -49,3 +52,7 @@ class ContextMenu(ContextBar, ABC):
         if self.left != self.rect.left or self.top != self.rect.top:
             self.left, self.top = self.rect.topleft
             self.finalize_button_rect(buttons, width, height)
+
+    def __call__(self, *args, **kwargs):
+        self.extension_manager.opened_context_menus.append(getattr(self, 'KEY', self.__class__.__name__))
+        super().__call__(*args, **kwargs)

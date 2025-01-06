@@ -14,7 +14,7 @@ from gui.screens.main_menu import MainMenu
 if TYPE_CHECKING:
     from gui.gui import GUI
     from rm_api import API
-    from gui.extension_manager import ExtensionManager
+    from gui.extensions import ExtensionManager
 
 
 class ReusedIcon:

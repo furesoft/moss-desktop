@@ -1,14 +1,15 @@
 import json
 import os.path
-import time
+from traceback import print_exc
 
+import extism
 from extism import Plugin
 from extism import Error as ExtismError
 from io import StringIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
+from .host_functions import init_host_functions
 from colorama import Fore
-from requests.hooks import HOOKS
 
 from gui.defaults import Defaults
 
@@ -28,8 +29,9 @@ class ExtensionManager:
     extra_items: dict
     extension_count: int
     extensions_loaded: int
-    extensions: dict
+    extensions: Dict[str, Plugin]
     extension_load_log: StringIO
+    context_menus: dict
 
     HOOK = 'em_extension_hook'
 
@@ -37,6 +39,12 @@ class ExtensionManager:
         self.gui = gui
         self._reset()
         self.gui.api.add_hook(self.HOOK, self.handle_hook)
+        self.opened_context_menus = []
+        init_host_functions(self)
+        if self.gui.config.debug:
+            extism.set_log_file('extism.log', 'debug')
+        else:
+            extism.set_log_file('extism.log', 'error')
 
     def reset(self):
         for extension in self.extensions.values():
@@ -44,6 +52,8 @@ class ExtensionManager:
                 extension.call('unregister', b'')
             except ExtismError:
                 self.error(f"Extension {extension} failed to unregister")
+                print_exc()
+            del extension
         self.gui.api.remove_hook(self.HOOK)
         self._reset()
 
@@ -53,6 +63,7 @@ class ExtensionManager:
         self.extension_count = 0
         self.extensions_loaded = 0
         self.extensions = {}
+        self.context_menus = {}
         self.extension_load_log = StringIO()
 
     def log(self, message: str):
@@ -87,14 +98,15 @@ class ExtensionManager:
         self.load_wasm_source(data, extension_name)
 
     def load_wasm_source(self, source: bytes, extension_name: str):
-        extension = Plugin(source)
+        extension = Plugin(source, True)
         try:
             extension.call('register', b'',
                            lambda output: self.handle_register_output(output, extension_name))
-            self.log(f"Registered extension {extension}")
+            self.log(f"Registered extension {extension_name}")
         except ExtismError:
             self.extension_count -= 1
             self.error(f"Extension {extension_name} failed to register")
+            print_exc()
             return
         self.extensions[extension_name] = extension
         self.extensions_loaded += 1
@@ -128,3 +140,18 @@ class ExtensionManager:
 
     def handle_hook(self, event):
         ...
+
+    def loop(self):
+        state = {
+            'width': self.gui.width,
+            'height': self.gui.height,
+            'current_screen': self.gui.screens.queue[-1].__class__.__name__ if self.gui.screens.queue else "",
+            'opened_context_menus': self.opened_context_menus
+        }
+        for extension in self.extensions.values():
+            try:
+                extension.call('extension_loop', json.dumps(state).encode())
+            except ExtismError:
+                self.error(f"Extension {extension} failed to loop")
+                print_exc()
+        self.opened_context_menus.clear()

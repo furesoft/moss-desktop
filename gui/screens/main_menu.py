@@ -475,6 +475,7 @@ class TopBarSelectMove(TopBarSelectOne):
     def create_collection(self):
         self.main_menu._bar.create_collection()
 
+
 class DebugContextMenu(ContextMenu):
     BUTTONS = (
         {
@@ -732,6 +733,8 @@ class MainMenu(pe.ChildContext):
             self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
                                       (0, 0), Defaults.TEXT_COLOR)
 
+        self.context_menus = {}
+
         # Document debug button text
         self.texts['debug'] = pe.Text(
             'DEBUG',
@@ -897,6 +900,15 @@ class MainMenu(pe.ChildContext):
             self.file_sync_operation and not self.file_sync_operation.finished
 
     def post_loop(self):
+        # Handle extra context menus
+        context_menus_to_remove = []
+        for key, context_menu in self.context_menus.items():
+            context_menu()
+            if context_menu.is_closed:
+                context_menus_to_remove.append(key)
+        for key in context_menus_to_remove:
+            del self.context_menus[key]
+
         # Draw progress bar for file sync operations
         if self.file_sync_operation and not self.file_sync_operation.finished:
             draw_bottom_loading_bar(self.parent_context, self.file_sync_operation.done, self.file_sync_operation.total)

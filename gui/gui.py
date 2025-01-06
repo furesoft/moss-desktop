@@ -34,6 +34,7 @@ from .aspect_ratio import Ratios
 if TYPE_CHECKING:
     from gui.screens.main_menu import MainMenu
     from .screens.import_screen import ImportScreen
+    from .extensions import ExtensionManager
 
 pe.init()
 
@@ -160,6 +161,8 @@ class GUI(pe.GameContext):
     MODE = pe.display.DISPLAY_MODE_RESIZABLE
     FAKE_SCREEN_REFRESH_TIME = .1
 
+    extension_manager: 'ExtensionManager'
+
     def __init__(self):
         global Defaults
         self.config = load_config()
@@ -173,7 +176,7 @@ class GUI(pe.GameContext):
         setattr(pe.settings, 'indev', False)
 
         from .defaults import Defaults
-        from .extension_manager import ExtensionManager
+        from gui.extensions import ExtensionManager
         self.BACKGROUND = Defaults.BACKGROUND
         super().__init__()
 
@@ -266,6 +269,7 @@ class GUI(pe.GameContext):
         if not self.running:
             return
         self.screens.queue[-1]()
+        self.extension_manager.loop()
 
     def save_config(self):
         with open("config.json", "w") as f:
