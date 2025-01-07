@@ -34,6 +34,7 @@ from .aspect_ratio import Ratios
 if TYPE_CHECKING:
     from gui.screens.main_menu import MainMenu
     from .screens.import_screen import ImportScreen
+    from .extensions import ExtensionManager
 
 pe.init()
 
@@ -161,6 +162,8 @@ class GUI(pe.GameContext):
     MODE = pe.display.DISPLAY_MODE_RESIZABLE
     FAKE_SCREEN_REFRESH_TIME = .1
 
+    extension_manager: 'ExtensionManager'
+
     def __init__(self):
         global Defaults
         self.config = load_config()
@@ -174,8 +177,7 @@ class GUI(pe.GameContext):
         setattr(pe.settings, 'indev', False)
 
         from .defaults import Defaults
-        from .extension_manager import ExtensionManager
-        self.BACKGROUND = Defaults.BACKGROUND
+        from gui.extensions import ExtensionManager
         super().__init__()
 
         try:
@@ -215,6 +217,7 @@ class GUI(pe.GameContext):
         self.api.add_hook('GUI', self.handle_api_event)
         pe.display.set_icon(Defaults.APP_ICON)
         makedirs(Defaults.EXTENSIONS_DIR, exist_ok=True)
+        makedirs(Defaults.OPTIONS_DIR, exist_ok=True)
         makedirs(Defaults.THUMB_FILE_PATH, exist_ok=True)
 
     @property
@@ -274,9 +277,10 @@ class GUI(pe.GameContext):
         self.dirty_config = False
 
     def save_config_if_dirty(self):
-        if not self.dirty_config:
-            return
-        self.save_config()
+        if self.extension_manager.dirty_configs:
+            self.extension_manager.save_configs()
+        if self.dirty_config:
+            self.save_config()
 
     def fake_screen_refresh(self):
         section = (time.time() - self.fake_screen_refresh_timer) / self.FAKE_SCREEN_REFRESH_TIME
@@ -348,8 +352,7 @@ class GUI(pe.GameContext):
 
     def quit_check(self):
         self.running = False
-        if self.dirty_config:
-            self.save_config()
+        self.save_config_if_dirty()
 
     def handle_api_event(self, e):
         if isinstance(e, APIFatal):
@@ -381,3 +384,8 @@ class GUI(pe.GameContext):
         self.screens.queue.clear()
         from gui.screens.loader import Loader
         self.screens.put(Loader(self))
+        self.extension_manager.init()
+
+    @property
+    def BACKGROUND(self):
+        return Defaults.BACKGROUND
