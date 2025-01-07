@@ -177,7 +177,6 @@ class GUI(pe.GameContext):
 
         from .defaults import Defaults
         from gui.extensions import ExtensionManager
-        self.BACKGROUND = Defaults.BACKGROUND
         super().__init__()
 
         try:
@@ -386,3 +385,7 @@ class GUI(pe.GameContext):
         from gui.screens.loader import Loader
         self.screens.put(Loader(self))
         self.extension_manager.init()
+
+    @property
+    def BACKGROUND(self):
+        return Defaults.BACKGROUND

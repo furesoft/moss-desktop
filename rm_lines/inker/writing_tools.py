@@ -4,7 +4,6 @@ Code originally from https://github.com/lschwetlick/maxio through
 https://github.com/chemag/maxio .
 """
 
-import logging
 import math
 
 # color_id to RGB conversion
@@ -236,10 +235,7 @@ class Brush(Pen):
         intensity = self.cutoff(intensity)
         # using segment color not opacity because the dots interfere with each other.
         # Color must be 255 rgb
-        rev_intensity = abs(intensity - 1)
-        segment_color = [int(rev_intensity * (255 - self.base_color[0])),
-                         int(rev_intensity * (255 - self.base_color[1])),
-                         int(rev_intensity * (255 - self.base_color[2]))]
+        segment_color = [int(intensity * i) for i in self.base_color]
 
         return "rgb" + str(tuple(segment_color))
 

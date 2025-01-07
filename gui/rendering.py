@@ -1,5 +1,6 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING, Dict, Tuple, Union, Optional
+from typing import TYPE_CHECKING, Dict, Tuple, Optional
+
 import pygameextra as pe
 
 from gui.defaults import Defaults
@@ -173,7 +174,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         selection_rect = rect.inflate(gui.ratios.main_menu_x_padding, gui.ratios.main_menu_x_padding)
         selection_rect.height += title_text.rect.height + gui.ratios.main_menu_x_padding + gui.ratios.line * 2
         pe.draw.rect(Defaults.SELECTED, selection_rect)
-        pe.draw.rect(Defaults.BACKGROUND, rect)
+    pe.draw.rect(Defaults.DOCUMENT_BACKGROUND, rect)
 
     render_button_using_text(
         gui, title_text,
@@ -224,7 +225,8 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
 
         cloud_icon_rect.center = cloud_icon_padded_rect.center
 
-        pe.draw.rect(pe.colors.white, cloud_icon_padded_rect)  # Give the cloud icon a white background with padding
+        pe.draw.rect(Defaults.DOCUMENT_BACKGROUND,
+                     cloud_icon_padded_rect)  # Give the cloud icon a white background with padding
         cloud_icon.display(cloud_icon_rect.topleft)
 
     # Render the passive outline
@@ -256,7 +258,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
                 # Draw the original_background
                 pe.draw.rect(Defaults.BUTTON_ACTIVE_COLOR, rect)
                 # Draw a background for the debug button
-                pe.draw.rect(pe.colors.darkgray, inflated_rect)
+                pe.draw.rect(Defaults.LINE_GRAY, inflated_rect)
 
             pe.button.action(
                 inflated_rect,
@@ -288,15 +290,21 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
 
 def render_button_using_text(
         gui: 'GUI', text: pe.Text,
-        inactive_color=Defaults.TRANSPARENT_COLOR, active_color=Defaults.BUTTON_ACTIVE_COLOR,
+        inactive_color: Tuple[int, ...] = None, active_color: Tuple[int, ...] = None,
         *args,
         name: str = None, action=None, data=None,
         rect: pe.Rect = None,
         outline: int = None,
         text_infront: bool = False,
-        outline_color: Union[Tuple[int, int, int], Tuple[int, int, int, int]] = Defaults.OUTLINE_COLOR,
+        outline_color: Tuple[int, ...] = None,
         **kwargs
 ):
+    if not outline_color:
+        outline_color = Defaults.OUTLINE_COLOR
+    if not inactive_color:
+        inactive_color = Defaults.TRANSPARENT_COLOR
+    if not active_color:
+        active_color = Defaults.BUTTON_ACTIVE_COLOR
     if not text_infront:
         text.display()
     if not rect:
@@ -368,7 +376,7 @@ def get_bottom_bar_rect(gui: 'GUI'):
 def draw_bottom_bar(gui: 'GUI'):
     # The entire lower bar
     pe.draw.rect(
-        pe.colors.black,
+        Defaults.SELECTED,
         get_bottom_bar_rect(gui)
     )
 

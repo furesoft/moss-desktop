@@ -11,11 +11,15 @@ if TYPE_CHECKING:
 class TitledMixin:
     TITLE = "Title"
     ratios: 'Ratios'
-    TITLE_COLORS = Defaults.TEXT_COLOR
+    TITLE_COLORS = None
+
+    @property
+    def title_colors(self):
+        return self.TITLE_COLORS or Defaults.TEXT_COLOR
 
     def handle_title(self, title: str = None):
         self.title = pe.Text(title or self.TITLE, Defaults.MAIN_MENU_FONT, self.ratios.titled_mixin_title_size,
-                             colors=self.TITLE_COLORS)
+                             colors=self.title_colors)
 
         self.title.rect.topleft = (
             self.ratios.titled_mixin_title_padding,

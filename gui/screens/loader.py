@@ -2,14 +2,14 @@ import os
 import threading
 import time
 from traceback import print_exc
-
-import pygameextra as pe
 from typing import TYPE_CHECKING, Union, Dict
 
-from gui.screens.mixins import LogoMixin
-from rm_api.notifications.models import SyncCompleted, NewDocuments
+import pygameextra as pe
+
 from gui.defaults import Defaults
 from gui.screens.main_menu import MainMenu
+from gui.screens.mixins import LogoMixin
+from rm_api.notifications.models import SyncCompleted, NewDocuments
 
 if TYPE_CHECKING:
     from gui.gui import GUI
@@ -23,6 +23,11 @@ class ReusedIcon:
         self.scale = scale
 
 
+class InvertedIcon:
+    def __init__(self, item: str):
+        self.item = item
+
+
 class ResizedIcon:
     def __init__(self, item: str, scale: float):
         self.item = item
@@ -32,65 +37,43 @@ class ResizedIcon:
 class Loader(pe.ChildContext, LogoMixin):
     TO_LOAD = {
         # Icons and Images
-        'folder': os.path.join(Defaults.ICON_DIR, 'folder.svg'),
-        'folder_inverted': os.path.join(Defaults.ICON_DIR, 'folder_inverted.svg'),
-        'folder_add': os.path.join(Defaults.ICON_DIR, 'folder_add.svg'),
-        'folder_add_inverted': os.path.join(Defaults.ICON_DIR, 'folder_add_inverted.svg'),
-        'folder_empty': os.path.join(Defaults.ICON_DIR, 'folder_empty.svg'),
-        'folder_empty_inverted': os.path.join(Defaults.ICON_DIR, 'folder_empty_inverted.svg'),
-        'star': os.path.join(Defaults.ICON_DIR, 'star.svg'),
-        'star_inverted': os.path.join(Defaults.ICON_DIR, 'star_inverted.svg'),
-        'star_empty': os.path.join(Defaults.ICON_DIR, 'star_empty.svg'),
-        'star_empty_inverted': os.path.join(Defaults.ICON_DIR, 'star_empty_inverted.svg'),
-        'tag': os.path.join(Defaults.ICON_DIR, 'tag.svg'),
-        'tag_inverted': os.path.join(Defaults.ICON_DIR, 'tag_inverted.svg'),
-        'chevron_down': os.path.join(Defaults.ICON_DIR, 'chevron_down.svg'),
-        'chevron_down_inverted': os.path.join(Defaults.ICON_DIR, 'chevron_down_inverted.svg'),
-        'chevron_right': os.path.join(Defaults.ICON_DIR, 'chevron_right.svg'),
-        'chevron_right_inverted': os.path.join(Defaults.ICON_DIR, 'chevron_right_inverted.svg'),
-        'small_chevron_down': os.path.join(Defaults.ICON_DIR, 'small_chevron_down.svg'),
-        'small_chevron_down_inverted': os.path.join(Defaults.ICON_DIR, 'small_chevron_down_inverted.svg'),
-        'small_chevron_right': os.path.join(Defaults.ICON_DIR, 'small_chevron_right.svg'),
-        'small_chevron_right_inverted': os.path.join(Defaults.ICON_DIR, 'small_chevron_right_inverted.svg'),
+        'folder': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'folder.svg')),
+        'folder_add': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'folder_add.svg')),
+        'folder_empty': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'folder_empty.svg')),
+        'star': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'star.svg')),
+        'star_empty': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'star_empty.svg')),
+        'tag': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'tag.svg')),
+        'chevron_down': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'chevron_down.svg')),
+        'chevron_right': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'chevron_right.svg')),
+        'small_chevron_down': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'small_chevron_down.svg')),
+        'small_chevron_right': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'small_chevron_right.svg')),
         'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
         'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
-        'cloud_synced': os.path.join(Defaults.ICON_DIR, 'cloud_synced.svg'),
-        'cloud_synced_inverted': os.path.join(Defaults.ICON_DIR, 'cloud_synced_inverted.svg'),
+        'cloud_synced': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'cloud_synced.svg')),
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
         'notebook': ReusedIcon('notebook_large', 0.333),
-        'notebook_add': os.path.join(Defaults.ICON_DIR, 'notebook_add.svg'),
+        'notebook_add': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'notebook_add.svg')),
         'share': os.path.join(Defaults.ICON_DIR, 'share.svg'),
-        'export': os.path.join(Defaults.ICON_DIR, 'export.svg'),
-        'import': os.path.join(Defaults.ICON_DIR, 'import.svg'),
+        'export': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'export.svg')),
+        'import': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'import.svg')),
         'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
-        'rotate': os.path.join(Defaults.ICON_DIR, 'rotate.svg'),
-        'rotate_inverted': os.path.join(Defaults.ICON_DIR, 'rotate_inverted.svg'),
-        'burger': os.path.join(Defaults.ICON_DIR, 'burger.svg'),
-        'burger_inverted': os.path.join(Defaults.ICON_DIR, 'burger_inverted.svg'),
-        'filter': os.path.join(Defaults.ICON_DIR, 'filter.svg'),
+        'rotate': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'rotate.svg')),
+        'burger': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'burger.svg')),
+        'filter': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'filter.svg')),
         'context_menu': os.path.join(Defaults.ICON_DIR, 'context_menu.svg'),
         'pencil': os.path.join(Defaults.ICON_DIR, 'pencil.svg'),
-        'my_files': os.path.join(Defaults.ICON_DIR, 'my_files.svg'),
-        'my_files_inverted': os.path.join(Defaults.ICON_DIR, 'my_files_inverted.svg'),
-        'trashcan': os.path.join(Defaults.ICON_DIR, 'trashcan.svg'),
-        'trashcan_inverted': os.path.join(Defaults.ICON_DIR, 'trashcan_inverted.svg'),
-        'trashcan_delete': os.path.join(Defaults.ICON_DIR, 'trashcan_delete.svg'),
-        'trashcan_delete_inverted': os.path.join(Defaults.ICON_DIR, 'trashcan_delete_inverted.svg'),
-        'cog': os.path.join(Defaults.ICON_DIR, 'cog.svg'),
-        'cog_inverted': os.path.join(Defaults.ICON_DIR, 'cog_inverted.svg'),
+        'my_files': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'my_files.svg')),
+        'trashcan': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'trashcan.svg')),
+        'trashcan_delete': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'trashcan_delete.svg')),
+        'cog': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'cog.svg')),
         'heart': os.path.join(Defaults.ICON_DIR, 'heart.svg'),
-        'compass': os.path.join(Defaults.ICON_DIR, 'compass.svg'),
-        'compass_inverted': os.path.join(Defaults.ICON_DIR, 'compass_inverted.svg'),
-        'duplicate': os.path.join(Defaults.ICON_DIR, 'duplicate.svg'),
-        'duplicate_inverted': os.path.join(Defaults.ICON_DIR, 'duplicate_inverted.svg'),
-        'text_edit': os.path.join(Defaults.ICON_DIR, 'text_edit.svg'),
-        'text_edit_inverted': os.path.join(Defaults.ICON_DIR, 'text_edit_inverted.svg'),
-        'move': os.path.join(Defaults.ICON_DIR, 'move.svg'),
-        'move_inverted': os.path.join(Defaults.ICON_DIR, 'move_inverted.svg'),
-        'x_medium': os.path.join(Defaults.ICON_DIR, 'x_medium.svg'),
-        'x_medium_inverted': os.path.join(Defaults.ICON_DIR, 'x_medium_inverted.svg'),
-        'discord_qr_code': ResizedIcon(os.path.join(Defaults.IMAGES_DIR, 'discord_qr_code.png'), 0.1),
+        'compass': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'compass.svg')),
+        'duplicate': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'duplicate.svg')),
+        'text_edit': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'text_edit.svg')),
+        'move': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'move.svg')),
+        'x_medium': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'x_medium.svg')),
+        'discord_qr_code': ResizedIcon(os.path.join(Defaults.IMAGES_DIR, 'discord_qr_code.png'), 0.253),
 
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
@@ -122,25 +105,30 @@ class Loader(pe.ChildContext, LogoMixin):
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()
 
+    def __load(self, key: str, item: Union[str, ReusedIcon, ResizedIcon, InvertedIcon]):
+        if isinstance(item, ReusedIcon):
+            self.icons[key] = self.icons[item.key].copy()
+            self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
+        elif isinstance(item, ResizedIcon):
+            self.load_image(key, item.item, item.scale)
+        elif isinstance(item, InvertedIcon):
+            self.__load(key, item.item)
+            self.__load(f'{key}_inverted', item.item.replace(key, f'{key}_inverted'))
+        elif not isinstance(item, str):
+            return
+        elif item.endswith('.svg'):
+            # SVGs are 40px, but we use 1000px height, so they are 23px
+            # 23 / 40 = 0.575
+            # but, I find 0.5 to better match
+            self.load_image(key, item, 0.5)
+        elif item.endswith('.png'):
+            self.load_image(key, item)
+        else:
+            self.load_data(key, item)
+
     def _load(self):
         for key, item in self.TO_LOAD.items():
-            if isinstance(item, ReusedIcon):
-                self.icons[key] = self.icons[item.key].copy()
-                self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
-            elif isinstance(item, ResizedIcon):
-                self.load_image(key, item.item, item.scale)
-            elif not isinstance(item, str):
-                continue
-            elif item.endswith('.svg'):
-                # SVGs are 40px, but we use 1000px height, so they are 23px
-                # 23 / 40 = 0.575
-                # but, I find 0.5 to better match
-                self.load_image(key, item, 0.5)
-            elif item.endswith('.png'):
-                self.load_image(key, item)
-
-            else:
-                self.load_data(key, item)
+            self.__load(key, item)
             self.items_loaded += 1
 
         # Wait for extensions to load

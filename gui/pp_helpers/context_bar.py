@@ -1,15 +1,16 @@
+from abc import ABC, abstractmethod
 from functools import lru_cache
+from typing import Tuple, Dict, List, Optional
 
 import pygameextra as pe
-from abc import ABC, abstractmethod
-from typing import Tuple, Dict, List, Optional
+
 from gui.defaults import Defaults
 
 
 class ContextBar(pe.ChildContext, ABC):
     LAYER = pe.AFTER_LOOP_LAYER
-    TEXT_COLOR = Defaults.TEXT_COLOR_T
-    TEXT_COLOR_INVERTED = Defaults.TEXT_COLOR_H
+    TEXT_COLOR = None
+    TEXT_COLOR_INVERTED = None
     BUTTONS: Tuple[Dict[str, Optional[str]]] = ()
     INVERT = False
 
@@ -20,6 +21,14 @@ class ContextBar(pe.ChildContext, ABC):
     # Scaled button texts
     texts: List[pe.Text]
     texts_inverted: List[pe.Text]
+
+    @property
+    def text_color(self):
+        return self.TEXT_COLOR or Defaults.TEXT_COLOR_T
+
+    @property
+    def text_color_inverted(self):
+        return self.TEXT_COLOR_INVERTED or Defaults.TEXT_COLOR_H
 
     def __init__(self, parent: 'MainMenu'):
         self.texts = []
@@ -97,11 +106,11 @@ class ContextBar(pe.ChildContext, ABC):
         for button_meta in self.BUTTONS:
             self.texts.append(pe.Text(
                 button_meta['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
-                colors=self.TEXT_COLOR
+                colors=self.text_color
             ))
             self.texts_inverted.append(pe.Text(
                 button_meta['text'], Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
-                colors=self.TEXT_COLOR_INVERTED
+                colors=self.text_color_inverted
             ))
 
         # Process final text and icon positions inside button and padding

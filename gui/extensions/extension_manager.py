@@ -131,7 +131,7 @@ class ExtensionManager:
         self.extensions[extension_name] = extension
         self.current_extension = extension_name
         try:
-            extension.call('register', b'',
+            extension.call('register', self.state,
                            lambda output: self.handle_register_output(output, extension_name))
         except ExtismError:
             self.extensions.pop(extension_name)
@@ -184,23 +184,27 @@ class ExtensionManager:
         ...
 
     def loop(self):
-        state = {
-            'width': self.gui.width,
-            'height': self.gui.height,
-            'current_screen': self.gui.screens.queue[-1].__class__.__name__ if self.gui.screens.queue else "",
-            'opened_context_menus': self.opened_context_menus
-        }
         for extension_name, extension in self.extensions.items():
             self.current_extension = extension_name
             try:
                 extension.call(
                     'extension_loop',
-                    json.dumps(state).encode()
+                    self.state
                 )
             except ExtismError:
                 self.error(f"Extension {extension} failed to loop")
                 print_exc()
         self.opened_context_menus.clear()
+
+    @property
+    def state(self):
+        return json.dumps({
+            'width': self.gui.width,
+            'height': self.gui.height,
+            'current_screen': self.gui.screens.queue[-1].__class__.__name__ if self.gui.screens.queue else "",
+            'opened_context_menus': self.opened_context_menus,
+            'icons': list(self.gui.icons.keys()),
+        }).encode()
 
     def save_configs(self):
         for config, config_path in map(
