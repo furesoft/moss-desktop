@@ -1,11 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from abc import abstractmethod
 from functools import lru_cache
-from typing import Tuple, Dict, List, Optional, Literal
+from typing import Tuple, Dict, List, Optional
 
 import pygameextra as pe
 
 from gui.defaults import Defaults
+from gui.literals import CONTEXT_BAR_DIRECTIONS
 
 
 class ContextBar(pe.ChildContext, ABC):
@@ -14,7 +15,7 @@ class ContextBar(pe.ChildContext, ABC):
     TEXT_COLOR_INVERTED = None
     BUTTONS: Tuple[Dict[str, Optional[str]]] = ()
     INVERT = False
-    CONTEXT_MENU_OPEN_DIRECTION: Literal['down', 'right'] = 'down'
+    CONTEXT_MENU_OPEN_DIRECTION: CONTEXT_BAR_DIRECTIONS = 'down'
     CONTEXT_MENU_OPEN_PADDING: int = 0
 
     # definitions from GUI

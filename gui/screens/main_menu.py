@@ -13,10 +13,12 @@ from gui.file_prompts import import_prompt, notebook_prompt
 from gui.helpers import shorten_path
 from gui.pp_helpers import ContextMenu, ContextBar
 from gui.pp_helpers.popups import ConfirmPopup
+from gui.preview_handler import PreviewHandler
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
+from gui.screens.viewer import DocumentViewer
 from rm_api.models import Document, DocumentCollection
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 
@@ -481,11 +483,65 @@ class TopBarSelectMove(TopBarSelectOne):
 
 
 class DebugContextMenu(ContextMenu):
+    DEBUG_FOLDER = 'debug'
+    DEBUG_PREVIEW = 'debug_preview'
+    DEBUG_PREVIEW_PAGE_INDEX = 'debug'
+    PREVIEW_COLORS = (
+        (255, 255, 255),
+        (200, 200, 200),
+        (150, 150, 150),
+        (100, 100, 100),
+        (50, 50, 50),
+        (20, 20, 20),
+        (0, 0, 0),
+        (255, 0, 0),
+        (200, 0, 0),
+        (150, 0, 0),
+        (100, 0, 0),
+        (50, 0, 0),
+        (20, 0, 0),
+        (0, 255, 0),
+        (0, 200, 0),
+        (0, 150, 0),
+        (0, 100, 0),
+        (0, 50, 0),
+        (0, 20, 0),
+        (0, 0, 255),
+        (0, 0, 200),
+        (0, 0, 150),
+        (0, 0, 100),
+        (0, 0, 50),
+        (0, 0, 20),
+        (255, 255, 0),
+        (200, 200, 0),
+        (150, 150, 0),
+        (100, 100, 0),
+        (50, 50, 0),
+        (20, 20, 0),
+        (0, 255, 255),
+        (0, 200, 200),
+        (0, 150, 150),
+        (0, 100, 100),
+        (0, 50, 50),
+        (0, 20, 20),
+        (255, 0, 255),
+        (200, 0, 200),
+        (150, 0, 150),
+        (100, 0, 100),
+        (50, 0, 50),
+        (20, 0, 20),
+
+    )
     BUTTONS = (
         {
             "text": "Global debug menu",
             "icon": "cog",
             "action": None
+        },
+        {
+            "text": "Test doc view",
+            "icon": "notebook",
+            "action": "test_doc_view"
         },
         {
             "text": "Hot reload",
@@ -496,6 +552,58 @@ class DebugContextMenu(ContextMenu):
 
     def hot_reload(self):
         self.reload()
+
+    def test_doc_view(self):
+        if not PreviewHandler.CACHED_PREVIEW.get(self.DEBUG_PREVIEW):
+            surface = pe.Surface((len(self.PREVIEW_COLORS) * 10, 100))
+            with surface:
+                for i, color in enumerate(self.PREVIEW_COLORS):
+                    pe.draw.rect(color, (i * 10, 0, 10, surface.height))
+            PreviewHandler.CACHED_PREVIEW[self.DEBUG_PREVIEW] = (self.DEBUG_PREVIEW_PAGE_INDEX, pe.Image(surface))
+
+        for document in list(self.api.documents.values()):
+            if document.parent == self.DEBUG_FOLDER:
+                self.api.documents.pop(document.uuid)
+        for document_collection in list(self.api.document_collections.values()):
+            if document_collection.parent == self.DEBUG_FOLDER:
+                self.api.document_collections.pop(document_collection.uuid)
+
+        self.apply(DocumentCollection.create(self.api, "Folder", self.DEBUG_FOLDER))
+        self.apply(folder_with_tag := DocumentCollection.create(self.api, "Folder /w tag", self.DEBUG_FOLDER))
+        self.apply(folder_with_star := DocumentCollection.create(self.api, "Folder /w star", self.DEBUG_FOLDER))
+        self.apply(Document.new_notebook(self.api, "Normal notebook", self.DEBUG_FOLDER))
+        self.apply(notebook_with_tag := Document.new_notebook(self.api, "Notebook /w tag", self.DEBUG_FOLDER))
+        self.apply(notebook_with_star := Document.new_notebook(self.api, "Notebook /w star", self.DEBUG_FOLDER))
+        self.apply(problematic_notebook := Document.new_notebook(self.api, "Problematic notebook", self.DEBUG_FOLDER))
+        self.apply(syncing_notebook := Document.new_notebook(self.api, "Syncing notebook", self.DEBUG_FOLDER))
+
+        # Document collections
+        folder_with_tag.tags.append('Test tag')
+
+        folder_with_star.metadata.pinned = True
+
+        # Notebooks
+        DocumentViewer.PROBLEMATIC_DOCUMENTS.add(problematic_notebook.uuid)
+
+        notebook_with_tag.content.tags.append('Test tag')
+        folder_with_star.metadata.pinned = True
+
+        progress = DocumentSyncProgress(syncing_notebook.uuid)
+        progress.total = 2
+        progress.done = 1
+        self.api.spread_event(progress)
+
+        # Set the navigation parent
+        self.main_menu.navigation_parent = self.DEBUG_FOLDER
+
+    def apply(self, item):
+        if isinstance(item, DocumentCollection):
+            self.api.document_collections[item.uuid] = item
+        elif isinstance(item, Document):
+            self.api.documents[item.uuid] = item
+            item.provision = True
+            item.content.c_pages.pages[0].id = self.DEBUG_PREVIEW_PAGE_INDEX
+            PreviewHandler.CACHED_PREVIEW[item.uuid] = PreviewHandler.CACHED_PREVIEW[self.DEBUG_PREVIEW]
 
 
 class SideBar(ContextMenu):
