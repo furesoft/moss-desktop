@@ -393,12 +393,13 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, finish: bool =
     loading_bar_rect.x -= gui.ratios.bottom_loading_bar_padding
 
     # Draw the loading bar background
-    pe.draw.rect(Defaults.LINE_GRAY, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
+    pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, loading_bar_rect, 0,
+                 edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
     if total > 0:
         loading_bar_rect.width = int(loading_bar_rect.width * current / total)
 
-    pe.draw.rect(pe.colors.white, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
+    pe.draw.rect(Defaults.BACKGROUND, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
     # Make and show text of current / total
     if not finish:
