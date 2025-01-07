@@ -1,7 +1,7 @@
 import os.path
 import threading
 from traceback import print_exc
-from typing import Dict, Tuple, List, Union
+from typing import Dict, Tuple, List, Optional
 
 import pygameextra as pe
 
@@ -17,19 +17,17 @@ try:
 except ImportError:
     pymupdf = None
 
-MAY_CONTAIN_A_IMAGE = Union[None, pe.Image]
-
 
 class PreviewHandler:
     # Document id : (page id, sprite)
     # Sprite just allows for easy resizing
-    CACHED_PREVIEW: Dict[str, Tuple[str, MAY_CONTAIN_A_IMAGE]] = {}
+    CACHED_PREVIEW: Dict[str, Tuple[str, Optional[pe.Image]]] = {}
     CACHED_RESIZES: Dict[str, pe.Image] = {}
     PREVIEW_LOAD_TASKS: List[str] = []
     PYGAME_THREAD_LOCK = threading.Lock()
 
     @classmethod
-    def get_preview(cls, document: Document, size: Tuple[int, int]) -> MAY_CONTAIN_A_IMAGE:
+    def get_preview(cls, document: Document, size: Tuple[int, int]) -> Optional[pe.Image]:
         size = tuple(min(given, max) for given, max in zip(size, Defaults.PREVIEW_SIZE))
         try:
             image = cls._get_preview(document)
@@ -53,7 +51,7 @@ class PreviewHandler:
         return resized_image
 
     @classmethod
-    def _get_preview(cls, document: Document) -> MAY_CONTAIN_A_IMAGE:
+    def _get_preview(cls, document: Document) -> Optional[pe.Image]:
         try:
             if document.content.cover_page_number == -1:
                 page_id = document.content.c_pages.last_opened.value
