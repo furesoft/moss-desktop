@@ -4,11 +4,11 @@ import os
 import time
 from numbers import Number
 from os import makedirs
+from queue import Queue
 from typing import TypedDict, Union, TYPE_CHECKING
 
 import appdirs
 import pygameextra as pe
-from queue import Queue
 from box import Box
 from colorama import Fore
 
@@ -42,6 +42,7 @@ APP_NAME = "Moss"
 INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 pe.settings.raise_error_for_button_without_name = True
+pe.settings.use_button_context_indexing = False
 
 
 class ConfigDict(TypedDict):
@@ -380,4 +381,3 @@ class GUI(pe.GameContext):
         self.screens.queue.clear()
         from gui.screens.loader import Loader
         self.screens.put(Loader(self))
-
