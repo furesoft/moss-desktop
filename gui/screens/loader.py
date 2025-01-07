@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Union, Dict
 import pygameextra as pe
 
 from gui.defaults import Defaults
+from gui.helpers import invert_icon
 from gui.screens.main_menu import MainMenu
 from gui.screens.mixins import LogoMixin
 from rm_api.notifications.models import SyncCompleted, NewDocuments
@@ -47,22 +48,22 @@ class Loader(pe.ChildContext, LogoMixin):
         'chevron_right': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'chevron_right.svg')),
         'small_chevron_down': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'small_chevron_down.svg')),
         'small_chevron_right': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'small_chevron_right.svg')),
-        'cloud': os.path.join(Defaults.ICON_DIR, 'cloud.svg'),
-        'cloud_download': os.path.join(Defaults.ICON_DIR, 'cloud_download.svg'),
+        'cloud': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'cloud.svg')),
+        'cloud_download': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'cloud_download.svg')),
         'cloud_synced': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'cloud_synced.svg')),
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
-        'notebook_large': os.path.join(Defaults.ICON_DIR, 'notebook_large.svg'),
+        'notebook_large': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'notebook_large.svg')),
         'notebook': ReusedIcon('notebook_large', 0.333),
         'notebook_add': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'notebook_add.svg')),
-        'share': os.path.join(Defaults.ICON_DIR, 'share.svg'),
+        'share': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'share.svg')),
         'export': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'export.svg')),
         'import': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'import.svg')),
-        'info': os.path.join(Defaults.ICON_DIR, 'information_circle.svg'),
+        'info': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'information_circle.svg')),
         'rotate': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'rotate.svg')),
         'burger': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'burger.svg')),
         'filter': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'filter.svg')),
-        'context_menu': os.path.join(Defaults.ICON_DIR, 'context_menu.svg'),
-        'pencil': os.path.join(Defaults.ICON_DIR, 'pencil.svg'),
+        'context_menu': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'context_menu.svg')),
+        'pencil': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'pencil.svg')),
         'my_files': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'my_files.svg')),
         'trashcan': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'trashcan.svg')),
         'trashcan_delete': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'trashcan_delete.svg')),
@@ -113,7 +114,8 @@ class Loader(pe.ChildContext, LogoMixin):
             self.load_image(key, item.item, item.scale)
         elif isinstance(item, InvertedIcon):
             self.__load(key, item.item)
-            self.__load(f'{key}_inverted', item.item.replace(key, f'{key}_inverted'))
+            key_inverted = f'{key}_inverted'
+            invert_icon(self, key, key_inverted)
         elif not isinstance(item, str):
             return
         elif item.endswith('.svg'):

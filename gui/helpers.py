@@ -1,4 +1,9 @@
+from typing import TYPE_CHECKING
+
 import pygameextra as pe
+
+if TYPE_CHECKING:
+    from gui import GUI
 
 
 def shorten_name(name, letters=16, max_length=20):
@@ -55,3 +60,14 @@ def dynamic_text(name, font_filename, fontsize, width):
 
 def shorten_path(path, letters=26, max_length=30):
     return shorten_name(path, letters)
+
+
+def invert_icon(gui: 'GUI', key: str, result_key: str):
+    if key == result_key:
+        pixels = pe.pygame.surfarray.pixels2d(gui.icons[key].surface.surface)
+        pixels ^= 0x00FFFFFF
+        del pixels
+        return
+    icon = gui.icons[key].copy()
+    gui.icons[result_key] = icon
+    invert_icon(gui, result_key, result_key)

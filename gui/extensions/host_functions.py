@@ -1,12 +1,12 @@
 from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Type, Any
 
-import pygameextra as pe
 from box import Box
 from extism import host_fn, Json
 
 from .input_types import TContextMenu
 from ..defaults import Defaults
+from ..helpers import invert_icon
 from ..pp_helpers import ContextMenu
 
 if TYPE_CHECKING:
@@ -107,16 +107,7 @@ def moss_defaults_set_text_color(key: str, r1: int, g1: int, b1: int, r2: int, g
 
 @host_fn()
 def moss_gui_invert_icon(key: str, result_key: str):
-    if key == result_key:
-        pixels = pe.pygame.surfarray.pixels2d(gui.icons[key].surface.surface)
-        pixels ^= 0x00FFFFFF
-        del pixels
-        return
-    icon = pe.Image(gui.icons[key].surface.copy())
-    pixels = pe.pygame.surfarray.pixels2d(icon.surface.surface)
-    pixels ^= 0x00FFFFFF
-    del pixels
-    gui.icons[result_key] = icon
+    invert_icon(gui, key, result_key)
 
 
 @host_fn()
