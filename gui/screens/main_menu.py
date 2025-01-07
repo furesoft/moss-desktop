@@ -140,6 +140,11 @@ class MainMenuContextBar(ContextBar):
             if self.main_menu.loading or self.api.sync_notifiers != 0 else False
         )
 
+    def handle_new_context_menu(self, context_menu_getter, index):
+        super().handle_new_context_menu(
+            lambda ideal_position: context_menu_getter((ideal_position[0], self.ratios.main_menu_top_height)), index
+        )
+
     def finalize_button_rect(self, buttons, width, height):
         width += (len(self.BUTTONS) - (2 if self.INCLUDE_MENU else 1)) * self.ratios.main_menu_bar_padding
         max_width = self.main_menu.resync_rect.left - self.ratios.main_menu_button_margin
@@ -181,12 +186,13 @@ class TopBar(MainMenuContextBar):
             "action": 'import_action',
             "context_menu": 'import_context',
             "context_icon": "small_chevron_down"
-        }, {
-            "text": "Export",
-            "icon": "export",
-            "action": None,
-            "disabled": True
-        }
+        },
+        # {
+        #     "text": "Export",
+        #     "icon": "export",
+        #     "action": None,
+        #     "disabled": True
+        # }
     )
     ONLINE_ACTIONS = ['create_notebook', 'create_collection', 'import_action']
 
@@ -558,6 +564,7 @@ class SideBar(ContextMenu):
                 "context_icon": "chevron_right",
             })
         super().__init__(context, *args, **kwargs)
+        self.CONTEXT_MENU_OPEN_PADDING = self.ratios.seperator - self.ratios.line
 
     def pre_loop(self):
         super().pre_loop()
