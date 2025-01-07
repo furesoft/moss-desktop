@@ -1,7 +1,7 @@
+from abc import ABC
 from typing import Tuple
 
 import pygameextra as pe
-from abc import ABC
 
 from gui.defaults import Defaults
 from gui.pp_helpers.context_bar import ContextBar
@@ -9,6 +9,7 @@ from gui.pp_helpers.context_bar import ContextBar
 
 class ContextMenu(ContextBar, ABC):
     ENABLE_OUTLINE = True
+    CONTEXT_MENU_OPEN_DIRECTION = 'right'
 
     def __init__(self, parent: 'MainMenu', topleft: Tuple[int, int]):
         self.left, self.top = topleft

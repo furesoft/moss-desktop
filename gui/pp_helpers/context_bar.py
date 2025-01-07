@@ -1,8 +1,9 @@
+from abc import ABC, abstractmethod
 from functools import lru_cache
+from typing import Tuple, Dict, List, Optional, Literal
 
 import pygameextra as pe
-from abc import ABC, abstractmethod
-from typing import Tuple, Dict, List, Optional
+
 from gui.defaults import Defaults
 
 
@@ -12,6 +13,8 @@ class ContextBar(pe.ChildContext, ABC):
     TEXT_COLOR_INVERTED = Defaults.TEXT_COLOR_H
     BUTTONS: Tuple[Dict[str, Optional[str]]] = ()
     INVERT = False
+    CONTEXT_MENU_OPEN_DIRECTION: Literal['down', 'right'] = 'down'
+    CONTEXT_MENU_OPEN_PADDING: int = 0
 
     # definitions from GUI
     icons: Dict[str, pe.Image]
@@ -72,7 +75,16 @@ class ContextBar(pe.ChildContext, ABC):
         return buttons
 
     def handle_new_context_menu(self, context_menu_getter, index):
-        context_menu = context_menu_getter(self.buttons[index].area.bottomleft)
+        if self.CONTEXT_MENU_OPEN_DIRECTION == 'down':
+            ideal_position = self.buttons[index].area.bottomleft
+            ideal_position = ideal_position[0], ideal_position[1] + self.CONTEXT_MENU_OPEN_PADDING
+        elif self.CONTEXT_MENU_OPEN_DIRECTION == 'right':
+            ideal_position = self.buttons[index].area.topright
+            ideal_position = ideal_position[0] + self.CONTEXT_MENU_OPEN_PADDING, ideal_position[1]
+        else:
+            raise ValueError(f"Invalid CONTEXT_MENU_OPEN_DIRECTION '{self.CONTEXT_MENU_OPEN_DIRECTION}'")
+
+        context_menu = context_menu_getter(ideal_position)
         if not context_menu:
             return
         if context_menu:

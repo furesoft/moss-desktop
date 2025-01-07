@@ -1,5 +1,4 @@
 import time
-from copy import deepcopy
 from functools import wraps
 from queue import Queue
 from threading import Lock, Thread
@@ -8,19 +7,18 @@ from typing import TYPE_CHECKING, Dict, List, Union
 import pygameextra as pe
 
 from gui.cloud_action_helper import import_files_to_cloud, import_notebook_pages_to_cloud
+from gui.defaults import Defaults
 from gui.events import ResizeEvent
 from gui.file_prompts import import_prompt, notebook_prompt
+from gui.helpers import shorten_path
 from gui.pp_helpers import ContextMenu, ContextBar
 from gui.pp_helpers.popups import ConfirmPopup
 from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_header
 from gui.screens.docs_view import DocumentTreeViewer
 from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
+from rm_api.models import Document, DocumentCollection
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
-from rm_api.models import Document, DocumentCollection, make_uuid
-
-from gui.defaults import Defaults
-from gui.helpers import shorten_path
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -475,6 +473,7 @@ class TopBarSelectMove(TopBarSelectOne):
     def create_collection(self):
         self.main_menu._bar.create_collection()
 
+
 class DebugContextMenu(ContextMenu):
     BUTTONS = (
         {
@@ -579,7 +578,6 @@ class SideBar(ContextMenu):
         self.handle_new_context_menu(self.debug_context_menu, len(self.BUTTONS) - 1)
 
     def debug_context_menu(self, ideal_position):
-        ideal_position = (ideal_position[0] + self.rect.width, ideal_position[1])
         return DebugContextMenu(self.main_menu, ideal_position)
 
     def finalize_button_rect(self, buttons, width, height):
