@@ -41,6 +41,7 @@ class ExtensionManager:
         self.opened_context_menus = []
         self.dirty_configs = []
         self.extensions_to_load = []
+        self.loaded_extensions = []
         self.extra_items = {}
         self.extensions = {}
         self.context_menus = {}
@@ -69,6 +70,7 @@ class ExtensionManager:
 
     def _reset(self):
         self.extensions_to_load.clear()
+        self.loaded_extensions.clear()
         self.extra_items.clear()
         self.extensions.clear()
         self.context_menus.clear()
@@ -140,6 +142,7 @@ class ExtensionManager:
             print_exc()
             return
         self.log(f"Registered extension {extension_name}")
+        self.loaded_extensions.append(extension_name)
         self.extensions_loaded += 1
 
     def gather_extensions(self):
@@ -185,6 +188,8 @@ class ExtensionManager:
 
     def loop(self):
         for extension_name, extension in self.extensions.items():
+            if extension_name not in self.loaded_extensions:
+                continue
             self.current_extension = extension_name
             try:
                 extension.call(

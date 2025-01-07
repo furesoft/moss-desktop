@@ -33,10 +33,8 @@ def get_asset_path():
 
 class DefaultsMeta(type):
     def __setattr__(self, key, value):
-        print(key)
         if key == 'BACKGROUND':
             remarkable_palette[2] = list(value[:3])
-            print(f"Setting remarkable_palette[2] to {remarkable_palette[2]}")
         if key == 'SELECTED':
             remarkable_palette[0] = list(value[:3])
         if key == 'LINE_GRAY':
