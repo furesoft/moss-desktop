@@ -149,6 +149,17 @@ class ExtensionManager:
         for extension in os.listdir(Defaults.EXTENSIONS_DIR):
             if extension.startswith('_'):
                 continue
+            if extension.endswith('.wasm'):
+                extension_name = extension[:-5]
+                os.makedirs(os.path.join(Defaults.EXTENSIONS_DIR, extension_name), exist_ok=True)
+                os.rename(
+                    os.path.join(Defaults.EXTENSIONS_DIR, extension),
+                    os.path.join(Defaults.EXTENSIONS_DIR, extension_name, extension)
+                )
+                self.extensions_to_load.append(extension_name)
+                continue
+            if os.path.isfile(os.path.join(Defaults.EXTENSIONS_DIR, extension)):
+                continue
             self.extensions_to_load.append(extension)
 
     def load(self):
