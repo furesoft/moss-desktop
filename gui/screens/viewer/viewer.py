@@ -1,9 +1,8 @@
 import threading
 import time
-
-import pygameextra as pe
 from typing import TYPE_CHECKING, Dict
 
+import pygameextra as pe
 from colorama import Fore
 
 from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
@@ -300,7 +299,7 @@ class DocumentViewer(pe.ChildContext):
         outline_rect.inflate_ip(self.ratios.pixel(5), self.ratios.pixel(5))
 
         # Draw the outline, the line and the arrow icon
-        pe.draw.rect(pe.colors.white, outline_rect)
+        pe.draw.rect(Defaults.BACKGROUND, outline_rect)
         pe.draw.line(Defaults.LINE_GRAY,
                      (x_pos := self.top_puller.rect.centerx - self.ratios.pixel(2), self.top_puller.rect.centery),
                      (x_pos, icon_rect.centery), self.ratios.pixel(3))
