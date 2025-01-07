@@ -5,6 +5,7 @@ import time
 from numbers import Number
 from os import makedirs
 from queue import Queue
+from traceback import print_exc
 from typing import TypedDict, Union, TYPE_CHECKING
 
 import appdirs
@@ -22,6 +23,7 @@ Defaults = None
 try:
     from CEF4pygame import CEFpygame
 except Exception:
+    print_exc()
     CEFpygame = None
 try:
     import pymupdf

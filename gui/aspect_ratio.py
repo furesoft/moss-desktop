@@ -90,6 +90,11 @@ class Ratios:
         self.document_viewer_loading_square = int(100 * scale)
         self.document_viewer_loading_circle_radius = int(5 * scale)
         self.document_viewer_error_font_size = int(20 * scale)
+        self.document_viewer_x_margin = int(10 * scale)
+        self.document_viewer_x_rounding = int(5 * scale)
+        self.document_viewer_x_outline = int(2 * scale)
+        self.document_viewer_x_width = int(35 * scale)
+        self.document_viewer_x_height = self.document_viewer_x_width  # Square
 
         # Import Screen
         self.import_screen_button_padding = int(20 * scale)

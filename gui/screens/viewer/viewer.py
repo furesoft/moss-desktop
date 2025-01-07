@@ -228,6 +228,32 @@ class DocumentRenderer(pe.ChildContext):
             self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
 
 
+class DocumentViewerUI(pe.ChildContext):
+    LAYER = pe.BEFORE_POST_LAYER
+
+    def __init__(self, parent: 'GUI', viewer: 'DocumentViewer'):
+        self.viewer = viewer
+        self.document = viewer.document
+        self.x_rect = pe.Rect(0, 0, parent.ratios.document_viewer_x_width, parent.ratios.document_viewer_x_height)
+        self.x_icon = parent.icons['x_small']
+        self.x_icon_rect = pe.Rect(0, 0, *self.x_icon.size)
+        super().__init__(parent)
+        self.align_x_rect()
+
+    def loop(self):
+        pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, self.x_rect,
+                     edge_rounding=self.ratios.document_viewer_x_rounding)
+        pe.draw.rect(Defaults.SELECTED, self.x_rect, self.ratios.document_viewer_x_outline,
+                     edge_rounding=self.ratios.document_viewer_x_rounding - self.ratios.document_viewer_x_outline)
+        self.x_icon.display(self.x_icon_rect.topleft)
+        pe.button.action(self.x_rect, action=self.viewer.close, name=f'document_viewer_x<{id(self.viewer)}>')
+
+    def align_x_rect(self):
+        self.x_rect.topright = (self.width, 0)
+        self.x_rect.move_ip(-self.ratios.document_viewer_x_margin, self.ratios.document_viewer_x_margin)
+        self.x_icon_rect.center = self.x_rect.center
+
+
 class DocumentViewer(pe.ChildContext):
     LAYER = pe.AFTER_LOOP_LAYER
 
@@ -236,7 +262,13 @@ class DocumentViewer(pe.ChildContext):
     PROBLEMATIC_DOCUMENTS = set()
     EVENT_HOOK_NAME = 'document_viewer_resize_check<{0}>'
 
+    document: 'Document'
+    top_puller: DraggablePuller
+    ui: DocumentViewerUI
+    document_renderer: DocumentRenderer
+
     def __init__(self, parent: 'GUI', document_uuid: str):
+        super().__init__(parent)
         top_rect = pe.Rect(
             0, 0,
             parent.width,
@@ -250,25 +282,30 @@ class DocumentViewer(pe.ChildContext):
             detect_y=-top_rect.height, callback_y=self.close,
             draw_callback_y=self.draw_close_indicator
         )
+        self.ui = DocumentViewerUI(parent, self)
         try:
             self.document_renderer = DocumentRenderer(parent, self.document)
         except UnusableContent:
             self.PROBLEMATIC_DOCUMENTS.add(document_uuid)
             raise CannotRenderDocument(self.document)
-        super().__init__(parent)
+
         self.api.add_hook(self.EVENT_HOOK_NAME.format(id(self)), self.resize_check_hook)
 
     def loop(self):
         self.document_renderer()
         self.top_puller()
+        self.ui()
 
     def handle_event(self, event):
         self.document_renderer.handle_event(event)
+        if pe.event.key_DOWN(pe.K_ESCAPE):
+            self.close()
 
     def resize_check_hook(self, event):
         if isinstance(event, ResizeEvent):
             self.top_puller.rect.width = event.new_size[0]
             self.top_puller.draggable.area = (event.new_size[0], self.top_puller.draggable.area[1])
+            self.ui.align_x_rect()
 
     def close(self):
         self.document_renderer.close()
