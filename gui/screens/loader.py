@@ -25,7 +25,7 @@ class ReusedIcon:
 
 
 class InvertedIcon:
-    def __init__(self, item: str):
+    def __init__(self, item: 'AcceptedLoadTypes'):
         self.item = item
 
 
@@ -33,6 +33,9 @@ class ResizedIcon:
     def __init__(self, item: str, scale: float):
         self.item = item
         self.scale = scale
+
+
+AcceptedLoadTypes = Union[str, ReusedIcon, ResizedIcon, InvertedIcon]
 
 
 class Loader(pe.ChildContext, LogoMixin):
@@ -53,7 +56,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'cloud_synced': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'cloud_synced.svg')),
         'warning_circle': os.path.join(Defaults.ICON_DIR, 'warning_circle.svg'),
         'notebook_large': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'notebook_large.svg')),
-        'notebook': ReusedIcon('notebook_large', 0.333),
+        'notebook': InvertedIcon(ReusedIcon('notebook_large', 0.333)),
         'notebook_add': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'notebook_add.svg')),
         'share': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'share.svg')),
         'export': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'export.svg')),
@@ -106,7 +109,7 @@ class Loader(pe.ChildContext, LogoMixin):
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()
 
-    def __load(self, key: str, item: Union[str, ReusedIcon, ResizedIcon, InvertedIcon]):
+    def __load(self, key: str, item: AcceptedLoadTypes):
         if isinstance(item, ReusedIcon):
             self.icons[key] = self.icons[item.key].copy()
             self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
