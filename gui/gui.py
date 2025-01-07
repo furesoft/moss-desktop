@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from gui.screens.main_menu import MainMenu
     from .screens.import_screen import ImportScreen
     from .extensions import ExtensionManager
+    from .pp_helpers.popups import GUIConfirmPopup
 
 pe.init()
 
@@ -208,6 +209,7 @@ class GUI(pe.GameContext):
             self.screens.put(Installer(self))
         self.screens.put(VersionChecker(self))
         self.running = True
+        self.warning: 'GUIConfirmPopup' = None
         self.doing_fake_screen_refresh = False
         self.reset_fake_screen_refresh = True
         self.fake_screen_refresh_timer: float = None
@@ -232,6 +234,13 @@ class GUI(pe.GameContext):
         }
 
     def pre_loop(self):
+        if self.warning:
+            self.warning()
+            if self.warning.TYPE == 'sync_locked' and not self.api._upload_lock.locked():
+                self.warning = None
+                self.quit_check()
+            elif self.warning.closed:
+                self.warning = None
         if self.config.enable_fake_screen_refresh and (len(
                 self.screens.queue) != self.last_screen_count or not self.reset_fake_screen_refresh):
             self.doing_fake_screen_refresh = True
@@ -269,7 +278,8 @@ class GUI(pe.GameContext):
     def loop(self):
         if not self.running:
             return
-        self.screens.queue[-1]()
+        if not self.warning or not getattr(self.warning, 'wait', False):
+            self.screens.queue[-1]()
 
     def save_config(self):
         with open("config.json", "w") as f:
@@ -350,9 +360,16 @@ class GUI(pe.GameContext):
         self.extra_event(e)
         super().handle_event(e)
 
-    def quit_check(self):
+    def quit(self):
         self.running = False
         self.save_config_if_dirty()
+
+    def quit_check(self):
+        if self.api._upload_lock.locked():
+            from .pp_helpers.popups import GUISyncLockedPopup
+            self.warning = GUISyncLockedPopup(self)
+        else:
+            self.quit()
 
     def handle_api_event(self, e):
         if isinstance(e, APIFatal):

@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import pygameextra as pe
 
+from gui import APP_NAME
 from gui.defaults import Defaults
 from gui.events import ResizeEvent
 from gui.rendering import render_button_using_text
@@ -45,7 +46,6 @@ class Popup(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         if self.closed:
             return
         pe.button.rect((0, 0, *self.size), self.COLOR, self.COLOR, name=f'popup_{id(self)}_background')
-        pe.fill.interlace(Defaults.LINE_GRAY, 10)
         self.title.display()
         self.description.display()
         render_button_using_text(self.parent_context, self.texts['close'], outline=self.ratios.outline,
@@ -86,6 +86,26 @@ class ConfirmPopup(Popup):
                                  inactive_color=Defaults.BACKGROUND,
                                  active_color=Defaults.BUTTON_ACTIVE_COLOR_INVERTED,
                                  action=self.ok, name=f'popup_{id(self)}_confirm', text_infront=True)
+
+
+class GUIConfirmPopup(ConfirmPopup):
+    LAYER = pe.AFTER_POST_LAYER
+    TYPE: str = None
+
+
+class GUISyncLockedPopup(GUIConfirmPopup):
+    TYPE = "sync_locked"
+
+    def __init__(self, parent: "GUI"):
+        super().__init__(
+            parent,
+            "Sync in progress",
+            f"There is still a sync in progress. If you close {APP_NAME} now you may infer data loss!\n"
+            "It is recommended to wait until the sync is finished.\n\n"
+            f"Are you sure you want to force close {APP_NAME} without waiting for the sync to finish?\n"
+            f"Note: {APP_NAME} will proceed to close after the sync is finished.",
+            confirm_action=parent.quit
+        )
 
 
 class WarningPopup(Popup):

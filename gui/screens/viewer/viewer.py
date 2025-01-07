@@ -299,7 +299,13 @@ class DocumentViewer(pe.ChildContext):
         outline_rect.inflate_ip(self.ratios.pixel(5), self.ratios.pixel(5))
 
         # Draw the outline, the line and the arrow icon
-        pe.draw.rect(Defaults.BACKGROUND, outline_rect)
+        pe.draw.rect(
+            Defaults.BACKGROUND, outline_rect,
+            edge_rounding_topleft=0,
+            edge_rounding_topright=0,
+            edge_rounding_bottomleft=self.ratios.document_viewer_top_arrow_rounding,
+            edge_rounding_bottomright=self.ratios.document_viewer_top_arrow_rounding
+        )
         pe.draw.line(Defaults.LINE_GRAY,
                      (x_pos := self.top_puller.rect.centerx - self.ratios.pixel(2), self.top_puller.rect.centery),
                      (x_pos, icon_rect.centery), self.ratios.pixel(3))
