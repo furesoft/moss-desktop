@@ -16,8 +16,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-#        os: [ windows-latest, ubuntu-latest, macos-latest ]
-        os: [ windows-latest ]
+        #        os: [ windows-latest, ubuntu-latest, macos-latest ]
+        os: [ windows-latest, ubuntu-latest ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,8 +39,10 @@ jobs:
         shell: bash
         run: |
           PYGAME_DIR=$(python -c 'import os, pygameextra; print(os.path.dirname(pygameextra.pygame.__file__))')
+          EXTISM_DIR=$(python -c 'import os, extism_sys; print(os.path.dirname(extism_sys.__file__))')
           echo "PYGAME_DIR=${PYGAME_DIR}" >> $GITHUB_ENV
-          
+          echo "EXTISM_DIR=${EXTISM_DIR}" >> $GITHUB_ENV
+
       - name: Build
         uses: Nuitka/Nuitka-Action@main
         with:
@@ -48,7 +50,6 @@ jobs:
           script-name: moss.py
           mode: app
           disable-console: ${{ github.ref == 'refs/heads/main' }}
-          macos-create-app-bundle: true
           deployment: ${{ github.ref == 'refs/heads/main' }}
           report: compilation-report.xml
           windows-icon-from-ico: assets/icons/moss.ico
@@ -59,7 +60,8 @@ jobs:
             assets=assets
           include-data-files: |
             LICENSE=LICENSE
-            ${{ env.PYGAME_DIR }}/libpng16-16.dll=libpng16-16.dll
+            ${{ env.EXTISM_DIR }}/extism_sys.so=extism_sys/extism_sys.so
+            ${{ matrix.os == 'windows-latest' && format('{0}/libpng16-16.dll=libpng16-16.dll', env.PYGAME_DIR) || '' }}
           nofollow-import-to: |
             pymupdf.mupdf
 

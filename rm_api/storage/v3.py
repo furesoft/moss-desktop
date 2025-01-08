@@ -2,26 +2,28 @@ import asyncio
 import base64
 import json
 import os
+import ssl
+from functools import lru_cache
 from hashlib import sha256
+from json import JSONDecodeError
 from traceback import format_exc
+from typing import TYPE_CHECKING, Union, Tuple, List
 
 import aiohttp
+import certifi
 from aiohttp import ClientTimeout
 from colorama import Fore, Style
 from crc32c import crc32c
-from functools import lru_cache
-from json import JSONDecodeError
-
 from urllib3 import Retry
 
 import rm_api.models as models
-from typing import TYPE_CHECKING, Union, Tuple, List
-
 from rm_api.notifications.models import DocumentSyncProgress, FileSyncProgress
 from rm_api.storage.common import FileHandle, ProgressFileAdapter
 from rm_api.storage.exceptions import NewSyncRequired
 
 FILES_URL = "{0}sync/v3/files/{1}"
+
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 if TYPE_CHECKING:
     from rm_api import API
@@ -168,7 +170,8 @@ async def put_file_async(api: 'API', file: 'File', data: bytes, sync_event: Docu
     timeout = ClientTimeout(total=3600)  # One hour timeout limit
     google = False
 
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with aiohttp.ClientSession(timeout=timeout,
+                                     connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
         # Try uploading through remarkable
         try:
             response = await fetch_with_retries(
