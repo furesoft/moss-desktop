@@ -1,16 +1,17 @@
+import json
 import os
 import shutil
-import json
 from functools import lru_cache
 from traceback import print_exc
 from typing import TYPE_CHECKING, Tuple
 
 import pygameextra as pe
+import pyperclip
 from colorama import Fore
 
+import rm_api.models as models
 from gui.defaults import Defaults
 from gui.pp_helpers.context_menu import ContextMenu
-import rm_api.models as models
 from rm_api.storage.v3 import get_file_contents, get_file, make_files_request
 from rm_lines import rm_bytes_to_svg
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 
 class DocumentDebugPopup(ContextMenu):
     EXISTING = {}
+    CLOSE_AFTER_ACTION = True
     BUTTONS = (
         {
             "text": "Extract files",
@@ -37,6 +39,11 @@ class DocumentDebugPopup(ContextMenu):
             "text": "Render important",
             "icon": "star",
             "action": 'render_important'
+        },
+        {
+            "text": "Copy UUID",
+            "icon": "copy",
+            "action": 'copy_uuid'
         }
     )
 
@@ -133,7 +140,6 @@ class DocumentDebugPopup(ContextMenu):
                 if self.config.format_raw_exports and is_json:
                     data = json.dumps(json.loads(data), indent=4, sort_keys=True).encode()
                 f.write(data)
-        self.close()
 
     def render_pages(self, important: bool = False):
         if important:
@@ -162,8 +168,9 @@ class DocumentDebugPopup(ContextMenu):
             except Exception as e:
                 print_exc()
             i += 1
-        self.close()
 
     def render_important(self):
         self.render_pages(True)
-        self.close()
+
+    def copy_uuid(self):
+        pyperclip.copy(self.document.uuid)

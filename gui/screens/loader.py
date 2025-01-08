@@ -60,6 +60,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'notebook_add': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'notebook_add.svg')),
         'share': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'share.svg')),
         'export': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'export.svg')),
+        'copy': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'copy.svg')),
         'import': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'import.svg')),
         'info': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'information_circle.svg')),
         'rotate': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'rotate.svg')),

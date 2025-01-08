@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
+import pyperclip
 
 from gui.cloud_action_helper import import_notebook_pages_to_cloud
 from gui.defaults import Defaults
@@ -62,6 +63,7 @@ class DebugContextMenu(ContextMenu):
     DEBUG_FOLDER = 'debug'
     DEBUG_PREVIEW = 'debug_preview'
     DEBUG_PREVIEW_PAGE_INDEX = 'debug'
+    CLOSE_AFTER_ACTION = True
     PREVIEW_COLORS = (
         (255, 255, 255),
         (200, 200, 200),
@@ -123,6 +125,11 @@ class DebugContextMenu(ContextMenu):
             "text": "Hot reload",
             "icon": "rotate",
             "action": "hot_reload"
+        },
+        {
+            "text": "Copy folder UUID",
+            "icon": "copy",
+            "action": "copy_uuid"
         }
     )
 
@@ -171,6 +178,9 @@ class DebugContextMenu(ContextMenu):
 
         # Set the navigation parent
         self.main_menu.navigation_parent = self.DEBUG_FOLDER
+
+    def copy_uuid(self):
+        pyperclip.copy(self.main_menu.navigation_parent)
 
     def apply(self, item):
         if isinstance(item, DocumentCollection):
