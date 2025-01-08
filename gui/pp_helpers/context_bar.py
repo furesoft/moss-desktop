@@ -39,6 +39,7 @@ class ContextBar(pe.ChildContext, ABC):
         self.texts_inverted = []
         self.main_menu = parent
         self.initialized = False
+        self.context_menu_count = 0
         parent.quick_refresh()
         super().__init__(parent.parent_context)
 
@@ -63,8 +64,9 @@ class ContextBar(pe.ChildContext, ABC):
                     Defaults.BUTTON_ACTIVE_COLOR if button['action'] else Defaults.TRANSPARENT_COLOR,
                     action_set={
                         'l_click': {
-                            'action': getattr(self, button['action']) if button['action'] else lambda: None,
-                            'args': button.get('data', ()),
+                            'action': self.handle_action,
+                            'args': (getattr(self, button['action']) if button['action'] else lambda: None,
+                                     button.get('data', ())),
                         },
                         'r_click': {
                             'action': self.handle_new_context_menu,
@@ -84,6 +86,12 @@ class ContextBar(pe.ChildContext, ABC):
 
         return buttons
 
+    def handle_action(self, action, data):
+        pe.button.Button.action_call({
+            'action': action,
+            'args': data
+        })
+
     def handle_new_context_menu(self, context_menu_getter, index):
         if self.CONTEXT_MENU_OPEN_DIRECTION == 'down':
             ideal_position = self.buttons[index].area.bottomleft
@@ -100,6 +108,11 @@ class ContextBar(pe.ChildContext, ABC):
         if context_menu:
             context_menu()
             self.BUTTONS[index]['_context_menu'] = context_menu
+            self.context_menu_count += 1
+
+    def handle_context_menu_closed(self, button, button_meta):
+        button_meta['_context_menu'] = None
+        self.context_menu_count -= 1
 
     @abstractmethod
     def finalize_button_rect(self, buttons, width, height):
@@ -228,5 +241,5 @@ class ContextBar(pe.ChildContext, ABC):
 
             if context_menu := button_meta.get('_context_menu'):
                 if context_menu.is_closed:
-                    button_meta['_context_menu'] = None
+                    self.handle_context_menu_closed(button, button_meta)
                 context_menu()

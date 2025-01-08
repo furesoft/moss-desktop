@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 class ContextMenu(ContextBar, ABC):
     ENABLE_OUTLINE = True
     CONTEXT_MENU_OPEN_DIRECTION = 'right'
+    CLOSE_AFTER_ACTION: bool = False
 
     def __init__(self, parent: 'MainMenu', topleft: Tuple[int, int]):
         self.left, self.top = topleft
@@ -30,8 +31,21 @@ class ContextMenu(ContextBar, ABC):
         super().pre_loop()
 
     def close(self):
+        if self.context_menu_count > 0:
+            return
         self.is_closed = True
         self.quick_refresh()
+
+    def handle_context_menu_closed(self, button, button_meta):
+        if button_meta['_context_menu'].CLOSE_AFTER_ACTION:
+            super().handle_context_menu_closed(button, button_meta)
+            return self.close()
+        super().handle_context_menu_closed(button, button_meta)
+
+    def handle_action(self, action, data):
+        super().handle_action(action, data)
+        if self.CLOSE_AFTER_ACTION:
+            self.close()
 
     def post_loop(self):
         if self.waiting_for_let_go:
