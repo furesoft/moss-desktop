@@ -1,0 +1,3 @@
+[submodule "rm_api"]
+	path = rm_api
+	url = https://github.com/RedTTGMoss/rm_api.git
