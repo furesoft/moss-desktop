@@ -9,6 +9,7 @@ import extism
 from colorama import Fore
 from extism import Error as ExtismError
 from extism import Plugin
+from extism.extism import HOST_FN_REGISTRY
 
 from gui.defaults import Defaults
 from .host_functions import init_host_functions
@@ -129,7 +130,9 @@ class ExtensionManager:
         self.load_wasm_source(data, extension_name)
 
     def load_wasm_source(self, source: bytes, extension_name: str):
-        extension = Plugin(source, True)
+        extension = Plugin(source, True, functions=[
+            fn for fn in HOST_FN_REGISTRY if getattr(fn, 'moss', False)
+        ])
         self.extensions[extension_name] = extension
         self.current_extension = extension_name
         try:

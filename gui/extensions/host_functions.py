@@ -1,8 +1,9 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Type, Any
+from typing import TYPE_CHECKING, Annotated, Type, Any, Optional, Tuple, Union, List
 
 from box import Box
-from extism import host_fn, Json
+from extism import host_fn as extism_host_fn, Json, ValType
+from extism.extism import HOST_FN_REGISTRY
 
 from .input_types import TContextMenu
 from ..defaults import Defaults
@@ -32,6 +33,24 @@ def transform_to_json(fn):
         return {
             'value': fn(*args, **kwargs)
         }
+
+    return wrapper
+
+
+def host_fn(
+        name: Optional[str] = None,
+        namespace: Optional[str] = None,
+        signature: Optional[Tuple[List[ValType], List[ValType]]] = None,
+        user_data: Optional[Union[bytes, List[bytes]]] = None,
+):
+    func = extism_host_fn(name, namespace, signature, user_data)
+
+    @wraps(func)
+    def wrapper(fn):
+        result = func(fn)
+        setattr(HOST_FN_REGISTRY[-1], 'moss', True)
+
+        return result
 
     return wrapper
 
