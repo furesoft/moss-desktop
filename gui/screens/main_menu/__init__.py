@@ -75,6 +75,7 @@ class MainMenu(pe.ChildContext):
         self.path_queue = Queue()
         self.call_lock = Lock()
         self.file_sync_operation = None
+        self.previous_t = 0
         parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
@@ -285,13 +286,15 @@ class MainMenu(pe.ChildContext):
 
         # Draw progress bar for file sync operations
         if self.file_sync_operation and not self.file_sync_operation.finished:
-            draw_bottom_loading_bar(self.parent_context, self.file_sync_operation.done, self.file_sync_operation.total)
+            self.previous_t = draw_bottom_loading_bar(self.parent_context, self.file_sync_operation.done,
+                                                      self.file_sync_operation.total, self.previous_t)
             return
 
         # Draw sync operation from loader
         loader: 'Loader' = self.parent_context.screens.queue[0]  # The loader is always the first screen
         if loader.files_to_load is not None:
-            draw_bottom_loading_bar(self.parent_context, loader.files_loaded, loader.files_to_load)
+            self.previous_t = draw_bottom_loading_bar(self.parent_context, loader.files_loaded, loader.files_to_load,
+                                                      self.previous_t)
             # Update the data if the loader has loaded more files
             if loader.loading_feedback + 3 < loader.files_loaded:
                 self.get_items()
@@ -299,6 +302,8 @@ class MainMenu(pe.ChildContext):
         elif loader.loading_feedback:
             self.get_items()
             loader.loading_feedback = 0
+            self.previous_t = 0
+            draw_bottom_loading_bar(self.parent_context, 1, 1, finish=True)
         elif time.time() - loader.loading_complete_marker < 1:  # For 1 second after loading is complete
             draw_bottom_loading_bar(self.parent_context, 1, 1, finish=True)
 

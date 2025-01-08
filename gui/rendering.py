@@ -385,7 +385,7 @@ def draw_bottom_bar(gui: 'GUI'):
     )
 
 
-def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, finish: bool = False):
+def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, previous_t: float = 0, finish: bool = False):
     draw_bottom_bar(gui)
     bottom_bar_rect = get_bottom_bar_rect(gui)
     loading_bar_rect = pe.Rect(0, 0, gui.ratios.bottom_loading_bar_width, gui.ratios.bottom_loading_bar_height)
@@ -396,8 +396,14 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, finish: bool =
     pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, loading_bar_rect, 0,
                  edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
+    t = current / total
+    if t == 0 or t == 1:
+        smooth_t = t
+    else:
+        smooth_t = previous_t + (t - previous_t) * pe.settings.game_context.delta_time * 10
+
     if total > 0:
-        loading_bar_rect.width = int(loading_bar_rect.width * current / total)
+        loading_bar_rect.width = int(loading_bar_rect.width * smooth_t)
 
     pe.draw.rect(Defaults.BACKGROUND, loading_bar_rect, 0, edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
@@ -414,3 +420,5 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, finish: bool =
         icon_rect.midright = loading_bar_rect.midleft
         icon_rect.right -= gui.ratios.bottom_loading_bar_padding
         icon.display(icon_rect.topleft)
+
+    return smooth_t
