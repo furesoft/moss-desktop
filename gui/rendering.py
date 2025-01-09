@@ -8,7 +8,8 @@ from gui.pp_helpers import FullTextPopup, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler
 from gui.screens.viewer import DocumentViewer
 from gui.screens.viewer.viewer import CannotRenderDocument
-from rm_api import DocumentSyncProgress
+from gui.sync_stages import SYNC_STAGE_ICONS
+from rm_api import DocumentSyncProgress, STAGE_SYNC
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -385,7 +386,12 @@ def draw_bottom_bar(gui: 'GUI'):
     )
 
 
-def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, previous_t: float = 0, finish: bool = False):
+def draw_bottom_loading_bar(
+        gui: 'GUI',
+        current: int, total: int,
+        previous_t: float = 0,
+        finish: bool = False, stage: int = STAGE_SYNC
+):
     draw_bottom_bar(gui)
     bottom_bar_rect = get_bottom_bar_rect(gui)
     loading_bar_rect = pe.Rect(0, 0, gui.ratios.bottom_loading_bar_width, gui.ratios.bottom_loading_bar_height)
@@ -396,7 +402,7 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, previous_t: fl
     pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, loading_bar_rect, 0,
                  edge_rounding=gui.ratios.bottom_loading_bar_rounding)
 
-    t = current / total
+    t = (current / total) if total else 0
     if t == 0 or t == 1:
         smooth_t = t
     elif abs(t - previous_t) > 0.01:
@@ -412,11 +418,41 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, previous_t: fl
 
     # Make and show text of current / total
     if not finish:
+        prepend_text = gui.main_menu.texts[f'rm_api_stage_{stage or STAGE_SYNC}']
+
+        icon_key = f'{SYNC_STAGE_ICONS[stage or STAGE_SYNC]}'
+        base_icon: pe.Image = gui.icons[icon_key]
+        base_icon_rect = pe.Rect(0, 0, *base_icon.size)
+
+        if icon_key == 'rotate_inverted':
+            icon = pe.Image(
+                pe.pygame.transform.rotate(
+                    base_icon.surface.surface, 360 - gui.main_menu.rotate_angle  # Make it rotate clockwise
+                )
+            )
+            icon_rect = pe.Rect(0, 0, *icon.size)
+        else:
+            icon = base_icon
+            icon_rect = base_icon_rect
+
         text = pe.Text(f"{current} / {total}", Defaults.MAIN_MENU_PROGRESS_FONT, gui.ratios.bottom_bar_size,
                        colors=Defaults.TEXT_COLOR_H)
+
+        # Position the texts and icon
         text.rect.midright = loading_bar_rect.midleft
         text.rect.right -= gui.ratios.bottom_loading_bar_padding
+
+        base_icon_rect.midright = text.rect.midleft
+        base_icon_rect.right -= gui.ratios.bottom_loading_bar_padding
+
+        prepend_text.rect.midright = base_icon_rect.midleft
+        prepend_text.rect.right -= gui.ratios.bottom_loading_bar_padding
+
+        icon_rect.center = base_icon_rect.center
+
         text.display()
+        prepend_text.display()
+        icon.display(icon_rect.topleft)
     else:
         icon: pe.Image = gui.icons['cloud_synced_inverted']
         icon_rect = pe.Rect(0, 0, *icon.size)

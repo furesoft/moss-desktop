@@ -12,6 +12,7 @@ from gui.rendering import draw_bottom_loading_bar, get_bottom_bar_rect, render_h
 from gui.screens.main_menu.context_bars import TopBar, TopBarSelectOne, TopBarSelectMulti, TopBarSelectMove, TopBarTrash
 from gui.screens.main_menu.context_menus import SideBar
 from gui.screens.main_menu.main_doc_view import MainMenuDocView
+from gui.sync_stages import SYNC_STAGE_TEXTS
 from rm_api.models import Document
 from rm_api.notifications.models import SyncRefresh, FileSyncProgress, NewDocuments, DocumentSyncProgress
 
@@ -46,6 +47,8 @@ class MainMenu(pe.ChildContext):
     }
 
     SMALL_HEADER_TEXTS = {
+        f'rm_api_stage_{stage}': stage_text
+        for stage, stage_text in SYNC_STAGE_TEXTS.items()
     }
 
     MAINTAIN_TEXT_KEYS = (
@@ -76,6 +79,7 @@ class MainMenu(pe.ChildContext):
         self.call_lock = Lock()
         self.file_sync_operation = None
         self.previous_t = 0
+        self.rotate_angle = 0
         parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
@@ -106,7 +110,7 @@ class MainMenu(pe.ChildContext):
                 self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
         for key, text in self.SMALL_HEADER_TEXTS.items():
             self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
-                                      (0, 0), Defaults.TEXT_COLOR)
+                                      (0, 0), Defaults.TEXT_COLOR_H)
 
         self.context_menus = {}
 
@@ -286,8 +290,12 @@ class MainMenu(pe.ChildContext):
 
         # Draw progress bar for file sync operations
         if self.file_sync_operation and not self.file_sync_operation.finished:
-            self.previous_t = draw_bottom_loading_bar(self.parent_context, self.file_sync_operation.done,
-                                                      self.file_sync_operation.total, self.previous_t)
+            self.previous_t = draw_bottom_loading_bar(
+                self.parent_context, self.file_sync_operation.done,
+                self.file_sync_operation.total, self.previous_t,
+                stage=self.file_sync_operation.stage
+            )
+            self.update_sync_angle()
             return
 
         # Draw sync operation from loader
@@ -296,9 +304,10 @@ class MainMenu(pe.ChildContext):
             self.previous_t = draw_bottom_loading_bar(self.parent_context, loader.files_loaded, loader.files_to_load,
                                                       self.previous_t)
             # Update the data if the loader has loaded more files
-            if loader.loading_feedback + 3 < loader.files_loaded:
+            if loader.loading_feedback + 3 < loader.files_loaded:  # Update menu every 3 files
                 self.get_items()
                 loader.loading_feedback = loader.files_loaded
+            self.update_sync_angle()
         elif loader.loading_feedback:
             self.get_items()
             loader.loading_feedback = 0
@@ -350,3 +359,8 @@ class MainMenu(pe.ChildContext):
 
     def handle_event(self, event):
         self.doc_view.handle_event(event)
+
+    def update_sync_angle(self):
+        self.rotate_angle += 360 * self.delta_time
+        if self.rotate_angle >= 360:
+            self.rotate_angle = 0
