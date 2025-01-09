@@ -399,8 +399,11 @@ def draw_bottom_loading_bar(gui: 'GUI', current: int, total: int, previous_t: fl
     t = current / total
     if t == 0 or t == 1:
         smooth_t = t
-    else:
+    elif abs(t - previous_t) > 0.01:
         smooth_t = previous_t + (t - previous_t) * pe.settings.game_context.delta_time * 10
+    else:
+        smooth_t = t
+    smooth_t = min(1, max(0, smooth_t))
 
     if total > 0:
         loading_bar_rect.width = int(loading_bar_rect.width * smooth_t)
