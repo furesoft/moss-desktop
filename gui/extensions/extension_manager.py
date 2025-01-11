@@ -136,7 +136,7 @@ class ExtensionManager:
         self.extensions[extension_name] = extension
         self.current_extension = extension_name
         try:
-            extension.call('register', self.state,
+            extension.call('moss_register', self.state,
                            lambda output: self.handle_register_output(output, extension_name))
         except ExtismError:
             self.extensions.pop(extension_name)
