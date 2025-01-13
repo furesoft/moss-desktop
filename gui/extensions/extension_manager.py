@@ -60,7 +60,7 @@ class ExtensionManager:
         for extension_name, extension in self.extensions.items():
             self.current_extension = extension_name
             try:
-                extension.call('unregister', b'')
+                extension.call('moss_extension_unregister', b'')
             except ExtismError:
                 self.error(f"Extension {extension} failed to unregister")
                 print_exc()
@@ -136,7 +136,7 @@ class ExtensionManager:
         self.extensions[extension_name] = extension
         self.current_extension = extension_name
         try:
-            extension.call('register', self.state,
+            extension.call('moss_extension_register', self.state,
                            lambda output: self.handle_register_output(output, extension_name))
         except ExtismError:
             self.extensions.pop(extension_name)
@@ -207,7 +207,7 @@ class ExtensionManager:
             self.current_extension = extension_name
             try:
                 extension.call(
-                    'extension_loop',
+                    'moss_extension_loop',
                     self.state
                 )
             except ExtismError:
