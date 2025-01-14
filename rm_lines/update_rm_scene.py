@@ -1,11 +1,13 @@
 import atexit
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 import time
 import venv
-from typing import List, Tuple
+from itertools import chain
+from typing import List, Tuple, Dict
 
 import colorama
 from colorama import Fore
@@ -25,6 +27,7 @@ PIP_EXECUTABLE = os.path.join(VENV_BIN_DIR, "pip" + (".exe" if os.name == "nt" e
 PYTHON_EXECUTABLE = os.path.join(VENV_BIN_DIR, "python" + (".exe" if os.name == "nt" else ""))
 SOURCE_DIR = os.path.join(MODIFICATIONS_DIR, "src", "rmscene")
 TAB = '    '
+TESTING = True
 
 atexit.register(lambda: shutil.rmtree(MODIFICATIONS_DIR))
 
@@ -59,6 +62,187 @@ def run_import_replacers(line):
         return remove_from(line, 'KW_ONLY')
 
     return line
+
+
+def scene_items_replacers(line):
+    return re.sub(r'\[([^\|]+)\s\|\s([^\]]+)\]', r'[tp.Union[\1, \2]]', line)
+
+
+def dataclass_join_base(base_items, items):
+    internal_items = {}
+    for key, *item in base_items:
+        internal_items[key] = item
+    for key, *item in items:
+        internal_items[key] = item
+
+    return sorted(((key, *value) for key, value in internal_items.items()), key=lambda x: x[2] is not None)
+
+
+def subtractive_join_base(base_items, items):
+    internal_items = {}
+    for key, *item in items:
+        internal_items[key] = item
+    for key, *item in base_items:
+        if key in internal_items:
+            del internal_items[key]
+
+    return ((key, *value) for key, value in internal_items.items())
+
+
+def dataclass_replacer(code: str):
+    classes = []
+    lines = (line for line in code.splitlines())
+    base_args: Dict[str, List[Tuple[str, str, str]]] = {
+        'ABC': []
+    }
+    base_kwargs: Dict[str, List[Tuple[str, str, str]]] = {
+        'ABC': []
+    }
+    while (line := next(lines, None)) is not None:
+        class_lines = []
+        in_between_lines = []
+        var_lines = []
+        if line.startswith('@dataclass') or line.endswith('SceneItemBlock):'):
+            if line.startswith('@dataclass'):
+                class_lines.append(line)  # @dataclass
+                class_definition = next(lines)
+            else:
+                class_definition = line
+            class_lines.append(class_definition)  # class ...
+            while (line := next(lines, None)) is not None:  # Detect tab
+                class_lines.append(line)
+                if len(line) < 1:
+                    line = next(lines)
+                    if len(line) < 1:
+                        break
+                    else:
+                        class_lines.append(line)
+                if line.startswith('\t\t') or line.startswith(f'{TAB}{TAB}'):
+                    in_between_lines.append(line)
+                    continue
+                elif not (line.startswith('\t') or line.startswith(TAB)):
+                    break
+                line_stripped = line.strip()
+                if line_stripped.startswith("def") or line_stripped.startswith("@"):  # Detect new method or decorator
+                    in_between_lines.append(line)
+                    continue
+                if line_stripped.startswith('"') or line_stripped.startswith("#"):
+                    continue
+                if line_stripped.split(':')[0].isupper():
+                    in_between_lines.append(line)
+                    continue
+                var_lines.append(line_stripped)
+        else:
+            continue
+
+        class_remade_lines = [
+            class_definition,
+            *in_between_lines
+        ]
+        args = []
+        kwargs = []
+
+        kwarg_only = False
+
+        print(var_lines)
+
+        for var in var_lines:
+            var_name, var_type = [part.strip() for part in var.split(':')]
+            if '=' in var_type:
+                var_type, default = var_type.split('=')
+                var_type = var_type.strip()
+                default_value = default.strip()
+            else:
+                default_value = None
+            if var_type == 'KW_ONLY':
+                kwarg_only = True
+                continue
+            if kwarg_only:
+                kwargs.append((var_name, var_type, default_value))
+            else:
+                args.append((var_name, var_type, default_value))
+
+        if is_base := not class_definition.endswith('):'):  # Doesn't inherit anything
+            base_class_name = class_definition.split(':')[0].split()[-1].strip()
+            base_args[base_class_name] = args.copy()
+            base_kwargs[base_class_name] = kwargs.copy()
+            args.clear()
+            kwargs.clear()
+        else:
+            initial_base_class_name = class_definition.split('(')[1].split(')')[0].strip()  # Get the inherited class
+            class_name = class_definition.split(':')[0].split()[-1].split('(')[0].strip()  # Get the class name
+            if initial_base_class_name == 'ABC' or class_name == 'SceneItemBlock':  # If it's an abstract class, treat it as a base class
+                base_class_name = class_name
+
+                base_args[base_class_name] = args.copy()
+                base_kwargs[base_class_name] = kwargs.copy()
+
+                if class_name != 'SceneItemBlock':
+                    args.clear()
+                    kwargs.clear()
+                    is_base = True
+                else:
+                    base_class_name = initial_base_class_name  # Restore the base to complete this new base
+            else:
+                base_class_name = initial_base_class_name
+
+        if not (args or kwargs or is_base):  # skip if no args, kwargs and not a base class
+            continue
+
+        args_code = ', '.join(
+            f"{arg_name}: {arg_type} = {default_value}"
+            if default_value else f"{arg_name}: {arg_type}"
+            for arg_name, arg_type, default_value in dataclass_join_base(
+                base_args[base_class_name], args
+            )
+        )  # Generate the args code for the __init__ method
+        kwargs_code = ', '.join(
+            f"{kwarg_name}: {kwarg_type} = {default_value}"
+            if default_value else f"{kwarg_name}: {kwarg_type}"
+            for kwarg_name, kwarg_type, default_value in dataclass_join_base(
+                base_kwargs[base_class_name], kwargs
+            )
+        )  # Generate the kwargs code for the __init__ method
+        class_remade_lines.append(
+            f"{TAB}def __init__(self, {args_code + ', ' if args_code else ''}{'*, ' + kwargs_code if kwargs_code else ''}):")
+
+        # Generate the __init__ method
+        if not is_base:
+            base_args_code = ', '.join(arg_name for arg_name, _, _ in base_args[base_class_name])
+            base_kwargs_code = ', '.join(
+                f'{kwarg_name} = {kwarg_name}' for kwarg_name, _, _ in base_kwargs[base_class_name])
+            class_remade_lines.append(
+                f"{TAB}{TAB}super().__init__({base_args_code + ', ' if base_args_code else ''}{base_kwargs_code})")
+            # Call the super class __init__ method
+
+        for var_name, var_type, _ in (
+                base_args[base_class_name] + base_kwargs[base_class_name]) \
+                if is_base else chain(
+            subtractive_join_base(base_args[base_class_name], args),
+            subtractive_join_base(base_kwargs[base_class_name], kwargs)
+        ):
+            class_remade_lines.append(f"{TAB}{TAB}self.{var_name}: {var_type} = {var_name}")
+
+        class_code = '\n'.join(class_lines)
+        class_remade_code = '\n'.join(class_remade_lines)
+
+        classes.append((class_code, class_remade_code))
+
+    for class_code, class_remade_code in classes:
+        code = code.replace(class_code, class_remade_code)
+        print(
+            f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RED}\n"
+
+            f"{class_code}\n"
+
+            f"{Fore.CYAN}{'=' * 30}{Fore.GREEN}\n"
+
+            f"{class_remade_code}\n"
+
+            f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RESET}"
+        )
+
+    return code
 
 
 class WaitNicely:
@@ -127,100 +311,14 @@ with OpenModify(os.path.join(MODIFICATIONS_DIR, "pyproject.toml")) as (f, old):
         run_poetry_replacers(line)
         for line in old.splitlines()
     ))
+
 with OpenModify(os.path.join(SOURCE_DIR, 'tagged_block_reader.py')) as (f, old):
     imports_fixed = '\n'.join(
         run_import_replacers(line)
         for line in old.splitlines()
     )
-    classes = []
-    lines = (line for line in imports_fixed.splitlines())
-    base_args: List[Tuple[str, str, str]] = []
-    base_kwargs: List[Tuple[str, str, str]] = []
-    while (line := next(lines, None)) is not None:
-        class_lines = []
-        var_lines = []
-        if line.startswith('@dataclass'):
-            class_lines.append(line)  # @dataclass
-            class_definition = next(lines)
-            class_lines.append(class_definition)  # class ...
-            while (line := next(lines, None)) is not None:  # Detect tab
-                class_lines.append(line)
-                if len(line) < 1:
-                    line = next(lines)
-                    if len(line) < 1:
-                        break
-                elif not (line.startswith('\t') or line.startswith(' ' * 4)):
-                    break
-                line_stripped = line.strip()
-                if line_stripped.startswith('"') or line_stripped.startswith("#"):
-                    continue
-                var_lines.append(line_stripped)
-        else:
-            continue
 
-        class_remade_lines = [
-            class_definition
-        ]
-        args = []
-        kwargs = []
-
-        kwarg_only = False
-        for var in var_lines:
-            var_name, var_type = [part.strip() for part in var.split(':')]
-            if '=' in var_type:
-                var_type, default = var_type.split('=')
-                var_type = var_type.strip()
-                default_value = default.strip()
-            else:
-                default_value = None
-            if var_type == 'KW_ONLY':
-                kwarg_only = True
-                continue
-            if kwarg_only:
-                kwargs.append((var_name, var_type, default_value))
-            else:
-                args.append((var_name, var_type, default_value))
-
-        if is_base := class_definition.endswith('BlockInfo:'):
-            base_args = args.copy()
-            base_kwargs = kwargs.copy()
-            args.clear()
-            kwargs.clear()
-
-        if not (args or kwargs or is_base):
-            continue
-
-        args_code = ', '.join(
-            f"{arg_name}: {arg_type} = {default_value}"
-            if default_value else f"{arg_name}: {arg_type}"
-            for arg_name, arg_type, default_value in (
-                *base_args, *args
-            )
-        )
-        kwargs_code = ', '.join(
-            f"{kwarg_name}: {kwarg_type} = {default_value}"
-            if default_value else f"{kwarg_name}: {kwarg_type}"
-            for kwarg_name, kwarg_type, default_value in (
-                *base_kwargs, *kwargs
-            )
-        )
-        class_remade_lines.append(f"{TAB}def __init__({args_code}, *, {kwargs_code}):")
-        if not is_base:
-            base_args_code = ', '.join(arg_name for arg_name, _, _ in base_args)
-            base_kwargs_code = ', '.join(f'{kwarg_name} = {kwarg_name}' for kwarg_name, _, _ in base_kwargs)
-            class_remade_lines.append(
-                f"{TAB}{TAB}super().__init__({base_args_code}, {base_kwargs_code})")
-        for var_name, var_type, _ in args + kwargs:
-            class_remade_lines.append(f"{TAB}{TAB}self.{var_name}: {var_type} = {var_name}")
-
-        class_code = '\n'.join(class_lines)
-        class_remade_code = '\n'.join(class_remade_lines)
-
-        classes.append((class_code, class_remade_code))
-
-    final = imports_fixed
-    for class_code, class_remade_code in classes:
-        final = final.replace(class_code, class_remade_code)
+    final = dataclass_replacer(imports_fixed)
 
     f.write(final)
 
@@ -229,7 +327,18 @@ with OpenModify(os.path.join(SOURCE_DIR, 'scene_stream.py')) as (f, old):
         run_import_replacers(line)
         for line in old.splitlines()
     )
-    f.write(imports_fixed)
+
+    final = dataclass_replacer(imports_fixed)
+
+    f.write(final)
+
+with OpenModify(os.path.join(SOURCE_DIR, 'scene_items.py')) as (f, old):
+    typing_fixed = '\n'.join(
+        scene_items_replacers(line)
+        for line in old.splitlines()
+    )
+
+    f.write(typing_fixed)
 
 # ========================================
 print_stage("Running tests")
@@ -246,9 +355,9 @@ if 'error' in tests_output.lower():
     print(f"{Fore.RED}Tests had some errors{Fore.RESET}")
     print_stage("Please fix the modifications before continuing")
     print(f"{Fore.RED}{tests_output}{Fore.RESET}")
-    exit(1)
 
 # ========================================
 print_stage("Copy sources...")
 # ========================================
-shutil.copytree(os.path.join(MODIFICATIONS_DIR, "src/rmscene"), os.path.join(WORK_DIR, "rmscene"), dirs_exist_ok=True)
+shutil.copytree(os.path.join(MODIFICATIONS_DIR, "src/rmscene"), os.path.join(WORK_DIR, "rmscene"),
+                dirs_exist_ok=True)
