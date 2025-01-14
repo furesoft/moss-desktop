@@ -27,7 +27,7 @@ PIP_EXECUTABLE = os.path.join(VENV_BIN_DIR, "pip" + (".exe" if os.name == "nt" e
 PYTHON_EXECUTABLE = os.path.join(VENV_BIN_DIR, "python" + (".exe" if os.name == "nt" else ""))
 SOURCE_DIR = os.path.join(MODIFICATIONS_DIR, "src", "rmscene")
 TAB = '    '
-TESTING = True
+DEBUG = False
 
 atexit.register(lambda: shutil.rmtree(MODIFICATIONS_DIR))
 
@@ -144,7 +144,8 @@ def dataclass_replacer(code: str):
 
         kwarg_only = False
 
-        print(var_lines)
+        if DEBUG:
+            print(var_lines)
 
         for var in var_lines:
             var_name, var_type = [part.strip() for part in var.split(':')]
@@ -230,17 +231,18 @@ def dataclass_replacer(code: str):
 
     for class_code, class_remade_code in classes:
         code = code.replace(class_code, class_remade_code)
-        print(
-            f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RED}\n"
+        if DEBUG:
+            print(
+                f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RED}\n"
 
-            f"{class_code}\n"
+                f"{class_code}\n"
 
-            f"{Fore.CYAN}{'=' * 30}{Fore.GREEN}\n"
+                f"{Fore.CYAN}{'=' * 30}{Fore.GREEN}\n"
 
-            f"{class_remade_code}\n"
+                f"{class_remade_code}\n"
 
-            f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RESET}"
-        )
+                f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RESET}"
+            )
 
     return code
 
