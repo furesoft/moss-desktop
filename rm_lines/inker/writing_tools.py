@@ -35,7 +35,11 @@ MAGIC_PENCIL_SIZE = 44.6 * 2.3
 class Pen:
     def __init__(self, base_width, base_color_id):
         self.base_width = base_width
-        self.base_color = remarkable_palette[base_color_id]
+        try:
+            self.base_color = remarkable_palette[base_color_id]
+        except KeyError:
+            self.base_color = remarkable_palette[0]
+            print("Unknown color_id: ", base_color_id)
         self.segment_length = 1000
         self.base_opacity = 1
         self.name = "Basic Pen"
