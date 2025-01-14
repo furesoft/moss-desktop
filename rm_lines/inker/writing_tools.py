@@ -32,6 +32,10 @@ remarkable_palette = {
 MAGIC_PENCIL_SIZE = 44.6 * 2.3
 
 
+class PenException(Exception):
+    pass
+
+
 class Pen:
     def __init__(self, base_width, base_color_id):
         self.base_width = base_width
@@ -116,7 +120,7 @@ class Pen:
         elif pen_nr == 6:
             color_id = 2
             return Eraser(width, color_id)
-        raise Exception(f'Unknown pen_nr: {pen_nr}')
+        raise PenException(f'Unknown pen_nr: {pen_nr}')
 
 
 class Fineliner(Pen):

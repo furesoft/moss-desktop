@@ -5,11 +5,12 @@ https://github.com/chemag/maxio .
 """
 import io
 from pathlib import Path
+from traceback import print_exc
 from typing import Union
 
 from rm_lines.inker.document_size_tracker import DocumentSizeTracker, NotebookSizeTracker
 from .writing_tools import (
-    Pen,
+    Pen, PenException,
 )
 from ..rmscene.scene_items import ParagraphStyle, Group, Line, Text
 from ..rmscene.scene_tree import SceneTree
@@ -113,7 +114,10 @@ def draw_group(item: Group, output, anchor_pos, track_xy: DocumentSizeTracker):
         if isinstance(child, Group):
             draw_group(child, output, anchor_pos, track_xy=track_xy)
         elif isinstance(child, Line):
-            draw_stroke(child, output, track_xy)
+            try:
+                draw_stroke(child, output, track_xy)
+            except PenException:
+                print_exc()
     output.write(f'    </g>\n')
 
 
