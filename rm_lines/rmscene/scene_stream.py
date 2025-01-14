@@ -33,9 +33,11 @@ _logger = logging.getLogger(__name__)
 
 class Block(ABC):
     BLOCK_TYPE: tp.ClassVar
+
     def version_info(self, writer: TaggedBlockWriter) -> tuple[int, int]:
         """Return (min_version, current_version) to use when writing."""
         return (1, 1)
+
     def get_block_type(self) -> int:
         """Return block type for this block.
         By default, returns the block's BLOCK_TYPE attribute, but this method
@@ -43,6 +45,7 @@ class Block(ABC):
         types.
         """
         return self.BLOCK_TYPE
+
     @classmethod
     def lookup(cls, block_type: int) -> tp.Optional[tp.Type[Block]]:
         if getattr(cls, "BLOCK_TYPE", None) == block_type:
@@ -51,6 +54,7 @@ class Block(ABC):
             if match := subclass.lookup(block_type):
                 return match
         return None
+
     @classmethod
     def read(self, reader: TaggedBlockReader) -> Optional[Block]:
         """
@@ -79,6 +83,7 @@ class Block(ABC):
         # Keep any unparsed extra data
         block.extra_data = block_info.extra_data
         return block
+
     def write(self, writer: TaggedBlockWriter):
         """Write the block header and content to the stream."""
         min_version, current_version = self.version_info(writer)
@@ -86,57 +91,82 @@ class Block(ABC):
             self.to_stream(writer)
             # Write any leftover extra data that wasn't parsed
             writer.data.write_bytes(self.extra_data)
+
     @classmethod
     @abstractmethod
     def from_stream(cls, reader: TaggedBlockReader) -> Block:
         """Read content of block from stream."""
         raise NotImplementedError()
+
     @abstractmethod
     def to_stream(self, writer: TaggedBlockWriter):
         """Write content of block to stream."""
         raise NotImplementedError()
+
     def __init__(self, *, extra_data: bytes = b""):
         self.extra_data: bytes = extra_data
+
 
 class UnreadableBlock(Block):
     def get_block_type(self) -> int:
         return self.info.block_type
+
     @classmethod
     def from_stream(cls, reader: TaggedBlockReader) -> Block:
         raise NotImplementedError()
+
     def to_stream(self, writer: TaggedBlockWriter):
         writer.data.write_bytes(self.data)
-    def __init__(self, error: str, data: bytes, info: MainBlockInfo, *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+
+    def __init__(
+        self, error: str, data: bytes, info: MainBlockInfo, *, extra_data: bytes = b""
+    ):
+        super().__init__(extra_data=extra_data)
         self.error: str = error
         self.data: bytes = data
         self.info: MainBlockInfo = info
 
+
 class SceneInfo(Block):
     BLOCK_TYPE: tp.ClassVar = 0x0D
+
     def version_info(self, _) -> tuple[int, int]:
         """Return (min_version, current_version) to use when writing."""
         return (0, 1)
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> SceneInfo:
         current_layer = stream.read_lww_id(1)
         background_visible = stream.read_lww_bool(2)
         root_document_visible = stream.read_lww_bool(3)
-        return SceneInfo(current_layer=current_layer,
-                         background_visible=background_visible,
-                         root_document_visible=root_document_visible)
+        return SceneInfo(
+            current_layer=current_layer,
+            background_visible=background_visible,
+            root_document_visible=root_document_visible,
+        )
+
     def to_stream(self, writer: TaggedBlockWriter):
         writer.write_lww_id(1, self.current_layer)
         writer.write_lww_bool(2, self.background_visible)
         writer.write_lww_bool(3, self.root_document_visible)
-    def __init__(self, current_layer: LwwValue[CrdtId], background_visible: LwwValue[bool], root_document_visible: LwwValue[bool], *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+
+    def __init__(
+        self,
+        current_layer: LwwValue[CrdtId],
+        background_visible: LwwValue[bool],
+        root_document_visible: LwwValue[bool],
+        *,
+        extra_data: bytes = b"",
+    ):
+        super().__init__(extra_data=extra_data)
         self.current_layer: LwwValue[CrdtId] = current_layer
         self.background_visible: LwwValue[bool] = background_visible
         self.root_document_visible: LwwValue[bool] = root_document_visible
 
+
 class AuthorIdsBlock(Block):
     BLOCK_TYPE: tp.ClassVar = 0x09
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> AuthorIdsBlock:
         _logger.debug("Reading %s", cls.__name__)
@@ -151,6 +181,7 @@ class AuthorIdsBlock(Block):
                 author_id = stream.data.read_uint16()
                 author_ids[author_id] = uuid
         return AuthorIdsBlock(author_ids)
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         num_subblocks = len(self.author_uuids)
@@ -160,12 +191,15 @@ class AuthorIdsBlock(Block):
                 writer.data.write_varuint(len(uuid.bytes_le))
                 writer.data.write_bytes(uuid.bytes_le)
                 writer.data.write_uint16(author_id)
+
     def __init__(self, author_uuids: dict[int, UUID], *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+        super().__init__(extra_data=extra_data)
         self.author_uuids: dict[int, UUID] = author_uuids
+
 
 class MigrationInfoBlock(Block):
     BLOCK_TYPE: tp.ClassVar = 0x00
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> MigrationInfoBlock:
         "Parse migration info"
@@ -177,6 +211,7 @@ class MigrationInfoBlock(Block):
         else:
             unknown = False
         return MigrationInfoBlock(migration_id, is_device, unknown)
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         version = writer.options.get("version", Version("9.9.9"))
@@ -184,19 +219,30 @@ class MigrationInfoBlock(Block):
         writer.write_bool(2, self.is_device)
         if version >= Version("3.2.2"):
             writer.write_bool(3, self._unknown)
-    def __init__(self, migration_id: CrdtId, is_device: bool, _unknown: bool = False, *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+
+    def __init__(
+        self,
+        migration_id: CrdtId,
+        is_device: bool,
+        _unknown: bool = False,
+        *,
+        extra_data: bytes = b"",
+    ):
+        super().__init__(extra_data=extra_data)
         self.migration_id: CrdtId = migration_id
         self.is_device: bool = is_device
         self._unknown: bool = _unknown
 
+
 class TreeNodeBlock(Block):
     BLOCK_TYPE: tp.ClassVar = 0x02
+
     def version_info(self, writer: TaggedBlockWriter) -> tuple[int, int]:
         """Return (min_version, current_version) to use when writing."""
         version = writer.options.get("version", Version("9999"))
         # XXX this is a guess about which version this changed in
         return (1, 2) if (version >= Version("3.4")) else (1, 1)
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> TreeNodeBlock:
         "Parse tree node block."
@@ -213,6 +259,7 @@ class TreeNodeBlock(Block):
             group.anchor_threshold = stream.read_lww_float(9)
             group.anchor_origin_x = stream.read_lww_float(10)
         return cls(group)
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         group = self.group
@@ -230,15 +277,19 @@ class TreeNodeBlock(Block):
             writer.write_lww_byte(8, group.anchor_type)
             writer.write_lww_float(9, group.anchor_threshold)
             writer.write_lww_float(10, group.anchor_origin_x)
+
     def __init__(self, group: si.Group, *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+        super().__init__(extra_data=extra_data)
         self.group: si.Group = group
+
 
 class PageInfoBlock(Block):
     BLOCK_TYPE: tp.ClassVar = 0x0A
+
     def version_info(self, _) -> tuple[int, int]:
         """Return (min_version, current_version) to use when writing."""
         return (0, 1)
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> PageInfoBlock:
         "Parse page info block"
@@ -252,6 +303,7 @@ class PageInfoBlock(Block):
         if stream.bytes_remaining_in_block():
             info.type_folio_use_count = stream.read_int(5)
         return info
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         writer.write_int(1, self.loads_count)
@@ -261,16 +313,28 @@ class PageInfoBlock(Block):
         version = writer.options.get("version", Version("9999"))
         if version >= Version("3.2.2"):
             writer.write_int(5, self.type_folio_use_count)
-    def __init__(self, loads_count: int, merges_count: int, text_chars_count: int, text_lines_count: int, type_folio_use_count: int = 0, *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+
+    def __init__(
+        self,
+        loads_count: int,
+        merges_count: int,
+        text_chars_count: int,
+        text_lines_count: int,
+        type_folio_use_count: int = 0,
+        *,
+        extra_data: bytes = b"",
+    ):
+        super().__init__(extra_data=extra_data)
         self.loads_count: int = loads_count
         self.merges_count: int = merges_count
         self.text_chars_count: int = text_chars_count
         self.text_lines_count: int = text_lines_count
         self.type_folio_use_count: int = type_folio_use_count
 
+
 class SceneTreeBlock(Block):
     BLOCK_TYPE: tp.ClassVar = 0x01
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> SceneTreeBlock:
         "Parse scene tree block"
@@ -285,6 +349,7 @@ class SceneTreeBlock(Block):
             parent_id = stream.read_id(1)
             # XXX can there sometimes be something else here?
         return SceneTreeBlock(tree_id, node_id, is_update, parent_id)
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         writer.write_id(1, self.tree_id)
@@ -292,12 +357,22 @@ class SceneTreeBlock(Block):
         writer.write_bool(3, self.is_update)
         with writer.write_subblock(4):
             writer.write_id(1, self.parent_id)
-    def __init__(self, tree_id: CrdtId, node_id: CrdtId, is_update: bool, parent_id: CrdtId, *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+
+    def __init__(
+        self,
+        tree_id: CrdtId,
+        node_id: CrdtId,
+        is_update: bool,
+        parent_id: CrdtId,
+        *,
+        extra_data: bytes = b"",
+    ):
+        super().__init__(extra_data=extra_data)
         self.tree_id: CrdtId = tree_id
         self.node_id: CrdtId = node_id
         self.is_update: bool = is_update
         self.parent_id: CrdtId = parent_id
+
 
 def point_from_stream(stream: TaggedBlockReader, version: int = 2) -> si.Point:
     if version not in (1, 2):
@@ -404,6 +479,7 @@ def line_to_stream(line: si.Line, writer: TaggedBlockWriter, version: int = 2):
 
 class SceneItemBlock(Block):
     ITEM_TYPE: tp.ClassVar[int] = 0
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> SceneItemBlock:
         "Group item block?"
@@ -444,6 +520,7 @@ class SceneItemBlock(Block):
             CrdtSequenceItem(item_id, left_id, right_id, deleted_length, value),
             extra_value_data=extra_value_data,
         )
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         writer.write_id(1, self.parent_id)
@@ -456,20 +533,31 @@ class SceneItemBlock(Block):
                 writer.data.write_uint8(self.ITEM_TYPE)
                 self.value_to_stream(writer, self.item.value)
                 writer.data.write_bytes(self.extra_value_data)
+
     @classmethod
     @abstractmethod
     def value_from_stream(cls, reader: TaggedBlockReader) -> tp.Any:
         """Read the specific content of this block"""
         raise NotImplementedError()
+
     @abstractmethod
     def value_to_stream(self, writer: TaggedBlockWriter, value: tp.Any):
         """Write the specific content of this block"""
         raise NotImplementedError()
-    def __init__(self, parent_id: CrdtId, item: CrdtSequenceItem, extra_value_data: bytes = b"", *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+
+    def __init__(
+        self,
+        parent_id: CrdtId,
+        item: CrdtSequenceItem,
+        extra_value_data: bytes = b"",
+        *,
+        extra_data: bytes = b"",
+    ):
+        super().__init__(extra_data=extra_data)
         self.parent_id: CrdtId = parent_id
         self.item: CrdtSequenceItem = item
         self.extra_value_data: bytes = extra_value_data
+
 
 # These share the same structure so can share the same implementation?
 
@@ -681,6 +769,7 @@ def text_format_to_stream(
 
 class RootTextBlock(Block):
     BLOCK_TYPE: tp.ClassVar = 0x07
+
     @classmethod
     def from_stream(cls, stream: TaggedBlockReader) -> RootTextBlock:
         "Parse root text block."
@@ -718,6 +807,7 @@ class RootTextBlock(Block):
             width=width,
         )
         return RootTextBlock(block_id, value)
+
     def to_stream(self, writer: TaggedBlockWriter):
         _logger.debug("Writing %s", type(self).__name__)
         writer.write_id(1, self.block_id)
@@ -742,10 +832,12 @@ class RootTextBlock(Block):
             writer.data.write_float64(self.value.pos_y)
         # "width" from ddvk
         writer.write_float(4, self.value.width)
+
     def __init__(self, block_id: CrdtId, value: si.Text, *, extra_data: bytes = b""):
-        super().__init__(extra_data = extra_data)
+        super().__init__(extra_data=extra_data)
         self.block_id: CrdtId = block_id
         self.value: si.Text = value
+
 
 ## Functions to read and write streams of blocks
 

@@ -21,7 +21,7 @@ REPO_URL = "https://github.com/ricklupton/rmscene.git"
 REPO_CLONE_DIR = os.path.join(CACHE_DIR, "rmscene")
 MODIFICATIONS_DIR = tempfile.mkdtemp()
 VENV_DIR = os.path.join(CACHE_DIR, ".venv")
-EXTRA_PACKAGES = ("poetry",)
+EXTRA_PACKAGES = ("poetry", "black")
 VENV_BIN_DIR = os.path.join(VENV_DIR, "Scripts" if os.name == "nt" else "bin")
 PIP_EXECUTABLE = os.path.join(VENV_BIN_DIR, "pip" + (".exe" if os.name == "nt" else ""))
 PYTHON_EXECUTABLE = os.path.join(VENV_BIN_DIR, "python" + (".exe" if os.name == "nt" else ""))
@@ -300,7 +300,7 @@ with WaitNicely("Creating virtual environment", f"Created virtual environment"):
             shutil.rmtree(VENV_DIR)
         venv.create(VENV_DIR, with_pip=True)
 
-packages = ' '.join(EXTRA_PACKAGES)
+packages = ', '.join(EXTRA_PACKAGES)
 with WaitNicely(f"Installing {packages}", f"Installed {packages}"):
     subprocess.run([PIP_EXECUTABLE, "install", *EXTRA_PACKAGES], stdout=subprocess.PIPE)
 shutil.copytree(REPO_CLONE_DIR, MODIFICATIONS_DIR, dirs_exist_ok=True)
@@ -343,13 +343,20 @@ with OpenModify(os.path.join(SOURCE_DIR, 'scene_items.py')) as (f, old):
     f.write(typing_fixed)
 
 # ========================================
+print_stage("Checking modifications")
+# ========================================
+
+with WaitNicely("Linting", "Linted the code"):
+    subprocess.run([PYTHON_EXECUTABLE, "-m", "black", MODIFICATIONS_DIR], stderr=subprocess.DEVNULL)
+
+# ========================================
 print_stage("Running tests")
 # ========================================
 with WaitNicely("Preparing poetry", "Prepared poetry"):
     subprocess.run([PYTHON_EXECUTABLE, "-m", "poetry", "lock"], stdout=subprocess.DEVNULL)
     subprocess.run([PYTHON_EXECUTABLE, "-m", "poetry", "install"], stdout=subprocess.DEVNULL)
 
-with (WaitNicely("Running tests", "Finished running tests")):
+with WaitNicely("Running tests", "Finished running tests"):
     tests_output = subprocess.run([PYTHON_EXECUTABLE, "-m", "poetry", "run", "pytest"], stdout=subprocess.PIPE
                                   ).stdout.decode()
 
