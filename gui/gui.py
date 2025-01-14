@@ -68,6 +68,7 @@ class ConfigDict(TypedDict):
     format_raw_exports: bool
     add_ext_to_raw_exports: bool
     debug: bool
+    debug_lines: bool
     portable_mode: bool
     extensions: dict
 
@@ -93,6 +94,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'format_raw_exports': True,
     'add_ext_to_raw_exports': True,
     'debug': False,
+    'debug_lines': False,
     'debug_button_rects': False,
     'portable_mode': False,
     'extensions': {}
