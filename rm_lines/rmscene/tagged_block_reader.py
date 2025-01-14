@@ -49,7 +49,6 @@ class MainBlockInfo(BlockInfo):
         self.current_version: int = current_version
 
 
-@dataclass
 class SubBlockInfo(BlockInfo):
     "Sub-block info."
 

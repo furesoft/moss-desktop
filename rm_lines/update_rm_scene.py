@@ -243,6 +243,7 @@ def dataclass_replacer(code: str):
 
                 f"{Fore.LIGHTBLACK_EX}{'=' * 30}{Fore.RESET}"
             )
+    code = code.replace('@dataclass', '')
 
     return code
 
