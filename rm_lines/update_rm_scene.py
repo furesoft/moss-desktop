@@ -359,5 +359,6 @@ if 'error' in tests_output.lower():
 # ========================================
 print_stage("Copy sources...")
 # ========================================
-shutil.copytree(os.path.join(MODIFICATIONS_DIR, "src/rmscene"), os.path.join(WORK_DIR, "rmscene"),
+shutil.copytree(os.path.join(MODIFICATIONS_DIR, "src", "rmscene"), os.path.join(WORK_DIR, "rmscene"),
                 dirs_exist_ok=True)
+shutil.copy(os.path.join(MODIFICATIONS_DIR, "LICENSE"), os.path.join(WORK_DIR, "rmscene", "LICENSE"))
