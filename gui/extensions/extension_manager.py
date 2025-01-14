@@ -135,6 +135,13 @@ class ExtensionManager:
         ])
         self.extensions[extension_name] = extension
         self.current_extension = extension_name
+        if extension.function_exists('_start'):
+            try:
+                extension.call('_start', b'')
+            except ExtismError:
+                self.error(f"Extension {extension_name} failed to start")
+                print_exc()
+                return
         try:
             extension.call('moss_extension_register', self.state,
                            lambda output: self.handle_register_output(output, extension_name))
