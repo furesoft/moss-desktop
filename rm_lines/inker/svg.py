@@ -5,18 +5,16 @@ https://github.com/chemag/maxio .
 """
 import io
 from pathlib import Path
-
 from typing import Union
 
 from rm_lines.inker.document_size_tracker import DocumentSizeTracker, NotebookSizeTracker
-
 from .writing_tools import (
     Pen,
 )
-from ..scene_items import ParagraphStyle, Group, Line, Text
-from ..scene_tree import SceneTree
-from ..tagged_block_common import CrdtId
-from ..text import TextDocument
+from ..rmscene.scene_items import ParagraphStyle, Group, Line, Text
+from ..rmscene.scene_tree import SceneTree
+from ..rmscene.tagged_block_common import CrdtId
+from ..rmscene.text import TextDocument
 
 TEXT_TOP_Y = -88
 LINE_HEIGHTS = {
