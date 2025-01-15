@@ -282,7 +282,7 @@ class Caligraphy(Pen):
         return segment_width
 
 
-class Shader(Pen):
+class Shader(Highlighter):
     def __init__(self, base_width, base_color_id, rgba_color):
         super().__init__(base_width, base_color_id, rgba_color)
         self.name = "Shadow"
