@@ -104,7 +104,11 @@ class TaggedBlockReader:
     def read_color(self, index: int) -> tp.Tuple[int, ...]:
         self.data.read_tag(index, TagType.Byte4)
         color_bytes = self.data.read_bytes(4)
-        return tuple(int(b) for b in color_bytes)
+        # reMarkable uses a BGRA format, convert to RGBA for ease of use
+        return tuple(
+            int(b)
+            for b in (color_bytes[2], color_bytes[1], color_bytes[0], color_bytes[3])
+        )
 
     def read_float(self, index: int) -> float:
         """Read a tagged 4-byte float."""
@@ -153,7 +157,11 @@ class TaggedBlockReader:
     def read_color(self, index: int) -> tp.Tuple[int, ...]:
         self.data.read_tag(index, TagType.Byte4)
         color_bytes = self.data.read_bytes(4)
-        return tuple(int(b) for b in color_bytes)
+        # reMarkable uses a BGRA format, convert to RGBA for ease of use
+        return tuple(
+            int(b)
+            for b in (color_bytes[2], color_bytes[1], color_bytes[0], color_bytes[3])
+        )
 
     def read_float_optional(
         self, index: int, default: tp.Optional[float] = None

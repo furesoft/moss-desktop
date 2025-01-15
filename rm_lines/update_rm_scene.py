@@ -99,7 +99,9 @@ def run_extra_reader_modifier(line):
             f"{TAB}def read_color(self, index: int) -> tp.Tuple[int, ...]:\n"
             f"{TAB}{TAB}self.data.read_tag(index, TagType.Byte4)\n"
             f"{TAB}{TAB}color_bytes = self.data.read_bytes(4)\n"
-            f"{TAB}{TAB}return tuple(int(b) for b in color_bytes)\n{line}"
+            f"{TAB}{TAB}# reMarkable uses a BGRA format, convert to RGBA for ease of use\n"
+            f"{TAB}{TAB}return tuple(int(b) for b in (color_bytes[2], color_bytes[1], color_bytes[0], color_bytes[3]))"
+            f"\n{line}"
         )
 
     return line
