@@ -6,28 +6,30 @@ https://github.com/chemag/maxio .
 
 import math
 
+from rm_lines.rmscene.scene_items import Pen as pn
+from rm_lines.rmscene.scene_items import PenColor as pc
+
 # color_id to RGB conversion
 # 1. we use "color_id" for a unique, proprietary ID for colors,
 #   (see scene_stream.py):
 remarkable_palette = {
-    # BLACK = 0
-    0: [0, 0, 0],
-    # GRAY = 1
-    1: [125, 125, 125],
-    # WHITE = 2
-    2: [255, 255, 255],
-    # YELLOW = 3
-    3: [255, 255, 99],
-    # GREEN = 4
-    4: [0, 255, 0],
-    # PINK = 5
-    5: [255, 20, 147],
-    # BLUE = 6
-    6: [0, 98, 204],
-    # RED = 7
-    7: [217, 7, 7],
-    # GRAY_OVERLAP = 8
-    8: [125, 125, 125],
+    pc.BLACK: [0, 0, 0],
+    pc.GRAY: [125, 125, 125],
+    pc.WHITE: [255, 255, 255],
+
+    pc.YELLOW: [255, 255, 99],
+    pc.GREEN: [0, 255, 0],
+    pc.PINK: [255, 20, 147],
+
+    pc.BLUE: [0, 98, 204],
+    pc.RED: [217, 7, 7],
+    pc.GRAY_OVERLAP: [125, 125, 125],
+
+    pc.GREEN_2: [145, 218, 113],
+    pc.CYAN: [116, 210, 232],
+    pc.MAGENTA: [192, 127, 210],
+
+    pc.YELLOW_2: [250, 231, 25],
 }
 MAGIC_PENCIL_SIZE = 44.6 * 2.3
 
@@ -37,20 +39,23 @@ class PenException(Exception):
 
 
 class Pen:
-    def __init__(self, base_width, base_color_id):
+    def __init__(self, base_width, base_color_id, rgba_color, base_opacity: float = 1, base_stroke_opacity: float = 1):
         self.base_width = base_width
-        try:
-            self.base_color = remarkable_palette[base_color_id]
-        except KeyError:
-            self.base_color = remarkable_palette[0]
-            print("Unknown color_id: ", base_color_id)
+        if base_color_id == pc.HIGHLIGHT:
+            self.base_color, self.base_opacity = rgba_color[:3], rgba_color[3] / 255
+        else:
+            try:
+                self.base_color = remarkable_palette[base_color_id] or [0, 0, 0]
+                self.base_opacity = base_opacity
+            except KeyError:
+                self.base_color = [3, 252, 157]
+                print("Unknown color_id: ", base_color_id)
+        self.stroke_opacity = base_stroke_opacity
         self.segment_length = 1000
-        self.base_opacity = 1
         self.name = "Basic Pen"
         # initial stroke values
         self.stroke_linecap = "round"
         self.stroke_linejoin = "round"
-        self.stroke_opacity = 1
         self.stroke_width = base_width
         self.stroke_color = base_color_id
 
@@ -86,55 +91,48 @@ class Pen:
         return value
 
     @classmethod
-    def create(cls, pen_nr, color_id, width):
+    def create(cls, pen_nr, color_id, rgba_color, width):
         # print(f'----> create(cls, pen_nr: {pen_nr}, color_id: {color_id}, width: {width})')
-        # Brush
-        if pen_nr == 0 or pen_nr == 12:
-            return Brush(width, color_id)
-        # caligraphy
-        elif pen_nr == 21:
-            return Caligraphy(width, color_id)
-        # Marker
-        elif pen_nr == 3 or pen_nr == 16:
-            return Marker(width, color_id)
-        # BallPoint
-        elif pen_nr == 2 or pen_nr == 15:
-            return Ballpoint(width, color_id)
-        # Fineliner
-        elif pen_nr == 4 or pen_nr == 17:
-            return Fineliner(width, color_id)
-        # Pencil
-        elif pen_nr == 1 or pen_nr == 14:
-            return Pencil(width, color_id)
-        # Mechanical Pencil
-        elif pen_nr == 7 or pen_nr == 13:
-            return MechanicalPencil(width, color_id)
-        # Highlighter
-        elif pen_nr == 5 or pen_nr == 18:
+        if pen_nr == pn.PAINTBRUSH_1 or pen_nr == pn.PAINTBRUSH_2:
+            return Brush(width, color_id, rgba_color)
+        elif pen_nr == pn.CALIGRAPHY:
+            return Caligraphy(width, color_id, rgba_color)
+        elif pen_nr == pn.MARKER_1 or pen_nr == pn.MARKER_2:
+            return Marker(width, color_id, rgba_color)
+        elif pen_nr == pn.BALLPOINT_1 or pen_nr == pn.BALLPOINT_2:
+            return Ballpoint(width, color_id, rgba_color)
+        elif pen_nr == pn.FINELINER_1 or pen_nr == pn.FINELINER_2:
+            return Fineliner(width, color_id, rgba_color)
+        elif pen_nr == pn.PENCIL_1 or pen_nr == pn.PENCIL_2:
+            return Pencil(width, color_id, rgba_color)
+        elif pen_nr == pn.MECHANICAL_PENCIL_1 or pen_nr == pn.MECHANICAL_PENCIL_2:
+            return MechanicalPencil(width, color_id, rgba_color)
+        elif pen_nr == pn.HIGHLIGHTER_1 or pen_nr == pn.HIGHLIGHTER_2:
             width = 15
-            return Highlighter(width, color_id)
-        # Erase area
-        elif pen_nr == 8:
-            return Erase_Area(width, color_id)
-        # Eraser
-        elif pen_nr == 6:
-            color_id = 2
-            return Eraser(width, color_id)
+            return Highlighter(width, color_id, rgba_color)
+        elif pen_nr == pn.SHADER:
+            width = 15
+            return Shader(width, color_id, rgba_color)
+        elif pen_nr == pn.ERASER_AREA:
+            return Erase_Area(width, color_id, rgba_color)
+        elif pen_nr == pn.ERASER:
+            color_id = pc.WHITE.value
+            return Eraser(width, color_id, rgba_color)
         raise PenException(f'Unknown pen_nr: {pen_nr}')
 
 
 class Fineliner(Pen):
     last = 0
 
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.base_width = base_width * MAGIC_PENCIL_SIZE
         self.name = "Fineliner"
 
 
 class Ballpoint(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.segment_length = 5
         self.name = "Ballpoint"
         self.alternate = 0  # 0 or 1
@@ -175,8 +173,8 @@ class Ballpoint(Pen):
 
 
 class Marker(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.segment_length = 3
         self.name = "Marker"
 
@@ -186,8 +184,8 @@ class Marker(Pen):
 
 
 class Pencil(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.segment_length = 2
         self.name = "Pencil"
 
@@ -206,8 +204,8 @@ class Pencil(Pen):
 
 
 class MechanicalPencil(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.base_width = self.base_width * MAGIC_PENCIL_SIZE * 1.01
         self.base_opacity = 0.85
         self.segment_length = 2
@@ -225,8 +223,8 @@ class MechanicalPencil(Pen):
 
 
 class Brush(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.segment_length = 2
         self.stroke_linecap = "round"
         self.opacity = 1
@@ -249,34 +247,33 @@ class Brush(Pen):
 
 
 class Highlighter(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color, base_opacity=0.25, base_stroke_opacity=0.15)
+        print(self.base_color, self.base_opacity)
         self.stroke_linecap = "square"
-        self.base_opacity = 0.25
-        self.stroke_opacity = 0.15
         self.base_width = self.base_width * 10
         self.name = "Highlighter"
 
 
 class Eraser(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.stroke_linecap = "square"
         self.base_width = self.base_width * 2
         self.name = "Eraser"
 
 
 class Erase_Area(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.stroke_linecap = "square"
         self.base_opacity = 0
         self.name = "Erase Area"
 
 
 class Caligraphy(Pen):
-    def __init__(self, base_width, base_color_id):
-        super().__init__(base_width, base_color_id)
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
         self.segment_length = 2
         self.name = "Calligraphy"
 
@@ -284,3 +281,9 @@ class Caligraphy(Pen):
         segment_width = 2.16 * (((1 + pressure / 255) * (width / 4)) - 0.3 * self.direction_to_tilt(direction)) + (
                 0.1 * last_width)
         return segment_width
+
+
+class Shader(Pen):
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color)
+        self.name = "Shadow"

@@ -24,6 +24,7 @@ def rm_bytes_to_svg(data: bytes, track_xy: DocumentSizeTracker = None):
     tree = read_tree(BytesIO(data))
 
     if settings.config.debug_lines:
+        print("RM file tree: ", end='')
         pprint(get_children(tree.root))
 
     with StringIO() as f:

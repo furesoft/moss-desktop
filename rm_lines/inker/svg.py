@@ -123,7 +123,7 @@ def draw_group(item: Group, output, anchor_pos, track_xy: DocumentSizeTracker):
 
 def draw_stroke(item: Line, output, track_xy: DocumentSizeTracker):
     # initiate the pen
-    pen = Pen.create(item.tool.value, item.color.value, item.thickness_scale / 10)
+    pen = Pen.create(item.tool.value, item.color.value, item.rgba_color, item.thickness_scale / 10)
     K = 5
 
     # BEGIN stroke

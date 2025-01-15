@@ -64,7 +64,50 @@ def run_import_replacers(line):
     return line
 
 
+def run_line_class_modifier(line):
+    def add_rgba_color():
+        nonlocal line
+        line = (
+            f"{TAB}if color_id == si.PenColor.HIGHLIGHT:\n"
+            f"{TAB}{TAB}try:\n"
+            f"{TAB}{TAB}{TAB}rgba_color = stream.read_color(8)\n"
+            f"{TAB}{TAB}except UnexpectedBlockError:\n"
+            f"{TAB}{TAB}{TAB}rgba_color = None\n"
+            f"{TAB}else:\n"
+            f"{TAB}{TAB}rgba_color = None\n{line}"
+        )
+
+    if line.strip().startswith('return si.Line('):
+        line = line.replace(
+            'return si.Line(',
+            'return si.Line(rgba_color, ',
+        )
+        add_rgba_color()
+    if line.strip().startswith('return si.GlyphRange('):
+        line = line.replace(
+            'return si.GlyphRange(',
+            'return si.GlyphRange(rgba_color, ',
+        )
+        add_rgba_color()
+
+    return line
+
+
+def run_extra_reader_modifier(line):
+    if line.strip().startswith('def read_float'):
+        line = (
+            f"{TAB}def read_color(self, index: int) -> tp.Tuple[int, ...]:\n"
+            f"{TAB}{TAB}self.data.read_tag(index, TagType.Byte4)\n"
+            f"{TAB}{TAB}color_bytes = self.data.read_bytes(4)\n"
+            f"{TAB}{TAB}return tuple(int(b) for b in color_bytes)\n{line}"
+        )
+
+    return line
+
+
 def scene_items_replacers(line):
+    if line.strip().startswith('color: PenColor'):
+        line = f"{TAB}rgba_color: tp.Optional[tp.Tuple[int, ...]]\n{line}"
     return re.sub(r'\[([^\|]+)\s\|\s([^\]]+)\]', r'[tp.Union[\1, \2]]', line)
 
 
@@ -317,7 +360,7 @@ with OpenModify(os.path.join(MODIFICATIONS_DIR, "pyproject.toml")) as (f, old):
 
 with OpenModify(os.path.join(SOURCE_DIR, 'tagged_block_reader.py')) as (f, old):
     imports_fixed = '\n'.join(
-        run_import_replacers(line)
+        run_extra_reader_modifier(run_import_replacers(line))
         for line in old.splitlines()
     )
 
@@ -327,7 +370,7 @@ with OpenModify(os.path.join(SOURCE_DIR, 'tagged_block_reader.py')) as (f, old):
 
 with OpenModify(os.path.join(SOURCE_DIR, 'scene_stream.py')) as (f, old):
     imports_fixed = '\n'.join(
-        run_import_replacers(line)
+        run_line_class_modifier(run_import_replacers(line))
         for line in old.splitlines()
     )
 
