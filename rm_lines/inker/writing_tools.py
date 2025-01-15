@@ -39,10 +39,12 @@ class PenException(Exception):
 
 
 class Pen:
-    def __init__(self, base_width, base_color_id, rgba_color, base_opacity: float = 1, base_stroke_opacity: float = 1):
+    def __init__(self, base_width, base_color_id, rgba_color, base_opacity: float = 1, base_stroke_opacity: float = 1,
+                 base_blending_mode: str = "normal"):
         self.base_width = base_width
         if base_color_id == pc.HIGHLIGHT:
             self.base_color, self.base_opacity = rgba_color[:3], rgba_color[3] / 255
+            print(rgba_color, self.base_opacity)
         else:
             try:
                 self.base_color = remarkable_palette[base_color_id] or [0, 0, 0]
@@ -58,6 +60,7 @@ class Pen:
         self.stroke_linejoin = "round"
         self.stroke_width = base_width
         self.stroke_color = base_color_id
+        self.base_blending_mode = base_blending_mode
 
     # note that the units of the points have had their units converted
     # in scene_stream.py
@@ -83,6 +86,9 @@ class Pen:
 
     def get_segment_opacity(self, speed, direction, width, pressure, last_width):
         return self.base_opacity
+
+    def get_segment_blending_mode(self, speed, direction, width, pressure, last_width):
+        return self.base_blending_mode
 
     def cutoff(self, value):
         """must be between 1 and 0"""
@@ -246,11 +252,20 @@ class Brush(Pen):
         return "rgb" + str(tuple(segment_color))
 
 
-class Highlighter(Pen):
-    def __init__(self, base_width, base_color_id, rgba_color):
-        super().__init__(base_width, base_color_id, rgba_color, base_opacity=0.25, base_stroke_opacity=0.15)
+class HighlighterBase(Pen):
+    def __init__(self, base_width, base_color_id, rgba_color, base_blending_mode='normal'):
+        super().__init__(base_width, base_color_id, rgba_color, base_opacity=0.25, base_stroke_opacity=0.15,
+                         base_blending_mode=base_blending_mode)
         self.stroke_linecap = "square"
         self.base_width = self.base_width * 10
+
+
+class Highlighter(HighlighterBase):
+    def __init__(self, base_width, base_color_id, rgba_color):
+        super().__init__(base_width, base_color_id, rgba_color, base_blending_mode="multiply")
+        # Force opacity
+        # self.base_opacity = 0.25
+        # self.stroke_opacity = 0.15
         self.name = "Highlighter"
 
 
@@ -282,7 +297,7 @@ class Caligraphy(Pen):
         return segment_width
 
 
-class Shader(Highlighter):
+class Shader(HighlighterBase):
     def __init__(self, base_width, base_color_id, rgba_color):
         super().__init__(base_width, base_color_id, rgba_color)
         self.name = "Shader"

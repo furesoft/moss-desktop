@@ -151,12 +151,15 @@ def draw_stroke(item: Line, output, track_xy: DocumentSizeTracker):
                                                   last_segment_width)
             segment_opacity = pen.get_segment_opacity(point.speed, point.direction, point.width, point.pressure,
                                                       last_segment_width)
+            segment_blending_mode = pen.get_segment_blending_mode(point.speed, point.direction, point.width,
+                                                                  point.pressure,
+                                                                  last_segment_width)
             # print(segment_color, segment_width, segment_opacity, pen.stroke_linecap)
             # UPDATE stroke
             output.write('"/>\n')
             output.write('        <polyline ')
             output.write(
-                f'style="fill:none; stroke:{segment_color} ;stroke-width:{segment_width / K:.3f};opacity:{segment_opacity}" ')
+                f'style="fill:none; stroke:{segment_color} ;stroke-width:{segment_width / K:.3f};opacity:{segment_opacity};mix-blend-mode:{segment_blending_mode};" ')
             output.write(f'stroke-linecap="{pen.stroke_linecap}" ')
             output.write(f'stroke-linejoin="{pen.stroke_linejoin}" ')
             output.write('points="')
