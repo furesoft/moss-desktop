@@ -249,7 +249,6 @@ class Brush(Pen):
 class Highlighter(Pen):
     def __init__(self, base_width, base_color_id, rgba_color):
         super().__init__(base_width, base_color_id, rgba_color, base_opacity=0.25, base_stroke_opacity=0.15)
-        print(self.base_color, self.base_opacity)
         self.stroke_linecap = "square"
         self.base_width = self.base_width * 10
         self.name = "Highlighter"
