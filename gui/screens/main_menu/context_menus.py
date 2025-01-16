@@ -1,18 +1,22 @@
-from typing import TYPE_CHECKING
+import json
+import os
+from typing import TYPE_CHECKING, List
 
 import pygameextra as pe
 import pyperclip
 
 from gui.cloud_action_helper import import_notebook_pages_to_cloud
 from gui.defaults import Defaults
-from gui.file_prompts import notebook_prompt
+from gui.file_prompts import notebook_prompt, import_debug
 from gui.pp_helpers import ContextMenu
 from gui.preview_handler import PreviewHandler
 from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
 from gui.screens.viewer import DocumentViewer
-from rm_api.models import Document, DocumentCollection
+from rm_api import make_hash
+from rm_api.models import Document, DocumentCollection, Content, Metadata
 from rm_api.notifications.models import DocumentSyncProgress
+from rm_api.storage.common import FileHandle
 
 if TYPE_CHECKING:
     pass
@@ -122,6 +126,11 @@ class DebugContextMenu(ContextMenu):
             "action": "test_doc_view"
         },
         {
+            "text": "Import from directory",
+            "icon": "import",
+            "action": "import_from_directory"
+        },
+        {
             "text": "Hot reload",
             "icon": "rotate",
             "action": "hot_reload"
@@ -190,6 +199,36 @@ class DebugContextMenu(ContextMenu):
             item.provision = True
             item.content.c_pages.pages[0].id = self.DEBUG_PREVIEW_PAGE_INDEX
             PreviewHandler.CACHED_PREVIEW[item.uuid] = PreviewHandler.CACHED_PREVIEW[self.DEBUG_PREVIEW]
+
+    def import_from_directory(self):
+        import_debug(self._import_from_directory)
+
+    def _import_from_directory(self, file_paths: List[str]):
+        content = None
+        metadata = None
+        rm_files = []
+        document_uuid = None
+        for file_path in file_paths:
+            if file_path.endswith('.rm'):
+                rm_files.append(file_path)
+            elif file_path.endswith('.content.json') or file_path.endswith('.content'):
+                with open(file_path, 'r') as f:
+                    raw_content = json.load(f)
+                    content = Content(raw_content, None, make_hash(raw_content), True)
+            elif file_path.endswith('.metadata.json') or file_path.endswith('.metadata'):
+                with open(file_path, 'r') as f:
+                    raw_metadata = json.load(f)
+                    metadata = Metadata(raw_metadata, make_hash(raw_metadata))
+                document_uuid = os.path.basename(file_path).split('.')[0]
+        document = Document.new_notebook(
+            self.api, "Import debug", None, page_count=len(rm_files), notebook_data=[
+                FileHandle(file) for file in rm_files
+            ], document_uuid=document_uuid, content=content, metadata=metadata
+        )
+
+        document.check()
+
+        self.import_screen.add_item(document)
 
 
 class SideBar(ContextMenu):

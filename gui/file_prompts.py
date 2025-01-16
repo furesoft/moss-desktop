@@ -1,9 +1,11 @@
 import os
 import threading
 import tkinter as tk
-from typing import TYPE_CHECKING
 from tkinter import filedialog
+from typing import TYPE_CHECKING
+
 import pygameextra as pe
+
 from gui.defaults import Defaults
 
 if TYPE_CHECKING:
@@ -94,6 +96,11 @@ def save_file(title: str, *filetypes):
 
 @open_file("Import file", "Moss import types", *Defaults.IMPORT_TYPES)
 def import_prompt(file_path, callback):
+    callback(file_path)
+
+
+@open_file("Import debug", "All types", *Defaults.ALL_TYPES)
+def import_debug(file_path, callback):
     callback(file_path)
 
 
