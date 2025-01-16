@@ -1,11 +1,12 @@
-from functools import lru_cache
-import threading
 import re
+import threading
+from functools import lru_cache
 from io import BytesIO
 from traceback import print_exc
 from typing import Dict, Tuple, Union
 
 import pygameextra as pe
+
 from gui.screens.viewer.renderers.notebook.expanded_notebook import ExpandedNotebook
 from gui.screens.viewer.renderers.shared_model import AbstractRenderer
 from rm_api.models import Metadata
@@ -22,23 +23,21 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
                  use_lock: threading.Lock = None):
         super().__init__(frame_width, frame_height, track_xy)
         self.svg = svg
+        self.width_match = re.search(self.WIDTH_PATTERN, self.svg)
+        self.height_match = re.search(self.HEIGHT_PATTERN, self.svg)
+        self.viewbox_match = re.search(self.VIEWPORT_PATTERN, self.svg)
         self.use_lock = use_lock
 
     @lru_cache()
     def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None) -> pe.Image:
         # Replace the svg viewport with a viewport to capture the frame
 
-        # TODO: move these to __init__ or property setter of svg
-        width_match = re.search(self.WIDTH_PATTERN, self.svg)
-        height_match = re.search(self.HEIGHT_PATTERN, self.svg)
-        viewbox_match = re.search(self.VIEWPORT_PATTERN, self.svg)
-
-        width = float(width_match.group(1))
-        height = float(height_match.group(1))
-        x = float(viewbox_match.group(1))
-        y = float(viewbox_match.group(2))
-        w = float(viewbox_match.group(3))
-        h = float(viewbox_match.group(4))
+        width = float(self.width_match.group(1))
+        height = float(self.height_match.group(1))
+        x = float(self.viewbox_match.group(1))
+        y = float(self.viewbox_match.group(2))
+        w = float(self.viewbox_match.group(3))
+        h = float(self.viewbox_match.group(4))
 
         if final_width is None:
             final_width = int(width)

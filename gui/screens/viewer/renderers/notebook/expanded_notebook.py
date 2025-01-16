@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from pprint import pprint
+
+from pygameextra import settings
 
 from rm_lines.inker.document_size_tracker import NotebookSizeTracker
 
@@ -8,8 +11,11 @@ class ExpandedNotebook(ABC):
         self.frame_width = frame_width
         self.frame_height = frame_height
         self.track_xy = track_xy
+        if settings.config.debug:
+            print(f'Expanded notebook debug, frame size: {frame_width}, {frame_height} {track_xy}')
 
     def get_frames(self, area_x: int, area_y: int, area_width: int, area_height: int):
+
         visible_frames = []
 
         start_x = area_x // self.frame_width
@@ -28,13 +34,21 @@ class ExpandedNotebook(ABC):
                         frame_bottom > area_y and frame_top < area_y + area_height):
                     visible_frames.append((frame_x, -frame_y))
 
-        return [
+        if settings.config.debug:
+            print('Getting document frames', area_x, area_y, area_width, area_height)
+
+        frames = [
             self.get_frame_from_initial(
                 frame[0] * self.frame_width,
                 frame[1] * self.frame_height
             )
             for frame in visible_frames
         ]
+
+        if settings.config.debug:
+            pprint(frames)
+
+        return frames
 
     @abstractmethod
     def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None):

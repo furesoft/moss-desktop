@@ -76,6 +76,12 @@ class DocumentSizeTracker(ABC):
             'viewbox': f'{self.track_left} {self.track_top} {self.track_width} {self.track_height}',
         }
 
+    def __str__(self):
+        return f'DocumentSizeTracker({self.track_left}, {self.track_top}, {self.track_width}, {self.track_height})'
+
+    def __repr__(self):
+        return str(self)
+
 
 class NotebookSizeTracker(DocumentSizeTracker):
     def __init__(self):
