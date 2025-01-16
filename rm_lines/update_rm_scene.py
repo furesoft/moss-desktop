@@ -98,7 +98,7 @@ def run_extra_reader_modifier(line):
         line = (
             f"{TAB}def read_color(self, index: int) -> tp.Tuple[int, ...]:\n"
             f"{TAB}{TAB}self.data.read_tag(index, TagType.Byte4)\n"
-            f"{TAB}{TAB}color_bytes = self.data.read_bytes(4)\n"
+            f"{TAB}{TAB}color_bytes = self.data.read_bytes(4)[::-1]\n"
             f"{TAB}{TAB}# reMarkable uses a ARGB format, convert to RGBA for ease of use\n"
             f"{TAB}{TAB}return tuple(int(b) for b in (color_bytes[1], color_bytes[2], color_bytes[3], color_bytes[0]))"
             f"\n{line}"
@@ -412,7 +412,7 @@ if 'error' in tests_output.lower():
     print(f"{Fore.RED}{tests_output}{Fore.RESET}")
 
 # ========================================
-print_stage("Copy sources...")
+print_stage("Copy sources")
 # ========================================
 shutil.copytree(os.path.join(MODIFICATIONS_DIR, "src", "rmscene"), os.path.join(WORK_DIR, "rmscene"),
                 dirs_exist_ok=True)
