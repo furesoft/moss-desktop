@@ -45,7 +45,6 @@ class Pen:
         self.base_width = base_width
         if base_color_id == pc.HIGHLIGHT:
             self.base_color, self.base_opacity = rgba_color[:3], rgba_color[3] / 255
-            print(rgba_color, self.base_opacity)
         else:
             try:
                 self.base_color = remarkable_palette[base_color_id] or [0, 0, 0]
