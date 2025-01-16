@@ -1,8 +1,10 @@
+import json
 import os
+
+from slashr import SlashR
 
 from rm_api import API, get_file, get_file_contents, Metadata, update_root, put_file, File, make_hash, \
     DocumentSyncProgress
-import json
 
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -41,26 +43,28 @@ print(f"Great luck! Found {len(potential_roots)} potential root files, sorting b
 
 root_last_modified = {}
 
-for hash_of_root, files in potential_roots.items():
-    if len(files) == 0:
-        continue
-    last_modified = 0
-    for file in files:
-        try:
-            _, file_root = get_file(api, file.hash, use_cache=True)
-        except:
+with SlashR() as sr:
+    for i, (hash_of_root, files) in enumerate(potential_roots.items()):
+        if len(files) == 0:
             continue
-        for sub_file in file_root:
-            if not sub_file.uuid.endswith('.metadata'):
-                continue
+        sr.print(f"Checking {hash_of_root} {i + 1}/{len(potential_roots)} - ITEMS: {len(files)}")
+        last_modified = 0
+        for file in files:
             try:
-                metadata_raw = get_file_contents(api, sub_file.hash, use_cache=True)
+                _, file_root = get_file(api, file.hash, use_cache=True)
             except:
                 continue
+            for sub_file in file_root:
+                if not sub_file.uuid.endswith('.metadata'):
+                    continue
+                try:
+                    metadata_raw = get_file_contents(api, sub_file.hash, use_cache=True)
+                except:
+                    continue
 
-            metadata = Metadata(metadata_raw, sub_file.hash)
-            last_modified = max(last_modified, int(metadata.last_modified))
-    root_last_modified[hash_of_root] = last_modified
+                metadata = Metadata(metadata_raw, sub_file.hash)
+                last_modified = max(last_modified, int(metadata.last_modified))
+        root_last_modified[hash_of_root] = last_modified
 
 print("\nNEWEST FIRST, OLDEST LAST")
 for hash_of_root, files in sorted(potential_roots.items(), key=lambda root: root_last_modified.get(root[0], 0),
