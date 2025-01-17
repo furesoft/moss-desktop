@@ -69,6 +69,8 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker = No
 
     if track_xy is None:
         track_xy = NotebookSizeTracker()
+    if tree.scene_info and tree.scene_info.page_size:
+        track_xy.screen_width, track_xy.screen_height = tree.scene_info.page_size
     output = SvgWriter()
 
     # add svg header
@@ -83,6 +85,7 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker = No
         CrdtId(0, 281474976710654): 270,
         CrdtId(0, 281474976710655): 700,
     }
+
     if tree.root_text is not None:
         draw_text(tree.root_text, output, anchor_pos, track_xy)
 

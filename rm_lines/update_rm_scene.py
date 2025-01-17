@@ -33,13 +33,19 @@ atexit.register(lambda: shutil.rmtree(MODIFICATIONS_DIR))
 
 os.environ['PIP_DISABLE_PIP_VERSION_CHECK'] = '1'  # Disable pip version check
 
+EXTRA_VALUES = {
+    'SceneInfo': (
+        ('page_size', 'tp.Tuple[int, int]', None),
+    )
+}
+
 
 def print_stage(stage):
     print(f"{Fore.CYAN}{'=' * 5} {stage} {'=' * 5}{Fore.RESET}", flush=True)
     time.sleep(.1)
 
 
-def run_poetry_replacers(line):
+def run_poetry_modifier(line):
     if line.startswith('python = '):
         return 'python = "^3.9"'
     if 'poetry.dev-dependencies' in line:
@@ -61,6 +67,12 @@ def run_import_replacers(line):
     if 'dataclasses' in line:
         return remove_from(line, 'KW_ONLY')
 
+    return line
+
+
+def run_tagged_block_common_modifiers(line):
+    if line.strip().startswith('Byte4'):
+        line = f"{line}\n{line.replace('4', '2')}"
     return line
 
 
@@ -94,23 +106,66 @@ def run_line_class_modifier(line):
 
 
 def run_extra_reader_modifier(line):
-    if line.strip().startswith('def read_float'):
+    if line.strip().endswith('## Read simple values'):
         line = (
+            f"{line}\n"
+            # add read first, second
+            f"{TAB}def read_first_second(self, index: int) -> tp.Tuple[int, int]:\n"
+            f"{TAB}{TAB}self.data.read_tag(index, TagType.Length4)\n"
+            f"{TAB}{TAB}first_second_bytes = [self.data.read_uint32() for _ in range(4)]\n"
+            f"{TAB}{TAB}return first_second_bytes[1], first_second_bytes[2]\n"
+
+            # add read color
             f"{TAB}def read_color(self, index: int) -> tp.Tuple[int, ...]:\n"
             f"{TAB}{TAB}self.data.read_tag(index, TagType.Byte4)\n"
             f"{TAB}{TAB}color_bytes = self.data.read_bytes(4)[::-1]\n"
             f"{TAB}{TAB}# reMarkable uses a ARGB format, convert to RGBA for ease of use\n"
             f"{TAB}{TAB}return tuple(int(b) for b in (color_bytes[1], color_bytes[2], color_bytes[3], color_bytes[0]))"
-            f"\n{line}"
         )
 
     return line
 
 
-def scene_items_replacers(line):
+def run_scene_stream_modifier(line):
+    if line.strip().startswith('return SceneInfo('):
+        # Add page size getter in SceneInfo
+        line = (
+            f'{TAB}{TAB}try:\n'
+            f'{TAB}{TAB}{TAB}page_size = stream.read_first_second(5)\n'
+            f'{TAB}{TAB}except UnexpectedBlockError:\n'
+            f'{TAB}{TAB}{TAB}page_size = None\n'
+            f'{line}\n'
+            f"{' ' * len(line.split('(')[0])} page_size=page_size,"
+        )
+    if line.strip().startswith('elif isinstance(b, RootTextBlock):'):
+        # Add page size block to tree
+        line = (
+            f'{TAB}{TAB}elif isinstance(b, SceneInfo):\n'
+            f'{TAB}{TAB}{TAB}tree.scene_info = b\n'
+            f'{line}'
+        )
+    return line
+
+
+def run_scene_items_modifier(line):
     if line.strip().startswith('color: PenColor'):
         line = f"{TAB}rgba_color: tp.Optional[tp.Tuple[int, ...]]\n{line}"
     return re.sub(r'\[([^\|]+)\s\|\s([^\]]+)\]', r'[tp.Union[\1, \2]]', line)
+
+
+def run_scene_tree_modifier(line):
+    if line.strip().startswith('self.root '):
+        line = (
+            f"{line}\n"
+            f"{TAB}{TAB}self.scene_info: tp.Optional['SceneInfo'] = None"
+        )
+    if 'import scene_items' in line:
+        line = (
+            f'{line}\n'
+            f'if tp.TYPE_CHECKING:\n'
+            f'{TAB}from .scene_stream import SceneInfo'
+        )
+    return line
 
 
 def dataclass_join_base(base_items, items):
@@ -210,6 +265,7 @@ def dataclass_replacer(code: str):
 
         if is_base := not class_definition.endswith('):'):  # Doesn't inherit anything
             base_class_name = class_definition.split(':')[0].split()[-1].strip()
+            class_name = base_class_name
             base_args[base_class_name] = args.copy()
             base_kwargs[base_class_name] = kwargs.copy()
             args.clear()
@@ -231,6 +287,9 @@ def dataclass_replacer(code: str):
                     base_class_name = initial_base_class_name  # Restore the base to complete this new base
             else:
                 base_class_name = initial_base_class_name
+
+        if extra_values := EXTRA_VALUES.get(class_name):
+            args.extend(extra_values)
 
         if not (args or kwargs or is_base):  # skip if no args, kwargs and not a base class
             continue
@@ -355,10 +414,12 @@ shutil.copytree(REPO_CLONE_DIR, MODIFICATIONS_DIR, dirs_exist_ok=True)
 print_stage("Running modifications")
 # ========================================
 with OpenModify(os.path.join(MODIFICATIONS_DIR, "pyproject.toml")) as (f, old):
-    f.write('\n'.join(
-        run_poetry_replacers(line)
+    final = '\n'.join(
+        run_poetry_modifier(line)
         for line in old.splitlines()
-    ))
+    )
+
+    f.write(final)
 
 with OpenModify(os.path.join(SOURCE_DIR, 'tagged_block_reader.py')) as (f, old):
     imports_fixed = '\n'.join(
@@ -372,7 +433,7 @@ with OpenModify(os.path.join(SOURCE_DIR, 'tagged_block_reader.py')) as (f, old):
 
 with OpenModify(os.path.join(SOURCE_DIR, 'scene_stream.py')) as (f, old):
     imports_fixed = '\n'.join(
-        run_line_class_modifier(run_import_replacers(line))
+        run_scene_stream_modifier(run_line_class_modifier(run_import_replacers(line)))
         for line in old.splitlines()
     )
 
@@ -381,12 +442,28 @@ with OpenModify(os.path.join(SOURCE_DIR, 'scene_stream.py')) as (f, old):
     f.write(final)
 
 with OpenModify(os.path.join(SOURCE_DIR, 'scene_items.py')) as (f, old):
-    typing_fixed = '\n'.join(
-        scene_items_replacers(line)
+    final = '\n'.join(
+        run_scene_items_modifier(line)
         for line in old.splitlines()
     )
 
-    f.write(typing_fixed)
+    f.write(final)
+
+with OpenModify(os.path.join(SOURCE_DIR, 'scene_tree.py')) as (f, old):
+    final = '\n'.join(
+        run_scene_tree_modifier(line)
+        for line in old.splitlines()
+    )
+
+    f.write(final)
+
+with OpenModify(os.path.join(SOURCE_DIR, 'tagged_block_common.py')) as (f, old):
+    final = '\n'.join(
+        run_tagged_block_common_modifiers(line)
+        for line in old.splitlines()
+    )
+
+    f.write(final)
 
 # ========================================
 print_stage("Checking modifications")

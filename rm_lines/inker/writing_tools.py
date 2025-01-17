@@ -99,7 +99,7 @@ class Pen:
     @classmethod
     @lru_cache
     def create(cls, pen_nr, color_id, rgba_color, width):
-        print(f'----> create(cls, pen_nr: {pen_nr}, color_id: {color_id}, width: {width})')
+        # print(f'----> create(cls, pen_nr: {pen_nr}, color_id: {color_id}, width: {width})')
         if pen_nr == pn.PAINTBRUSH_1 or pen_nr == pn.PAINTBRUSH_2:
             return Brush(width, color_id, rgba_color)
         elif pen_nr == pn.CALIGRAPHY:
