@@ -1,6 +1,6 @@
 from io import BytesIO, StringIO
 from pprint import pprint
-from typing import Iterator
+from typing import Iterator, TYPE_CHECKING, Tuple
 from uuid import UUID, uuid4
 
 from pygameextra import settings
@@ -12,6 +12,9 @@ from .rmscene import read_tree, SceneGroupItemBlock, CrdtId, LwwValue, TreeNodeB
 from .rmscene import scene_items as si
 from .rmscene.crdt_sequence import CrdtSequence, CrdtSequenceItem
 
+if TYPE_CHECKING:
+    from rm_api import Document
+
 
 def get_children(sequence: CrdtSequence):
     return [
@@ -20,16 +23,18 @@ def get_children(sequence: CrdtSequence):
     ]
 
 
-def rm_bytes_to_svg(data: bytes, track_xy: DocumentSizeTracker = None):
+def rm_bytes_to_svg(data: bytes, document: 'Document') -> Tuple[str, DocumentSizeTracker]:
     tree = read_tree(BytesIO(data))
 
     if settings.config.debug_lines:
         print("RM file tree: ", end='')
         pprint(get_children(tree.root))
 
+    track_xy = DocumentSizeTracker.create_from_document(document)
+
     with StringIO() as f:
         tree_to_svg(tree, f, track_xy)
-        return f.getvalue()
+        return f.getvalue(), track_xy
 
 
 def blank_document(author_uuid=None) -> Iterator[Block]:

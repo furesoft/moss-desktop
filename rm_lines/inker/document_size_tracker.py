@@ -1,8 +1,9 @@
 from abc import ABC
+from typing import TYPE_CHECKING
 
-# The screen size of the Remarkable 2
-SCREEN_WIDTH = 1404
-SCREEN_HEIGHT = 1872
+if TYPE_CHECKING:
+    from rm_api import Document
+from rm_api.defaults import RM_SCREEN_SIZE, FileTypes, Orientations
 
 
 class DocumentSizeTracker(ABC):
@@ -100,15 +101,29 @@ class DocumentSizeTracker(ABC):
     def __repr__(self):
         return str(self)
 
+    @staticmethod
+    def create_from_document(document: 'Document') -> 'DocumentSizeTracker':
+        if document.content.file_type == FileTypes.PDF:
+            return PDFSizeTracker(document)
+        else:
+            return NotebookSizeTracker(document)
+
 
 class NotebookSizeTracker(DocumentSizeTracker):
-    def __init__(self):
-        super().__init__(0, 0, 0, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0)
+    def __init__(self, document: 'Document'):
+        super().__init__(0, 0,
+                         0, 0, 0, 0,
+                         *(
+                             RM_SCREEN_SIZE
+                             if document.content.orientation == Orientations.Portrait else
+                             RM_SCREEN_SIZE[::-1]
+                         ),
+                         0, 0)
 
 
-class PDFSizeTracker(DocumentSizeTracker):
-    def __init__(self):
-        width = SCREEN_WIDTH * 1.4
-        height = SCREEN_HEIGHT * 1.4
-        offset_x = SCREEN_WIDTH * 0.2
-        super().__init__(0, 0, 0, 0, 0, 0, width, height, offset_x, -10)
+class PDFSizeTracker(NotebookSizeTracker):
+    def __init__(self, document: 'Document'):
+        super().__init__(document)
+        self._frame_width *= 1.4
+        self._frame_height *= 1.4
+        self._offset_x = self._frame_width * 0.2

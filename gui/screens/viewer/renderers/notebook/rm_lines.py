@@ -9,9 +9,9 @@ import pygameextra as pe
 
 from gui.screens.viewer.renderers.notebook.expanded_notebook import ExpandedNotebook
 from gui.screens.viewer.renderers.shared_model import AbstractRenderer
-from rm_api.models import Metadata
+from rm_api import Document
 from rm_lines import rm_bytes_to_svg
-from rm_lines.inker.document_size_tracker import NotebookSizeTracker, PDFSizeTracker
+from rm_lines.inker.document_size_tracker import NotebookSizeTracker
 
 
 class rM_Lines_ExpandedNotebook(ExpandedNotebook):
@@ -81,7 +81,7 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
 
     def _load(self, page_uuid: str):
         if content := self.document.content_data.get(file_uuid := f'{self.document.uuid}/{page_uuid}.rm'):
-            self.pages[file_uuid] = self.generate_expanded_notebook_from_rm(self.document.metadata, content,
+            self.pages[file_uuid] = self.generate_expanded_notebook_from_rm(self.document, content,
                                                                             size=self.size)
         self.document_renderer.loading -= 1
 
@@ -114,14 +114,10 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
         threading.Thread(target=self._load, args=(page_uuid,), daemon=True).start()
 
     @staticmethod
-    def generate_expanded_notebook_from_rm(metadata: Metadata, content: bytes, size: Tuple[int, int] = None,
+    def generate_expanded_notebook_from_rm(document: Document, content: bytes, size: Tuple[int, int] = None,
                                            use_lock: threading.Lock = None) -> rM_Lines_ExpandedNotebook:
         try:
-            if metadata.type == 'DocumentType':
-                track_xy = NotebookSizeTracker()
-            else:
-                track_xy = PDFSizeTracker()
-            svg: str = rm_bytes_to_svg(content, track_xy)
+            svg, track_xy = rm_bytes_to_svg(content, document)
             expanded = rM_Lines_ExpandedNotebook(svg, track_xy, use_lock)
             expanded.get_frame_from_initial(0, 0, *(size if size else ()))
         except Exception as e:
