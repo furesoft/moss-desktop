@@ -127,6 +127,7 @@ class Defaults(metaclass=DefaultsMeta):
     ICO_APP_ICON = os.path.join(ICON_DIR, 'moss.ico')
 
     IMPORT_TYPES = ['.rm', '.pdf', '.epub']
+    ALL_TYPES = [*IMPORT_TYPES, '.content', '.metadata', '.json']
 
     PROGRESS_ORDER = [
         "total",
