@@ -1,5 +1,6 @@
 import atexit
 import json
+import logging
 import os
 import time
 from numbers import Number
@@ -8,9 +9,10 @@ from queue import Queue
 from typing import TypedDict, Union, TYPE_CHECKING
 
 import appdirs
+import colorama
 import pygameextra as pe
 from box import Box
-from colorama import Fore
+from colorama import Fore, Style
 
 from rm_api.auth import FailedToRefreshToken
 from rm_api.notifications.models import APIFatal
@@ -38,6 +40,7 @@ if TYPE_CHECKING:
     from .pp_helpers.popups import GUIConfirmPopup
 
 pe.init()
+colorama.init(autoreset=True)
 
 AUTHOR = "RedTTG"
 APP_NAME = "Moss"
@@ -45,6 +48,21 @@ INSTALL_DIR = appdirs.site_data_dir(APP_NAME, AUTHOR)
 USER_DATA_DIR = appdirs.user_data_dir(APP_NAME, AUTHOR)
 pe.settings.raise_error_for_button_without_name = True
 pe.settings.use_button_context_indexing = False
+
+LOG_COLORS = {
+    logging.DEBUG: Fore.CYAN,
+    logging.INFO: Fore.GREEN,
+    logging.WARNING: Fore.YELLOW,
+    logging.ERROR: Fore.RED,
+    logging.CRITICAL: Fore.MAGENTA + Style.BRIGHT,
+}
+
+
+class ColorFormatter(logging.Formatter):
+    def format(self, record):
+        log_color = LOG_COLORS.get(record.levelno, "")
+        formatted_message = super().format(record)
+        return f"{log_color}{formatted_message}{Style.RESET_ALL}"
 
 
 class ConfigDict(TypedDict):
@@ -182,6 +200,14 @@ class GUI(pe.GameContext):
         from .defaults import Defaults
         from gui.extensions import ExtensionManager
         super().__init__()
+
+        if self.config.debug:
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(ColorFormatter("%(name)s - %(levelname)s - %(message)s"))
+            logging.basicConfig(
+                level=logging.INFO,
+                handlers=[console_handler]
+            )
 
         try:
             self.api = API(**self.api_kwargs)
