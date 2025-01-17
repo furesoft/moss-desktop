@@ -18,20 +18,18 @@ class DocumentSizeTracker(ABC):
         self.track_bottom = frame_height
         self._track_left = 0
         self.track_right = frame_width
-        self.frame_width = frame_width
-        self.frame_height = frame_height
-        self._screen_width = SCREEN_WIDTH
-        self._screen_height = SCREEN_HEIGHT
+        self._frame_width = frame_width
+        self._frame_height = frame_height
         self.offset_x = offset_x
         self.offset_y = offset_y
 
     @property
-    def screen_width(self):
-        return self._screen_width
+    def frame_width(self):
+        return self._frame_width
 
     @property
-    def screen_height(self):
-        return self._screen_height
+    def frame_height(self):
+        return self._frame_height
 
     @property
     def track_top(self):
@@ -49,17 +47,15 @@ class DocumentSizeTracker(ABC):
     def track_height(self):
         return self.track_bottom - self.track_top
 
-    @screen_width.setter
-    def screen_width(self, value):
-        self._screen_width = value
+    @frame_width.setter
+    def frame_width(self, value):
         self.track_right = self.track_left + value
-        self.frame_width = value
+        self._frame_width = value
 
-    @screen_height.setter
-    def screen_height(self, value):
-        self._screen_height = value
+    @frame_height.setter
+    def frame_height(self, value):
         self.track_bottom = self.track_top + value
-        self.frame_height = value
+        self._frame_height = value
 
     @track_top.setter
     def track_top(self, value):
@@ -74,7 +70,7 @@ class DocumentSizeTracker(ABC):
         self.track_right += diff * 2
 
     def x(self, x):
-        aligned_x = x + self.screen_width / 2
+        aligned_x = x + self.frame_width / 2
         if aligned_x > self.track_right:
             self.track_right = aligned_x
         if aligned_x < self.track_left:
@@ -94,7 +90,7 @@ class DocumentSizeTracker(ABC):
         return {
             'height': self.track_height,
             'width': self.track_width,
-            'x_shift': self.screen_width / 2,
+            'x_shift': self.frame_width / 2,
             'viewbox': f'{self.track_left} {self.track_top} {self.track_width} {self.track_height}',
         }
 

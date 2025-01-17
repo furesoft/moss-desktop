@@ -7,12 +7,12 @@ from rm_lines.inker.document_size_tracker import NotebookSizeTracker
 
 
 class ExpandedNotebook(ABC):
-    def __init__(self, frame_width: int, frame_height: int, track_xy: NotebookSizeTracker):
-        self.frame_width = frame_width
-        self.frame_height = frame_height
+    def __init__(self, track_xy: NotebookSizeTracker):
+        self.frame_width = track_xy.frame_width
+        self.frame_height = track_xy.frame_height
         self.track_xy = track_xy
         if settings.config.debug:
-            print(f'Expanded notebook debug, frame size: {frame_width}, {frame_height} {track_xy}')
+            print(f'Expanded notebook debug, frame size: {track_xy.frame_width}, {track_xy.frame_height} {track_xy}')
 
     def get_frames(self, area_x: int, area_y: int, area_width: int, area_height: int):
 

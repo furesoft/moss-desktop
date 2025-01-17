@@ -19,9 +19,9 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
     HEIGHT_PATTERN = r'height="([\d.]+)"'
     VIEWPORT_PATTERN = r'viewBox="([\d.-]+) ([\d.-]+) ([\d.]+) ([\d.]+)"'
 
-    def __init__(self, svg: str, frame_width: int, frame_height: int, track_xy: NotebookSizeTracker,
+    def __init__(self, svg: str, track_xy: NotebookSizeTracker,
                  use_lock: threading.Lock = None):
-        super().__init__(frame_width, frame_height, track_xy)
+        super().__init__(track_xy)
         self.svg = svg
         self.width_match = re.search(self.WIDTH_PATTERN, self.svg)
         self.height_match = re.search(self.HEIGHT_PATTERN, self.svg)
@@ -122,7 +122,7 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
             else:
                 track_xy = PDFSizeTracker()
             svg: str = rm_bytes_to_svg(content, track_xy)
-            expanded = rM_Lines_ExpandedNotebook(svg, track_xy.frame_width, track_xy.frame_height, track_xy, use_lock)
+            expanded = rM_Lines_ExpandedNotebook(svg, track_xy, use_lock)
             expanded.get_frame_from_initial(0, 0, *(size if size else ()))
         except Exception as e:
             print_exc()

@@ -70,7 +70,7 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker = No
     if track_xy is None:
         track_xy = NotebookSizeTracker()
     if tree.scene_info and tree.scene_info.page_size:
-        track_xy.screen_width, track_xy.screen_height = tree.scene_info.page_size
+        track_xy.frame_width, track_xy.frame_height = tree.scene_info.page_size
     output = SvgWriter()
 
     # add svg header
