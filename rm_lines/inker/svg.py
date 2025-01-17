@@ -8,7 +8,7 @@ from pathlib import Path
 from traceback import print_exc
 from typing import Union
 
-from rm_lines.inker.document_size_tracker import DocumentSizeTracker, NotebookSizeTracker
+from rm_lines.inker.document_size_tracker import DocumentSizeTracker
 from .writing_tools import (
     Pen, PenException,
 )
@@ -64,11 +64,8 @@ def read_template_svg(template_path: Path) -> str:
     return "\n".join(lines[2:-1])
 
 
-def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker = None):
+def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
     """Convert Tree to SVG."""
-
-    if track_xy is None:
-        track_xy = NotebookSizeTracker()
     if tree.scene_info and tree.scene_info.page_size:
         track_xy.frame_width, track_xy.frame_height = tree.scene_info.page_size
     output = SvgWriter()
