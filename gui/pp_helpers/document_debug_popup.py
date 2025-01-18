@@ -162,7 +162,7 @@ class DocumentDebugPopup(ContextMenu):
 
             # Render and save
             try:
-                svg: str = rm_bytes_to_svg(data, self.document)
+                svg: str = rm_bytes_to_svg(data, self.document)[0]
                 with open(file_path, 'w') as f:
                     f.write(svg)
             except Exception as e:
