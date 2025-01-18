@@ -128,8 +128,8 @@ def open_document_debug_menu(gui: 'GUI', document: 'Document', position):
 def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
                     document_sync_operation: DocumentSyncProgress = None, scale=1, select_document=None,
                     selected: bool = False):
-    # Check if the document is being debugged and keep the debug menu open
-
+    # Prepare edge rounding and all the texts
+    edge_rounding = int(gui.ratios.main_menu_document_rounding * rect.width)
     inverse_key = '_inverted' if selected else ''
     title_text = texts.get(document.uuid + inverse_key)
     if not title_text:
@@ -145,12 +145,14 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     else:
         sub_text = None
 
+    # Position the texts
     title_text.rect.topleft = rect.bottomleft
     title_text.rect.top += gui.ratios.main_menu_document_title_height_margin
     if sub_text:
         sub_text.rect.left = title_text.rect.left
         sub_text.rect.top = title_text.rect.bottom + gui.ratios.main_menu_document_title_padding
 
+    # Prepare the action set if the document is clicked
     action = document.ensure_download_and_callback
     data = lambda: PreviewHandler.clear_for(document.uuid, lambda: open_document(gui, document.uuid))
     action_set = {
@@ -171,12 +173,16 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     if gui.config.download_everything and not document.available and not document.downloading:
         document.ensure_download_and_callback(lambda: PreviewHandler.clear_for(document.uuid))
 
+    # Draw black outline if selected
     if selected:
         selection_rect = rect.inflate(gui.ratios.main_menu_x_padding, gui.ratios.main_menu_x_padding)
         selection_rect.height += title_text.rect.height + gui.ratios.main_menu_x_padding + gui.ratios.line * 2
         pe.draw.rect(Defaults.SELECTED, selection_rect)
+
+    # Draw a background behind the document
     pe.draw.rect(Defaults.DOCUMENT_BACKGROUND, rect)
 
+    # Render the title text
     render_button_using_text(
         gui, title_text,
         Defaults.TRANSPARENT_COLOR, Defaults.TRANSPARENT_COLOR,
@@ -192,10 +198,12 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         },
         disabled=document.provision or disabled
     )
+
+    # Render the sub text if it exists
     if sub_text:
         sub_text.display()
 
-    # Render the notebook icon
+    # Render the notebook icon if there is no preview
     preview = PreviewHandler.get_preview(document, rect.size)
     if not preview:
         notebook_large: pe.Image = gui.icons['notebook_large'].copy()
@@ -233,15 +241,30 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
     # Render the passive outline
     pe.draw.rect(
         Defaults.DOCUMENT_GRAY,
-        rect, gui.ratios.pixel(2)
+        rect, gui.ratios.pixel(2),
+        edge_rounding_topright=edge_rounding,
+        edge_rounding_bottomright=edge_rounding
+    )
+    # Render the passive spine
+    spine_rect = rect.scale_by(0.07, 1)
+    spine_rect.left = rect.left
+    pe.draw.rect(
+        Defaults.DOCUMENT_GRAY,
+        spine_rect
     )
 
     # Render the button
-    pe.button.rect(
+    pe.button.action(
         rect,
-        Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
         name=document.uuid,
-        action_set=action_set,
+        action_set={
+            **action_set,
+            'hover_draw': {
+                'action': pe.draw.rect,
+                'args': (Defaults.BUTTON_ACTIVE_COLOR, rect.copy()),
+                'kwargs': {'edge_rounding_topright': edge_rounding, 'edge_rounding_bottomright': edge_rounding}
+            }
+        },
         disabled=document.provision or disabled
     )
 
