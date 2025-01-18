@@ -246,7 +246,21 @@ class DocumentViewerUI(pe.ChildContext):
         pe.draw.rect(Defaults.SELECTED, self.x_rect, self.ratios.document_viewer_x_outline,
                      edge_rounding=self.ratios.document_viewer_x_rounding - self.ratios.document_viewer_x_outline)
         self.x_icon.display(self.x_icon_rect.topleft)
-        pe.button.action(self.x_rect, action=self.viewer.close, name=f'document_viewer_x<{id(self.viewer)}>')
+        pe.button.action(
+            self.x_rect, name=f'document_viewer_x<{id(self.viewer)}>',
+            action_set={
+                'l_click': {
+                    'action': self.viewer.close
+                },
+                'hover_draw': {
+                    'action': pe.draw.rect,
+                    'args': (Defaults.BUTTON_ACTIVE_COLOR, self.x_rect),
+                    'kwargs': {
+                        'edge_rounding': self.ratios.document_viewer_x_rounding
+                    }
+                }
+            }
+        )
 
     def align_x_rect(self):
         self.x_rect.topright = (self.width, 0)
