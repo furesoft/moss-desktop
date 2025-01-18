@@ -214,11 +214,14 @@ class DebugContextMenu(ContextMenu):
             elif file_path.endswith('.content.json') or file_path.endswith('.content'):
                 with open(file_path, 'r') as f:
                     raw_content = json.load(f)
-                    content = Content(raw_content, None, make_hash(raw_content), True)
+                    content = Content(raw_content, metadata, make_hash(raw_content), True)
             elif file_path.endswith('.metadata.json') or file_path.endswith('.metadata'):
                 with open(file_path, 'r') as f:
                     raw_metadata = json.load(f)
                     metadata = Metadata(raw_metadata, make_hash(raw_metadata))
+                    metadata.parent = self.main_menu.navigation_parent
+                    if content:
+                        content._metadata = metadata
                 document_uuid = os.path.basename(file_path).split('.')[0]
         document = Document.new_notebook(
             self.api, "Import debug", None, page_count=len(rm_files), notebook_data=[
