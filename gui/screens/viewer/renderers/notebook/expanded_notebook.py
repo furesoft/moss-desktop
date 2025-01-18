@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pprint import pprint
 
+import pygameextra as pe
 from pygameextra import settings
 
 from rm_lines.inker.document_size_tracker import NotebookSizeTracker
@@ -51,5 +52,5 @@ class ExpandedNotebook(ABC):
         return frames
 
     @abstractmethod
-    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None):
+    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None) -> pe.Sprite:
         ...

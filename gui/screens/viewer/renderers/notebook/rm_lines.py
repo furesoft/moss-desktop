@@ -32,8 +32,7 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         self.use_lock = use_lock
 
     @lru_cache()
-    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None,
-                               scale: float = 1) -> pe.Image:
+    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None) -> pe.Sprite:
         # Replace the svg viewport with a viewport to capture the frame
 
         width = float(self.width_match.group(1))
@@ -43,8 +42,8 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         w = float(self.viewbox_match.group(3))
         h = float(self.viewbox_match.group(4))
 
-        final_width = (final_width or self.track_xy.frame_width) * scale
-        final_height = (final_height or self.track_xy.frame_height) * scale
+        final_width = final_width or self.frame_width
+        final_height = final_height or self.frame_height
 
         # Replace values in the SVG content
         svg_content = re.sub(self.WIDTH_PATTERN, f'width="{final_width}"', self.svg)
@@ -62,7 +61,7 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         #     with self.use_lock:
         #         return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
         # else:
-        return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
+        return pe.Sprite(BytesIO(encoded_svg_content), (final_width, final_height))
 
 
 # noinspection PyPep8Naming
@@ -105,9 +104,10 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                 # TODO: replace with get frames and use offsets and aknowledge each frame offset when displaying
                 expanded_notebook = self.pages[rm_file]
                 frame = expanded_notebook.get_frame_from_initial(
-                    0, 0,
-                    scale=self.gui.ratios.rm_scaled * self.document_renderer.zoom
+                    0, 0
                 )
+                scale = self.gui.ratios.rm_scaled * self.document_renderer.zoom
+                frame.scale = (scale, scale)
                 frame.display((
                     self.document_renderer.center_x - frame.width // 2,
                     self.document_renderer.center_y - frame.height // 2
