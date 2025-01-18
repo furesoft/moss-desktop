@@ -86,6 +86,7 @@ class ConfigDict(TypedDict):
     format_raw_exports: bool
     add_ext_to_raw_exports: bool
     debug: bool
+    debug_log: bool
     debug_lines: bool
     portable_mode: bool
     extensions: dict
@@ -112,6 +113,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'format_raw_exports': True,
     'add_ext_to_raw_exports': True,
     'debug': False,
+    'debug_log': False,
     'debug_lines': False,
     'debug_button_rects': False,
     'portable_mode': False,
@@ -205,7 +207,7 @@ class GUI(pe.GameContext):
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(ColorFormatter("%(name)s - %(levelname)s - %(message)s"))
             logging.basicConfig(
-                level=logging.INFO,
+                level=logging.DEBUG if self.config.debug_log else logging.INFO,
                 handlers=[console_handler]
             )
 
