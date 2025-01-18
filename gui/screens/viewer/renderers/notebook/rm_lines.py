@@ -115,8 +115,10 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
 
                 if not self.document_renderer.renderer:
                     # Draw notebook shadow
-                    pe.draw.rect(Defaults.LINE_GRAY, rect, self.gui.ratios.seperator,
-                                 edge_rounding=self.gui.ratios.document_viewer_notebook_shadow_size)
+                    shadow_rect = rect.inflate(self.gui.ratios.document_viewer_notebook_shadow_size,
+                                               self.gui.ratios.document_viewer_notebook_shadow_size)
+                    pe.draw.rect(Defaults.LINE_GRAY, shadow_rect, self.gui.ratios.seperator,
+                                 edge_rounding=self.gui.ratios.document_viewer_notebook_shadow_radius)
 
                 frame.display(rect.topleft)
                 if self.error and self.error.text == self.RENDER_ERROR:
