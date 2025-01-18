@@ -1,5 +1,7 @@
 import pygameextra as pe
 
+from rm_api.defaults import RM_SCREEN_SIZE
+
 
 class Ratios:
     def __init__(self, scale):
@@ -125,3 +127,10 @@ class Ratios:
     @property
     def outline(self):
         return self.pixel(3)
+
+    @property
+    def rm_scaled(self):
+        # Moss runs on an initial height of 1000
+        # But remarkable runs on a different initial height
+        # This requires some modifications if we want to scale remarkable docs to the Moss scale
+        return self.scale * 1000 / RM_SCREEN_SIZE[1]

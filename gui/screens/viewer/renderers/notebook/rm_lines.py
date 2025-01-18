@@ -3,7 +3,7 @@ import threading
 from functools import lru_cache
 from io import BytesIO
 from traceback import print_exc
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Union, TYPE_CHECKING
 
 import pygameextra as pe
 
@@ -12,6 +12,9 @@ from gui.screens.viewer.renderers.shared_model import AbstractRenderer
 from rm_api import Document
 from rm_lines import rm_bytes_to_svg
 from rm_lines.inker.document_size_tracker import NotebookSizeTracker
+
+if TYPE_CHECKING:
+    pass
 
 
 class rM_Lines_ExpandedNotebook(ExpandedNotebook):
@@ -29,7 +32,8 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         self.use_lock = use_lock
 
     @lru_cache()
-    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None) -> pe.Image:
+    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None,
+                               scale: float = 1) -> pe.Image:
         # Replace the svg viewport with a viewport to capture the frame
 
         width = float(self.width_match.group(1))
@@ -39,10 +43,8 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         w = float(self.viewbox_match.group(3))
         h = float(self.viewbox_match.group(4))
 
-        if final_width is None:
-            final_width = int(width)
-        if final_height is None:
-            final_height = int(height)
+        final_width = (final_width or self.track_xy.frame_width) * scale
+        final_height = (final_height or self.track_xy.frame_height) * scale
 
         # Replace values in the SVG content
         svg_content = re.sub(self.WIDTH_PATTERN, f'width="{final_width}"', self.svg)
@@ -101,7 +103,15 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                 self.error = self.RENDER_ERROR
             else:
                 # TODO: replace with get frames and use offsets and aknowledge each frame offset when displaying
-                self.pages[rm_file].get_frame_from_initial(0, 0, *self.size).display()
+                expanded_notebook = self.pages[rm_file]
+                frame = expanded_notebook.get_frame_from_initial(
+                    0, 0,
+                    scale=self.gui.ratios.rm_scaled * self.document_renderer.zoom
+                )
+                frame.display((
+                    self.document_renderer.center_x - frame.width // 2,
+                    self.document_renderer.center_y - frame.height // 2
+                ))
                 if self.error and self.error.text == self.RENDER_ERROR:
                     self.error = None
         elif self.error and self.error.text == self.RENDER_ERROR:

@@ -50,6 +50,7 @@ class DocumentRenderer(pe.ChildContext):
 
     PAGE_NAVIGATION_DELAY = 0.2  # Initial button press delay
     PAGE_NAVIGATION_SPEED = 0.1  # After initial button press delay
+    ZOOM_SENSITIVITY = 10  # How fast the zoom changes
 
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
@@ -59,6 +60,7 @@ class DocumentRenderer(pe.ChildContext):
         self.hold_next = False
         self.hold_previous = False
         self.hold_timer = 0
+        self.zoom = 1
 
         # Check compatability
         if not self.document.content.usable:
@@ -76,6 +78,9 @@ class DocumentRenderer(pe.ChildContext):
         self.second_dot = self.loading_rect.x + split * 1.5
         self.third_dot = self.loading_rect.x + split * 2.05
 
+        self.draggable = pe.Draggable((0, 0))
+        self.pos = (0, 0)
+
         self.loading_timer = time.time()
 
         self.mode = 'nocontent'
@@ -88,6 +93,14 @@ class DocumentRenderer(pe.ChildContext):
         else:
             self.close()
             print(f"{Fore.RED}Notebook render mode `{self.config.notebook_render_mode}` unavailable{Fore.RESET}")
+
+    @property
+    def center_x(self):
+        return self.pos[0] + self.width // 2
+
+    @property
+    def center_y(self):
+        return self.pos[1] + self.height // 2
 
     @property
     def error(self):
@@ -104,7 +117,11 @@ class DocumentRenderer(pe.ChildContext):
         )
         self.loading = 0
 
-    def handle_navigation(self, event):
+    def handle_navigation(self, event: pe.pygame.event.Event):
+        if self.ctrl_hold and event.type == pe.pygame.MOUSEWHEEL:
+            self.zoom += event.y * self.ZOOM_SENSITIVITY * self.delta_time
+            self.zoom = max(0.2, min(3, self.zoom))
+
         if not self.hold_timer:
             if any([
                 pe.event.key_DOWN(key)
@@ -226,6 +243,7 @@ class DocumentRenderer(pe.ChildContext):
             elif self.hold_previous:
                 self.do_previous()
             self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
+        _, self.pos = self.draggable.check()  # Check if user is panning
 
 
 class DocumentViewerUI(pe.ChildContext):
