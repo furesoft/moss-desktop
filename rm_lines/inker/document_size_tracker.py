@@ -3,12 +3,18 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rm_api import Document
-from rm_api.defaults import RM_SCREEN_SIZE, FileTypes, Orientations
+from rm_api.defaults import RM_SCREEN_SIZE, FileTypes
 
 
 class DocumentSizeTracker(ABC):
-    def __init__(self, document_center_x, document_center_y, document_cap_top, document_cap_bottom, document_cap_left,
-                 document_cap_right, frame_width, frame_height, offset_x, offset_y):
+    def __init__(
+            self,
+            document_center_x=0, document_center_y=0,
+            document_cap_top=0, document_cap_bottom=0, document_cap_left=0, document_cap_right=0,
+            frame_width=RM_SCREEN_SIZE[0], frame_height=RM_SCREEN_SIZE[1],
+            offset_x=0, offset_y=0,
+            reverse_frame_size=False
+    ):
         self.document_center_x = document_center_x
         self.document_center_y = document_center_y
         self.document_cap_top = document_cap_top
@@ -20,16 +26,21 @@ class DocumentSizeTracker(ABC):
         self._track_left = 0
         self.track_right = frame_width
         self._frame_width = frame_width
+        self._reverse_frame_size = reverse_frame_size
         self._frame_height = frame_height
         self.offset_x = offset_x
         self.offset_y = offset_y
 
     @property
     def frame_width(self):
+        if self._reverse_frame_size:
+            return self._frame_height
         return self._frame_width
 
     @property
     def frame_height(self):
+        if self._reverse_frame_size:
+            return self._frame_width
         return self._frame_height
 
     @property
@@ -96,7 +107,10 @@ class DocumentSizeTracker(ABC):
         }
 
     def __str__(self):
-        return f'DocumentSizeTracker({self.track_left}, {self.track_top}, {self.track_width}, {self.track_height})'
+        return (f'DocumentSizeTracker('
+                f'{self.track_left}->{self.track_right}, '
+                f'{self.track_top}->{self.track_bottom}, '
+                f'{self.track_width}, {self.track_height})')
 
     def __repr__(self):
         return str(self)
@@ -111,19 +125,18 @@ class DocumentSizeTracker(ABC):
 
 class NotebookSizeTracker(DocumentSizeTracker):
     def __init__(self, document: 'Document'):
-        super().__init__(0, 0,
-                         0, 0, 0, 0,
-                         *(
-                             RM_SCREEN_SIZE
-                             if document.content.orientation == Orientations.Portrait else
-                             RM_SCREEN_SIZE[::-1]
-                         ),
-                         0, 0)
+        super().__init__(reverse_frame_size=document.content.is_landscape)
 
 
 class PDFSizeTracker(NotebookSizeTracker):
     def __init__(self, document: 'Document'):
         super().__init__(document)
-        self._frame_width *= 1.4
-        self._frame_height *= 1.4
         self._offset_x = self._frame_width * 0.2
+
+    @property
+    def frame_width(self):
+        return super().frame_width() * 1.4
+
+    @property
+    def frame_height(self):
+        return super().frame_height() * 1.4
