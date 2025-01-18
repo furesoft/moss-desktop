@@ -112,7 +112,7 @@ def run_extra_reader_modifier(line):
             # add read first, second
             f"{TAB}def read_first_second(self, index: int) -> tp.Tuple[int, int]:\n"
             f"{TAB}{TAB}self.data.read_tag(index, TagType.Length4)\n"
-            f"{TAB}{TAB}first_second_bytes = [self.data.read_uint32() for _ in range(4)]\n"
+            f"{TAB}{TAB}first_second_bytes = [self.data.read_uint32() for _ in range(3)]\n"
             f"{TAB}{TAB}return first_second_bytes[1], first_second_bytes[2]\n"
 
             # add read color
