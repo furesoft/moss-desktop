@@ -3,6 +3,7 @@ from datetime import timedelta
 from typing import Dict, TYPE_CHECKING, List
 
 import pygameextra as pe
+
 from gui.aspect_ratio import Ratios
 from gui.cloud_action_helper import surfaces_to_pdf
 from gui.defaults import Defaults
@@ -107,8 +108,9 @@ class ImportScreen(pe.ChildContext, ButtonReadyMixin, TitledMixin):
         self.documents_to_upload.append(document)
         document.provision = True  # Ensure that the document is in provisioning mode
         self.doc_view.handle_texts()
-        DocumentViewer.PROBLEMATIC_DOCUMENTS.remove(self.dummy_documents[0].uuid)
-        del self.dummy_documents[0]
+        if len(self.dummy_documents) > 0:  # Delete the predefined dummy document
+            DocumentViewer.PROBLEMATIC_DOCUMENTS.remove(self.dummy_documents[0].uuid)
+            del self.dummy_documents[0]
 
     def predefine_item(self, items: int = 1):
         self.expected_documents += items
