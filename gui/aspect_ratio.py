@@ -97,6 +97,7 @@ class Ratios:
         self.document_viewer_x_outline = int(2 * scale)
         self.document_viewer_x_width = int(35 * scale)
         self.document_viewer_x_height = self.document_viewer_x_width  # Square
+        self.document_viewer_notebook_shadow_size = int(5 * scale)
 
         # Import Screen
         self.import_screen_button_padding = int(20 * scale)

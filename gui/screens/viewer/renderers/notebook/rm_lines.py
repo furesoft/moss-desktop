@@ -7,6 +7,7 @@ from typing import Dict, Tuple, Union, TYPE_CHECKING
 
 import pygameextra as pe
 
+from gui.defaults import Defaults
 from gui.screens.viewer.renderers.notebook.expanded_notebook import ExpandedNotebook
 from gui.screens.viewer.renderers.shared_model import AbstractRenderer
 from rm_api import Document
@@ -108,10 +109,18 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                 )
                 scale = self.gui.ratios.rm_scaled * self.document_renderer.zoom
                 frame.scale = (scale, scale)
-                frame.display((
-                    self.document_renderer.center_x - frame.width // 2,
-                    self.document_renderer.center_y - frame.height // 2
-                ))
+                rect = pe.Rect(0, 0, *frame.size)
+                rect.centerx = self.document_renderer.center_x
+                rect.centery = self.document_renderer.center_y
+
+                if not self.document_renderer.renderer:
+                    # Draw notebook shadow
+                    shadow_rect = rect.move(self.gui.ratios.document_viewer_notebook_shadow_size,
+                                            self.gui.ratios.document_viewer_notebook_shadow_size)
+                    pe.draw.rect(Defaults.LINE_GRAY, shadow_rect, self.gui.ratios.seperator,
+                                 edge_rounding=self.gui.ratios.document_viewer_notebook_shadow_size)
+
+                frame.display(rect.topleft)
                 if self.error and self.error.text == self.RENDER_ERROR:
                     self.error = None
         elif self.error and self.error.text == self.RENDER_ERROR:
