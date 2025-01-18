@@ -230,6 +230,7 @@ class DebugContextMenu(ContextMenu):
         )
 
         document.check()
+        document.randomize_uuids()
 
         self.import_screen.add_item(document)
 
