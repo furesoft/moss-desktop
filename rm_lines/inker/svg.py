@@ -12,7 +12,7 @@ from rm_lines.inker.document_size_tracker import DocumentSizeTracker
 from .writing_tools import (
     Pen, PenException,
 )
-from ..rmscene.scene_items import ParagraphStyle, Group, Line, Text
+from ..rmscene import scene_items as si
 from ..rmscene.scene_tree import SceneTree
 from ..rmscene.tagged_block_common import CrdtId
 from ..rmscene.text import TextDocument
@@ -22,14 +22,14 @@ LINE_HEIGHTS = {
     # Tuned this line height using template grid -- it definitely seems to be
     # 71, rather than 70 or 72. Note however that it does interact a bit with
     # the initial text y-coordinate below.
-    ParagraphStyle.BASIC: 100,
-    ParagraphStyle.PLAIN: 71,
-    ParagraphStyle.HEADING: 150,
-    ParagraphStyle.BOLD: 70,
-    ParagraphStyle.BULLET: 35,
-    ParagraphStyle.BULLET2: 35,
-    ParagraphStyle.CHECKBOX: 100,
-    ParagraphStyle.CHECKBOX_CHECKED: 100,
+    si.ParagraphStyle.BASIC: 100,
+    si.ParagraphStyle.PLAIN: 71,
+    si.ParagraphStyle.HEADING: 150,
+    si.ParagraphStyle.BOLD: 70,
+    si.ParagraphStyle.BULLET: 35,
+    si.ParagraphStyle.BULLET2: 35,
+    si.ParagraphStyle.CHECKBOX: 100,
+    si.ParagraphStyle.CHECKBOX_CHECKED: 100,
 
     # There appears to be another format code (value 0) which is used when the
     # text starts far down the page, which case it has a negative offset (line
@@ -69,12 +69,15 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
     if tree.scene_info and tree.scene_info.page_size:
         track_xy.frame_width, track_xy.frame_height = tree.scene_info.page_size
     output = SvgWriter()
+    priority_lines = io.StringIO()  # For lines that should be drawn first AKA Highlighter
 
     # add svg header
     # output.write('<svg xmlns="http://www.w3.org/2000/svg">\n')
     output.write(SVG_HEADER)
 
     output.write('    <g id="p1" style="display:inline" transform="translate({x_shift},0)">\n')
+    output.write('    <g id="priority">\n{priority_lines}\n    </g>\n')
+
     # output.write('        <filter id="blurMe"><feGaussianBlur in="SourceGraphic" stdDeviation="10" /></filter>\n')
 
     # These special anchor IDs are for the top and bottom of the page.
@@ -86,7 +89,7 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
     if tree.root_text is not None:
         draw_text(tree.root_text, output, anchor_pos, track_xy)
 
-    draw_group(tree.root, output, anchor_pos, track_xy)
+    draw_group(tree.root, output, anchor_pos, track_xy, priority_lines)
 
     # # Overlay the page with a clickable rect to flip pages
     # output.write('\n')
@@ -96,10 +99,11 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
     output.write('    </g>\n')
     # END notebook
     output.write('</svg>\n')
-    output_file.write(output.format(**track_xy.format_kwargs))
+    final = output.format(**track_xy.format_kwargs, priority_lines=priority_lines.getvalue())
+    output_file.write(final)
 
 
-def draw_group(item: Group, output, anchor_pos, track_xy: DocumentSizeTracker):
+def draw_group(item: si.Group, output, anchor_pos, track_xy: DocumentSizeTracker, priority_lines: io.StringIO):
     anchor_x = 0.0
     anchor_y = 0.0
     if item.anchor_id is not None:
@@ -111,19 +115,22 @@ def draw_group(item: Group, output, anchor_pos, track_xy: DocumentSizeTracker):
     for child_id in item.children:
         child = item.children[child_id]
         output.write(f'    <!-- child {child_id} -->\n')
-        if isinstance(child, Group):
-            draw_group(child, output, anchor_pos, track_xy=track_xy)
-        elif isinstance(child, Line):
+        if isinstance(child, si.Group):
+            draw_group(child, output, anchor_pos, track_xy=track_xy, priority_lines=priority_lines)
+        elif isinstance(child, si.Line):
             try:
-                draw_stroke(child, output, track_xy)
+                draw_stroke(child, output, track_xy, priority_lines)
             except PenException:
                 print_exc()
     output.write(f'    </g>\n')
 
 
-def draw_stroke(item: Line, output, track_xy: DocumentSizeTracker):
+def draw_stroke(item: si.Line, output, track_xy: DocumentSizeTracker, priority_lines: io.StringIO):
     # initiate the pen
     pen = Pen.create(item.tool.value, item.color.value, item.rgba_color, item.thickness_scale / 10)
+
+    if item.tool == si.Pen.HIGHLIGHTER_2:
+        output = priority_lines
     K = 5
 
     # BEGIN stroke
@@ -178,8 +185,8 @@ def draw_stroke(item: Line, output, track_xy: DocumentSizeTracker):
     output.write('" />\n')
 
 
-def draw_text(text: Union[Text, TextDocument], output, anchor_pos, track_xy: DocumentSizeTracker):
-    if isinstance(text, Text):
+def draw_text(text: Union[si.Text, TextDocument], output, anchor_pos, track_xy: DocumentSizeTracker):
+    if isinstance(text, si.Text):
         text = TextDocument.from_scene_item(text)
     output.write('    <g class="root-text" style="display:inline">\n')
 
@@ -210,7 +217,7 @@ def draw_text(text: Union[Text, TextDocument], output, anchor_pos, track_xy: Doc
             ids = []
         y_offset += LINE_HEIGHTS[fmt]
 
-        pos_x
+        pos_x += 0
         pos_y += y_offset
         cls = fmt.name.lower()
         if line:
