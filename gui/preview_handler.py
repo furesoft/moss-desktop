@@ -21,37 +21,25 @@ except ImportError:
 class PreviewHandler:
     # Document id : (page id, sprite)
     # Sprite just allows for easy resizing
-    CACHED_PREVIEW: Dict[str, Tuple[str, Optional[pe.Image]]] = {}
-    CACHED_RESIZES: Dict[str, pe.Image] = {}
+    CACHED_PREVIEW: Dict[str, Tuple[str, Optional[pe.Sprite]]] = {}
     PREVIEW_LOAD_TASKS: List[str] = []
     PYGAME_THREAD_LOCK = threading.Lock()
 
     @classmethod
-    def get_preview(cls, document: Document, size: Tuple[int, int]) -> Optional[pe.Image]:
+    def get_preview(cls, document: Document, size: Tuple[int, int]) -> Optional[pe.Sprite]:
         size = tuple(min(given, max) for given, max in zip(size, Defaults.PREVIEW_SIZE))
         try:
-            image = cls._get_preview(document)
+            sprite = cls._get_preview(document)
         except:
             print_exc()
-            image = None
-        if image is None:
+            sprite = None
+        if sprite is None:
             return None
-        resized_image = cls.CACHED_RESIZES.get(document.uuid)
-        if not resized_image:
-            if image.size == size:
-                return image
-            resized_image = image.copy()
-            resized_image.resize(size)
-            cls.CACHED_RESIZES[document.uuid] = resized_image
-        elif resized_image.size != size:
-            del cls.CACHED_RESIZES[document.uuid]
-            resized_image = image.copy()
-            resized_image.resize(size)
-            cls.CACHED_RESIZES[document.uuid] = resized_image
-        return resized_image
+        sprite.resize = size
+        return sprite
 
     @classmethod
-    def _get_preview(cls, document: Document) -> Optional[pe.Image]:
+    def _get_preview(cls, document: Document) -> Optional[pe.Sprite]:
         try:
             if document.content.cover_page_number == -1:
                 page_id = document.content.c_pages.last_opened.value
@@ -66,14 +54,12 @@ class PreviewHandler:
             if preview[0] == page_id:
                 if os.path.isdir(Defaults.THUMB_FILE_PATH):
                     if not document.provision and preview[1] and not os.path.exists(location):
-                        preview[1].surface.save_to_file(location)
+                        preview[1].get_finished_surface().save_to_file(location)
                 return preview[1]
         # If the preview is not cached, load it
         if os.path.exists(location):
-            image = pe.Image(location)
-            cls.CACHED_PREVIEW[document_id] = (page_id, image)
-            if cls.CACHED_RESIZES.get(document.uuid):
-                del cls.CACHED_RESIZES[document.uuid]
+            sprite = pe.Sprite(location)
+            cls.CACHED_PREVIEW[document_id] = (page_id, sprite)
             return cls._get_preview(document)
 
         # Prevent multiple of the same task
@@ -151,21 +137,18 @@ class PreviewHandler:
                 raise Exception('Page content unavailable to construct preview')
             image = Notebook_rM_Lines_Renderer.generate_expanded_notebook_from_rm(document, rm_bytes,
                                                                                   use_lock=cls.PYGAME_THREAD_LOCK).get_frame_from_initial(
-                0, 0)
-            image.resize(Defaults.PREVIEW_SIZE)
+                0, 0, *Defaults.PREVIEW_SIZE)
         else:
             image = None
 
         if base_img:
             if image:
-                base_img.stamp(image.surface)
-                image.surface = base_img
+                base_img.stamp(image.reference)
+                image.reference = base_img
             else:
-                image = pe.Image(base_img)
+                image = pe.Sprite(base_img)
 
         cls.CACHED_PREVIEW[document.uuid] = (page_id, image)
-        if cls.CACHED_RESIZES.get(document.uuid):
-            del cls.CACHED_RESIZES[document.uuid]
 
     @classmethod
     def clear_for(cls, document_uuid: str, callback=None):
