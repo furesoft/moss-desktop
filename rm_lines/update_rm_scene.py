@@ -227,6 +227,7 @@ def dataclass_replacer(code: str):
                     in_between_lines.append(line)
                     continue
                 if line_stripped.startswith('"') or line_stripped.startswith("#"):
+                    in_between_lines.append(line)
                     continue
                 if line_stripped.split(':')[0].isupper():
                     in_between_lines.append(line)
