@@ -122,6 +122,18 @@ class DocumentSizeTracker(ABC):
         else:
             return NotebookSizeTracker(document)
 
+    def validate_visible_portion(self, left: int, top: int, w: int, h: int):
+        right = left + w
+        bottom = top + h
+
+        if right <= self.track_left or left >= self.track_right:
+            return False
+
+        if bottom <= self.track_top or top >= self.track_bottom:
+            return False
+
+        return True
+
 
 class NotebookSizeTracker(DocumentSizeTracker):
     def __init__(self, document: 'Document'):

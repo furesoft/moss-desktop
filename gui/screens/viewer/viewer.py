@@ -61,6 +61,8 @@ class DocumentRenderer(pe.ChildContext):
         self.hold_previous = False
         self.hold_timer = 0
         self.zoom = 1
+        self.zoom_scaling_offset = (0, 0)
+        self.zoom_reference_size = (100, 100)
 
         # Check compatability
         if not self.document.content.usable:
@@ -103,6 +105,10 @@ class DocumentRenderer(pe.ChildContext):
         return self.pos[1] + self.height // 2
 
     @property
+    def center(self):
+        return self.center_x, self.center_y
+
+    @property
     def error(self):
         return self._error
 
@@ -119,8 +125,32 @@ class DocumentRenderer(pe.ChildContext):
 
     def handle_navigation(self, event: pe.pygame.event.Event):
         if self.ctrl_hold and event.type == pe.pygame.MOUSEWHEEL:
+            zoom_before = self.zoom
             self.zoom += event.y * self.ZOOM_SENSITIVITY * self.delta_time
             self.zoom = max(0.2, min(3, self.zoom))
+            zoom_delta = zoom_before - self.zoom
+
+            # Handle proper panning offset
+            # noinspection PyTypeChecker
+            self.draggable.pos = self.pos = tuple(
+                int(
+                    pos -  # Finally subtract the offset from the current position
+                    ((
+                             (mp - center) /  # How offset the mouse is from the center
+                             (reference_size / 2)  # Half of size of the page
+                     )  # The influence from the center that the zoom offset should be
+                     * offset * zoom_delta  # Finally multiply by the offset and the zoom delta
+                     )
+                )  # Ensure the final value is an integer
+                for pos, mp, center, reference_size, offset in
+                zip(
+                    self.pos,
+                    pe.mouse.pos(),
+                    self.center,
+                    self.zoom_reference_size,
+                    self.zoom_scaling_offset
+                )  # Zip all required positional values
+            )
 
         if not self.hold_timer:
             if any([
@@ -244,6 +274,8 @@ class DocumentRenderer(pe.ChildContext):
                 self.do_previous()
             self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
         _, self.pos = self.draggable.check()  # Check if user is panning
+        if self.config.debug:
+            pe.draw.circle(pe.colors.red, self.pos, 5)
 
 
 class DocumentViewerUI(pe.ChildContext):

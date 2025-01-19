@@ -33,7 +33,8 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         self.use_lock = use_lock
 
     @lru_cache()
-    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None) -> pe.Sprite:
+    def get_frame_from_initial(self, frame_x, frame_y, final_width: int = None, final_height: int = None,
+                               scale: float = None) -> pe.Sprite:
         # Replace the svg viewport with a viewport to capture the frame
 
         width = float(self.width_match.group(1))
@@ -102,25 +103,74 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
             if self.pages[rm_file] is None:
                 self.error = self.RENDER_ERROR
             else:
-                # TODO: replace with get frames and use offsets and aknowledge each frame offset when displaying
                 expanded_notebook = self.pages[rm_file]
-                frame = expanded_notebook.get_frame_from_initial(
-                    0, 0
+                # initial_frame = expanded_notebook.get_frame_from_initial(
+                #     0, 0
+                # )
+                # scale = self.gui.ratios.rm_scaled(expanded_notebook.frame_width) * self.document_renderer.zoom
+                # initial_frame.scale = (scale, scale)
+                # rect = pe.Rect(0, 0, *initial_frame.size)
+                # rect.centerx = self.document_renderer.center_x
+                # rect.centery = self.document_renderer.center_y
+                #
+                # # if not self.document_renderer.renderer:
+                # #     # Draw notebook shadow
+                # #     shadow_rect = rect.inflate(self.gui.ratios.document_viewer_notebook_shadow_size,
+                # #                                self.gui.ratios.document_viewer_notebook_shadow_size)
+                # #     pe.draw.rect(Defaults.LINE_GRAY, shadow_rect, self.gui.ratios.seperator,
+                # #                  edge_rounding=self.gui.ratios.document_viewer_notebook_shadow_radius)
+                #
+                # initial_frame.display(rect.topleft)
+
+                frames = expanded_notebook.get_frames(
+                    -self.document_renderer.center_x, -self.document_renderer.center_y,
+                    *self.size, self.document_renderer.zoom
                 )
-                scale = self.gui.ratios.rm_scaled * self.document_renderer.zoom
-                frame.scale = (scale, scale)
-                rect = pe.Rect(0, 0, *frame.size)
-                rect.centerx = self.document_renderer.center_x
-                rect.centery = self.document_renderer.center_y
 
-                if not self.document_renderer.renderer:
-                    # Draw notebook shadow
-                    shadow_rect = rect.inflate(self.gui.ratios.document_viewer_notebook_shadow_size,
-                                               self.gui.ratios.document_viewer_notebook_shadow_size)
-                    pe.draw.rect(Defaults.LINE_GRAY, shadow_rect, self.gui.ratios.seperator,
-                                 edge_rounding=self.gui.ratios.document_viewer_notebook_shadow_radius)
+                expected_frame_sizes = tuple(
+                    # Calculate frame size for both zoom levels to determine the zoom scaling offset
+                    (
+                        expanded_notebook.frame_width * zoom *
+                        self.gui.ratios.rm_scaled(expanded_notebook.frame_width),
+                        expanded_notebook.frame_height * zoom *
+                        self.gui.ratios.rm_scaled(expanded_notebook.frame_width)
+                    )
+                    for zoom in (self.document_renderer.zoom, self.document_renderer.zoom + 1)
+                )
+                self.document_renderer.zoom_scaling_offset = tuple(
+                    # Half the change when changing zooming by 1 unit
+                    (expected_frame_sizes[0][_] - expected_frame_sizes[1][_]) / 2
+                    for _ in range(2)
+                )
+                self.document_renderer.zoom_reference_size = expected_frame_sizes[0]
 
-                frame.display(rect.topleft)
+                rotate_icon = self.gui.icons['rotate']
+
+                for (frame_x, frame_y), frame_task in frames.items():
+                    if frame_task.loaded:
+                        frame = frame_task.sprite
+                    else:
+                        rect = pe.Rect(0, 0, *expected_frame_sizes[0])
+                        icon_rect = pe.Rect(0, 0, *rotate_icon.size)
+                        rect.center = self.document_renderer.center
+                        rect.move_ip(
+                            frame_x * expected_frame_sizes[0][0],
+                            frame_y * expected_frame_sizes[0][1]
+                        )
+                        icon_rect.center = rect.center
+
+                        rotate_icon.display(icon_rect.topleft)
+                        pe.draw.rect(Defaults.LINE_GRAY, rect, self.gui.ratios.line)
+                        continue
+
+                    rect = pe.Rect(0, 0, *frame.size)
+                    rect.center = self.document_renderer.center
+                    rect.move_ip(
+                        frame_x * frame.size[0],
+                        frame_y * frame.size[1]
+                    )
+                    frame.display(rect.topleft)
+
                 if self.error and self.error.text == self.RENDER_ERROR:
                     self.error = None
         elif self.error and self.error.text == self.RENDER_ERROR:
