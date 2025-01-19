@@ -63,6 +63,8 @@ class rM_Lines_ExpandedNotebook(ExpandedNotebook):
         #     with self.use_lock:
         #         return pe.Image(BytesIO(encoded_svg_content), (final_width, final_height))
         # else:
+        # TODO: Instead of rendering each page render the SVG once and then slice it
+        #  or use something else to render SVGs
         return pe.Sprite(BytesIO(encoded_svg_content), (final_width, final_height))
 
 
@@ -104,6 +106,10 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                 self.error = self.RENDER_ERROR
             else:
                 expanded_notebook = self.pages[rm_file]
+
+                # TODO: Check zoom and handle higher quality chunks of the page when zoomed in
+
+                # TODO: Remove this old single frame code
                 # initial_frame = expanded_notebook.get_frame_from_initial(
                 #     0, 0
                 # )
