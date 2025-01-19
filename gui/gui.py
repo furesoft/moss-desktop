@@ -204,6 +204,7 @@ class GUI(pe.GameContext):
         super().__init__()
 
         if self.config.debug:
+            self.FPS_LOGGER = True
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(ColorFormatter("%(name)s - %(levelname)s - %(message)s"))
             logging.basicConfig(
