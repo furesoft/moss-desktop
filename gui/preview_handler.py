@@ -6,7 +6,7 @@ from typing import Dict, Tuple, List, Optional
 import pygameextra as pe
 
 from gui.defaults import Defaults
-from gui.screens.viewer.renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+from gui.screens.viewer.renderers.notebook.rm_lines_svg_inker import Notebook_rM_Lines_Renderer
 from rm_api import Document
 from rm_api.models import Page
 from rm_api.storage.common import FileHandle

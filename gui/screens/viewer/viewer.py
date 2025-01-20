@@ -6,7 +6,7 @@ import pygameextra as pe
 from colorama import Fore
 
 from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
-from .renderers.notebook.rm_lines import Notebook_rM_Lines_Renderer
+from .renderers.notebook.rm_lines_svg_inker import Notebook_rM_Lines_Renderer
 from .renderers.pdf.pymupdf import PDF_PyMuPDF_Viewer
 from ...events import ResizeEvent
 
