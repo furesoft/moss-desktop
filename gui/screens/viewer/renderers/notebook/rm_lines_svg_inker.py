@@ -176,6 +176,8 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                         frame_y * frame.size[1]
                     )
                     frame.display(rect.topleft)
+                    if self.gui.config.debug_viewer:
+                        pe.draw.rect(pe.colors.magenta, rect, self.gui.ratios.line)
 
                 if self.error and self.error.text == self.RENDER_ERROR:
                     self.error = None

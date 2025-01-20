@@ -88,6 +88,7 @@ class ConfigDict(TypedDict):
     debug: bool
     debug_log: bool
     debug_lines: bool
+    debug_viewer: bool
     portable_mode: bool
     extensions: dict
 
@@ -115,6 +116,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'debug': False,
     'debug_log': False,
     'debug_lines': False,
+    'debug_viewer': False,
     'debug_button_rects': False,
     'portable_mode': False,
     'extensions': {}
