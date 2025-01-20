@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 import pygameextra as pe
 
 # noinspection PyBroadException
@@ -7,7 +8,6 @@ try:
 except Exception:
     pymupdf = None
 
-from gui.defaults import Defaults
 from ..shared_model import AbstractRenderer
 
 
@@ -41,25 +41,24 @@ class PDF_PyMuPDF_Viewer(AbstractRenderer):
             return
 
         page_index = page.redirect.value
-        image = self.get_page(page_index)
+        sprite = self.get_page(page_index)
+        scale = self.document_renderer.zoom * self.gui.ratios.rm_scaled(sprite.reference.width)
+        sprite.scale = (scale, scale)
 
-        pe.display.blit(image, (0, 0))
+        rect = pe.Rect(0, 0, *sprite.size)
+        rect.center = self.document_renderer.center
+        sprite.display(rect.topleft)
 
     @lru_cache()
-    def get_page(self, page):
+    def get_page(self, page) -> pe.Sprite:
         pdf_page = self.pdf[page]
-        scale_x = self.width / pdf_page.rect.width
-        scale_y = self.height / pdf_page.rect.height
-
-        # Create a matrix for scaling
-        matrix = pymupdf.Matrix(scale_x, scale_y)
 
         # noinspection PyUnresolvedReferences
-        pix = pdf_page.get_pixmap(matrix=matrix)
+        pix = pdf_page.get_pixmap()
         mode = "RGBA" if pix.alpha else "RGB"
         # noinspection PyTypeChecker
-        image = pe.Surface(surface=pe.pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode))
-        return image
+        sprite = pe.Sprite(sprite_reference=pe.pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode))
+        return sprite
 
     def close(self):
         pass
