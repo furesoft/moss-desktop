@@ -26,6 +26,7 @@ class ExpandedNotebook(ABC):
     def __init__(self, track_xy: NotebookSizeTracker):
         self.frame_width = track_xy.frame_width
         self.frame_height = track_xy.frame_height
+        self.frame_size = (self.frame_width, self.frame_height)
         self.track_xy = track_xy
         if settings.config.debug:
             print(f'Expanded notebook debug, frame size: {track_xy.frame_width}, {track_xy.frame_height} {track_xy}')

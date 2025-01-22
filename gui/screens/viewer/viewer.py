@@ -83,6 +83,12 @@ class DocumentRenderer(pe.ChildContext):
         self.draggable = pe.Draggable((0, 0))
         self.pos = (0, 0)
 
+        if parent.config.debug:
+            self.debug_display = pe.Text(
+                'DEBUG', Defaults.DEBUG_FONT, parent.ratios.debug_text_size,
+                colors=(pe.colors.white, pe.colors.darkorange)
+            )
+
         self.loading_timer = time.time()
 
         self.mode = 'nocontent'
@@ -276,6 +282,35 @@ class DocumentRenderer(pe.ChildContext):
         _, self.pos = self.draggable.check()  # Check if user is panning
         if self.config.debug:
             pe.draw.circle(pe.colors.red, self.pos, 5)
+            self.debug_display.text = self.debug_text
+            self.debug_display.init()
+            self.debug_display.rect.bottomright = self.size
+            self.debug_display.display()
+
+    @property
+    def debug_text(self):
+        if self.notebook_renderer and self.notebook_renderer.expanded_notebook:
+            rm_position = tuple(
+                (
+                        (
+                                (mp - center) +  # Get the offset from the center
+                                (reference_size / 2)  # Add half of size of the page
+                        )
+                        / reference_size  # Divide to get a 0-1 coordinate
+                ) * frame_size  # Multiply by the frame size to get the real position
+                for mp, center, reference_size, frame_size in zip(
+                    pe.mouse.pos(),
+                    self.center,
+                    self.zoom_reference_size,
+                    self.notebook_renderer.expanded_notebook.frame_size,
+                )  # Zip all required positional values
+            )
+        else:
+            rm_position = (0, 0)
+        return (f"Zoom: {self.zoom:.2f} | "
+                f"Center: {self.center} | "
+                f"Page: {self.current_page_index} |"
+                f"RM Pos: {rm_position[0]:.2f}, {rm_position[1]:.2f}")
 
 
 class DocumentViewerUI(pe.ChildContext):

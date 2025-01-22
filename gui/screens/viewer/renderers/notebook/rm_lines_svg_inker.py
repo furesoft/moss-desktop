@@ -79,10 +79,12 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
 
     pages: Dict[str, Union[rM_Lines_ExpandedNotebook, None]]
     RENDER_ERROR = 'Error rendering writing for this page'
+    expanded_notebook: rM_Lines_ExpandedNotebook
 
     def __init__(self, document_renderer):
         super().__init__(document_renderer)
         self.pages = {}
+        self.expanded_notebook = None
 
     def _load(self, page_uuid: str):
         if content := self.document.content_data.get(file_uuid := f'{self.document.uuid}/{page_uuid}.rm'):
@@ -105,7 +107,7 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
             if self.pages[rm_file] is None:
                 self.error = self.RENDER_ERROR
             else:
-                expanded_notebook = self.pages[rm_file]
+                self.expanded_notebook = self.pages[rm_file]
 
                 # TODO: Check zoom and handle higher quality chunks of the page when zoomed in
 
@@ -128,7 +130,7 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                 #
                 # initial_frame.display(rect.topleft)
 
-                frames = expanded_notebook.get_frames(
+                frames = self.expanded_notebook.get_frames(
                     -self.document_renderer.center_x, -self.document_renderer.center_y,
                     *self.size, self.document_renderer.zoom
                 )
@@ -136,10 +138,10 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
                 expected_frame_sizes = tuple(
                     # Calculate frame size for both zoom levels to determine the zoom scaling offset
                     (
-                        expanded_notebook.frame_width * zoom *
-                        self.gui.ratios.rm_scaled(expanded_notebook.frame_width),
-                        expanded_notebook.frame_height * zoom *
-                        self.gui.ratios.rm_scaled(expanded_notebook.frame_width)
+                        self.expanded_notebook.frame_width * zoom *
+                        self.gui.ratios.rm_scaled(self.expanded_notebook.frame_width),
+                        self.expanded_notebook.frame_height * zoom *
+                        self.gui.ratios.rm_scaled(self.expanded_notebook.frame_width)
                     )
                     for zoom in (self.document_renderer.zoom, self.document_renderer.zoom + 1)
                 )

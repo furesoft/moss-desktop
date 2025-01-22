@@ -1,6 +1,8 @@
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from pygameextra import settings
+
 if TYPE_CHECKING:
     from rm_api import Document
 from rm_api.defaults import RM_SCREEN_SIZE, FileTypes
@@ -99,12 +101,17 @@ class DocumentSizeTracker(ABC):
 
     @property
     def format_kwargs(self):
-        return {
+        final = {
             'height': self.track_height,
             'width': self.track_width,
             'x_shift': self.frame_width / 2,
             'viewbox': f'{self.track_left} {self.track_top} {self.track_width} {self.track_height}',
         }
+
+        if settings.config.debug_disable_lines_alignment:
+            final['x_shift'] = 0
+
+        return final
 
     def __str__(self):
         return (f'DocumentSizeTracker('

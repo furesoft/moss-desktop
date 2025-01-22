@@ -87,6 +87,7 @@ class ConfigDict(TypedDict):
     add_ext_to_raw_exports: bool
     debug: bool
     debug_log: bool
+    debug_disable_lines_alignment: bool
     debug_lines: bool
     debug_viewer: bool
     portable_mode: bool
@@ -115,6 +116,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'add_ext_to_raw_exports': True,
     'debug': False,
     'debug_log': False,
+    'debug_disable_lines_alignment': False,
     'debug_lines': False,
     'debug_viewer': False,
     'debug_button_rects': False,
