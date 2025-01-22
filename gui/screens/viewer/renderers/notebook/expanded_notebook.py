@@ -1,25 +1,11 @@
-import threading
 from abc import ABC, abstractmethod
 from functools import lru_cache
 
 import pygameextra as pe
 from pygameextra import settings
 
+from gui.screens.viewer.renderers.shared_model import LoadTask
 from rm_lines.inker.document_size_tracker import NotebookSizeTracker
-
-
-class NotebookLoadTask:
-    def __init__(self, function, *args, **kwargs):
-        self.loaded = False
-        self.sprite = None
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
-        threading.Thread(target=self.load, daemon=True).start()
-
-    def load(self):
-        self.sprite = self.function(*self.args, **self.kwargs)
-        self.loaded = True
 
 
 class ExpandedNotebook(ABC):
@@ -80,5 +66,5 @@ class ExpandedNotebook(ABC):
 
     @lru_cache()
     def task_frame_from_initial(self, frame_x, frame_y, final_width: int = None,
-                                final_height: int = None) -> NotebookLoadTask:
-        return NotebookLoadTask(self.get_frame_from_initial, frame_x, frame_y, final_width, final_height)
+                                final_height: int = None) -> LoadTask:
+        return LoadTask(self.get_frame_from_initial, frame_x, frame_y, final_width, final_height)

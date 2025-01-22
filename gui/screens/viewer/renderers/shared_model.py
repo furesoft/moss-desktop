@@ -1,3 +1,4 @@
+import threading
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
@@ -52,4 +53,19 @@ class AbstractRenderer(ABC):
     def get_enhance_scale(self):
         # Return an enhancement scale for when the page is zoomed in
         # Will at most return between 1 and 3
-        return max(2, min(6, self.document_renderer.zoom // 0.5)) * 0.5
+        scale = max(2, min(6, self.document_renderer.zoom // 0.5)) * 0.5
+        return scale / self.document_renderer.config.scale
+
+
+class LoadTask:
+    def __init__(self, function, *args, **kwargs):
+        self.loaded = False
+        self.sprite = None
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        threading.Thread(target=self.load, daemon=True).start()
+
+    def load(self):
+        self.sprite = self.function(*self.args, **self.kwargs)
+        self.loaded = True

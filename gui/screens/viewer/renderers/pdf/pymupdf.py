@@ -4,6 +4,7 @@ import pygameextra as pe
 
 from rm_api.defaults import RM_SCREEN_SIZE
 from . import PDF_AbstractRenderer
+from ..shared_model import LoadTask
 
 # noinspection PyBroadException
 try:
@@ -34,7 +35,13 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
 
         page_index = page.redirect.value
         pdf_zoom_enhance = self.get_enhance_scale()
-        sprite = self.get_page(page_index, pdf_zoom_enhance)
+        task = self.task_get_page(page_index, pdf_zoom_enhance)
+
+        if not task.loaded:
+            pdf_zoom_enhance = 0.5
+            sprite = self.get_page(page_index, 0.5)
+        else:
+            sprite = task.sprite
 
         # Calculate the scale and remarkable scale of the page
         base_scale = self.document_renderer.zoom * self.gui.ratios.rm_scaled(RM_SCREEN_SIZE[0])
@@ -49,10 +56,22 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         rect.center = self.document_renderer.center
         # Align the PDF to the top
         rect.top = rect.centery - (RM_SCREEN_SIZE[1] // 2) * base_scale
-        sprite.display(rect.topleft)
+
+        screen_rect = pe.Rect(0, 0, *self.size)
+
+        # Clip the visible area of the PDF
+        clipped_area = screen_rect.clip(rect)
+
+        # Remove the rect position from the clip
+        clipped_area.move_ip(-rect.left, -rect.top)
+        # Move the rect by the clipped area offset
+        rect.move_ip(clipped_area.left, clipped_area.top)
+
+        # Finally render the PDF
+        sprite.display(rect.topleft, clipped_area)
 
     @lru_cache()
-    def get_page(self, page, scale=1) -> pe.Sprite:
+    def get_page(self, page, scale: float = 1) -> pe.Sprite:
         pdf_page = self.pdf[page]
 
         # Scale up the PDF if required
@@ -64,6 +83,10 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         # noinspection PyTypeChecker
         sprite = pe.Sprite(sprite_reference=pe.pygame.image.frombuffer(pix.samples, (pix.width, pix.height), mode))
         return sprite
+
+    @lru_cache()
+    def task_get_page(self, page, scale: float = 1) -> LoadTask:
+        return LoadTask(self.get_page, page, scale)
 
     def close(self):
         pass
