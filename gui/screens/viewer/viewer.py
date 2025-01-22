@@ -5,24 +5,12 @@ from typing import TYPE_CHECKING, Dict
 import pygameextra as pe
 from colorama import Fore
 
-from gui.screens.viewer.renderers.pdf.cef import PDF_CEF_Viewer
-from .renderers.notebook.rm_lines_svg_inker import Notebook_rM_Lines_Renderer
-from .renderers.pdf.pymupdf import PDF_PyMuPDF_Viewer
-from ...events import ResizeEvent
-
-try:
-    import CEF4pygame
-
-    CEF4pygame.print = lambda *args, **kwargs: None
-    from CEF4pygame import CEFpygame
-    from cefpython3 import cefpython as cef
-except Exception:
-    CEFpygame = None
-    cef = None
-
 from gui.defaults import Defaults
 from gui.pp_helpers import DraggablePuller
 from rm_api import models
+from .renderers.notebook.rm_lines_svg_inker import Notebook_rM_Lines_Renderer
+from .renderers.pdf.pymupdf import PDF_PyMuPDF_Viewer
+from ...events import ResizeEvent
 
 if TYPE_CHECKING:
     from gui.gui import GUI, ConfigType
@@ -226,10 +214,7 @@ class DocumentRenderer(pe.ChildContext):
 
     def load(self):
         if self.document.content.file_type in ('pdf', 'epub'):
-            if self.config.pdf_render_mode == 'cef' and CEFpygame:
-                self.loading += 1
-                self.renderer = PDF_CEF_Viewer(self)
-            elif self.config.pdf_render_mode == 'pymupdf':
+            if self.config.pdf_render_mode == 'pymupdf':
                 self.loading += 1
                 self.renderer = PDF_PyMuPDF_Viewer(self)
             elif self.config.pdf_render_mode == 'none':

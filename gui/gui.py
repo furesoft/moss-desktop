@@ -22,10 +22,6 @@ from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES, 
 Defaults = None
 
 try:
-    from CEF4pygame import CEFpygame
-except Exception:
-    CEFpygame = None
-try:
     import pymupdf
 except Exception:
     pymupdf = None
@@ -172,9 +168,9 @@ def load_config() -> ConfigType:
     if config['pdf_render_mode'] not in PDF_RENDER_MODES.__args__:
         raise ValueError(f"Invalid pdf_render_mode: {config['pdf_render_mode']}")
     if config['pdf_render_mode'] == 'retry':
-        config['pdf_render_mode'] = 'cef'
-    if config['pdf_render_mode'] == 'cef' and CEFpygame is None:
-        print(f"{Fore.YELLOW}Cef is not installed or is not compatible with your python version.{Fore.RESET}")
+        config['pdf_render_mode'] = 'pymupdf'
+    if config['pdf_render_mode'] == 'cef':
+        print(f"{Fore.RED}Sorry but CEF is no longer supported!{Fore.RESET}")
         config['pdf_render_mode'] = 'pymupdf'
     if config['pdf_render_mode'] == 'pymupdf' and not pymupdf:
         print(f"{Fore.YELLOW}PyMuPDF is not installed or is not compatible with your python version.{Fore.RESET}")
