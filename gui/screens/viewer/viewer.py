@@ -61,7 +61,8 @@ class DocumentRenderer(pe.ChildContext):
         self.hold_next = False
         self.hold_previous = False
         self.hold_timer = 0
-        self.zoom = 1
+        self.base_zoom = 1
+        self._zoom = 1
         self.zoom_scaling_offset = (0, 0)
         self.zoom_reference_size = (100, 100)
         self.last_zoom_time = time.time()
@@ -105,6 +106,10 @@ class DocumentRenderer(pe.ChildContext):
             print(f"{Fore.RED}Notebook render mode `{self.config.notebook_render_mode}` unavailable{Fore.RESET}")
 
     @property
+    def zoom(self):
+        return self.base_zoom * self._zoom
+
+    @property
     def zoom_ready(self):
         return time.time() - self.last_zoom_time > self.ZOOM_WAIT
 
@@ -138,8 +143,8 @@ class DocumentRenderer(pe.ChildContext):
     def handle_navigation(self, event: pe.pygame.event.Event):
         if self.ctrl_hold and event.type == pe.pygame.MOUSEWHEEL:
             zoom_before = self.zoom
-            self.zoom += event.y * self.ZOOM_SENSITIVITY * self.delta_time
-            self.zoom = max(0.2, min(3, self.zoom))
+            self._zoom += event.y * self.ZOOM_SENSITIVITY * self.delta_time
+            self._zoom = max(0.2, min(3, self._zoom))
             zoom_delta = zoom_before - self.zoom
 
             if zoom_delta:
@@ -247,6 +252,8 @@ class DocumentRenderer(pe.ChildContext):
         if not self.began_loading:
             self.load()
             self.began_loading = True
+        if self.config.debug:
+            pe.fill.transparency(pe.colors.black, 25)
         # Draw the loading icon
         if self.loading:
             pe.draw.rect(pe.colors.black, self.loading_rect)
@@ -315,10 +322,12 @@ class DocumentRenderer(pe.ChildContext):
             )
         else:
             rm_position = (0, 0)
-        return (f"Zoom: {self.zoom:.2f} | "
-                f"Center: {self.center} | "
-                f"Page: {self.current_page_index} |"
-                f"RM Pos: {rm_position[0]:.2f}, {rm_position[1]:.2f}")
+        return (
+            f"Zoom: {self.base_zoom:.2f} * {self._zoom:.2f} | "
+            f"Center: {self.center} | "
+            f"Page: {self.current_page_index} | "
+            f"RM Pos: {rm_position[0]:.2f}, {rm_position[1]:.2f}"
+        )
 
 
 class DocumentViewerUI(pe.ChildContext):
