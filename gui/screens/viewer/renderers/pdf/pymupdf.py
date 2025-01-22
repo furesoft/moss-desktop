@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional
 
 import pygameextra as pe
 
@@ -18,11 +19,15 @@ PDF_SCALING = 227.54 / 72
 
 # noinspection PyPep8Naming
 class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
+    pdf: Optional[pymupdf.Document]
+
+    def __init__(self, document_renderer):
+        super().__init__(document_renderer)
+        self.pdf = None
+        self.extra_scale = {}
 
     def load(self):
-        if not self.pdf_raw:
-            self.pdf = None
-        else:
+        if self.pdf_raw:
             self.pdf = pymupdf.open(stream=self.pdf_raw, filetype='pdf')
         self.document_renderer.loading -= 1
 
@@ -33,21 +38,22 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         if not page.redirect:
             return
 
+        # Calculate the scale and remarkable scale of the page
+        acceptable_width = RM_SCREEN_SIZE[0] * self.gui.ratios.rm_scaled(RM_SCREEN_SIZE[0])
+        base_scale = self.document_renderer.zoom * self.gui.ratios.rm_scaled(RM_SCREEN_SIZE[0])
+
         page_index = page.redirect.value
         pdf_zoom_enhance = self.get_enhance_scale()
-        task = self.task_get_page(page_index, pdf_zoom_enhance)
+        task = self.task_get_page(page_index, pdf_zoom_enhance, acceptable_width)
 
         if not (task.loaded and self.document_renderer.zoom_ready):
             pdf_zoom_enhance = 1
-            sprite = self.get_page(page_index, 1)
+            sprite = self.get_page(page_index, 1, acceptable_width)
         else:
             sprite = task.sprite
 
-        # Calculate the scale and remarkable scale of the page
-        base_scale = self.document_renderer.zoom * self.gui.ratios.rm_scaled(RM_SCREEN_SIZE[0])
-
         # Scale the PDF to the screen
-        scale = (base_scale * PDF_SCALING) / pdf_zoom_enhance
+        scale = (base_scale * PDF_SCALING) / (pdf_zoom_enhance + self.extra_scale.get(page_index, 0))
 
         # Set the scale of the sprite
         sprite.scale = (scale, scale)
@@ -71,8 +77,13 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         sprite.display(rect.topleft, clipped_area)
 
     @lru_cache()
-    def get_page(self, page, scale: float = 1) -> pe.Sprite:
-        pdf_page = self.pdf[page]
+    def get_page(self, page, scale: float = 1, acceptable_width: int = None) -> pe.Sprite:
+        pdf_page: pymupdf.Page = self.pdf[page]
+
+        if acceptable_width:
+            self.extra_scale[page] = acceptable_width / pdf_page.mediabox_size.x
+
+        scale += self.extra_scale.get(page, 0)
 
         # Scale up the PDF if required
         matrix = pymupdf.Matrix(scale, scale)
@@ -85,8 +96,8 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         return sprite
 
     @lru_cache()
-    def task_get_page(self, page, scale: float = 1) -> LoadTask:
-        return LoadTask(self.get_page, page, scale)
+    def task_get_page(self, page, scale: float = 1, acceptable_width: int = None) -> LoadTask:
+        return LoadTask(self.get_page, page, scale, acceptable_width)
 
     def close(self):
         pass
