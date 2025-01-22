@@ -2,6 +2,8 @@ from functools import lru_cache
 
 import pygameextra as pe
 
+from rm_api.defaults import RM_SCREEN_SIZE
+
 # noinspection PyBroadException
 try:
     import pymupdf
@@ -9,6 +11,9 @@ except Exception:
     pymupdf = None
 
 from ..shared_model import AbstractRenderer
+
+# DPI / typographic measurement unit
+PDF_SCALING = 227.54 / 72
 
 
 # noinspection PyPep8Naming
@@ -42,11 +47,13 @@ class PDF_PyMuPDF_Viewer(AbstractRenderer):
 
         page_index = page.redirect.value
         sprite = self.get_page(page_index)
-        scale = self.document_renderer.zoom * self.gui.ratios.rm_scaled(sprite.reference.width)
+        base_scale = self.document_renderer.zoom * self.gui.ratios.rm_scaled(RM_SCREEN_SIZE[0])
+        scale = base_scale * PDF_SCALING
         sprite.scale = (scale, scale)
 
         rect = pe.Rect(0, 0, *sprite.size)
         rect.center = self.document_renderer.center
+        rect.top = rect.centery - (RM_SCREEN_SIZE[1] // 2) * base_scale
         sprite.display(rect.topleft)
 
     @lru_cache()
