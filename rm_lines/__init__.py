@@ -23,7 +23,7 @@ def get_children(sequence: CrdtSequence):
     ]
 
 
-def rm_bytes_to_svg(data: bytes, document: 'Document') -> Tuple[str, DocumentSizeTracker]:
+def rm_bytes_to_svg(data: bytes, document: 'Document', template: str = None) -> Tuple[str, DocumentSizeTracker]:
     tree = read_tree(BytesIO(data))
 
     if settings.config.debug_lines:
@@ -33,7 +33,7 @@ def rm_bytes_to_svg(data: bytes, document: 'Document') -> Tuple[str, DocumentSiz
     track_xy = DocumentSizeTracker.create_from_document(document)
 
     with StringIO() as f:
-        tree_to_svg(tree, f, track_xy)
+        tree_to_svg(tree, f, track_xy, template)
         return f.getvalue(), track_xy
 
 

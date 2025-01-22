@@ -6,6 +6,7 @@ from traceback import print_exc
 from typing import Dict, Tuple, Union, TYPE_CHECKING
 
 import pygameextra as pe
+from pygameextra import settings
 
 from gui.defaults import Defaults
 from gui.screens.viewer.renderers.notebook.expanded_notebook import ExpandedNotebook
@@ -88,8 +89,9 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
 
     def _load(self, page_uuid: str):
         if content := self.document.content_data.get(file_uuid := f'{self.document.uuid}/{page_uuid}.rm'):
+            template = self.document.content.c_pages.get_page_from_uuid(page_uuid).template.value
             self.pages[file_uuid] = self.generate_expanded_notebook_from_rm(self.document, content,
-                                                                            size=self.size)
+                                                                            size=self.size, template=template)
         self.document_renderer.loading -= 1
 
     def load(self):
@@ -194,9 +196,15 @@ class Notebook_rM_Lines_Renderer(AbstractRenderer):
 
     @staticmethod
     def generate_expanded_notebook_from_rm(document: Document, content: bytes, size: Tuple[int, int] = None,
-                                           use_lock: threading.Lock = None) -> rM_Lines_ExpandedNotebook:
+                                           use_lock: threading.Lock = None,
+                                           template: str = None) -> rM_Lines_ExpandedNotebook:
         try:
-            svg, track_xy = rm_bytes_to_svg(content, document)
+            template_key = f'templates/{template}'
+            template_data = settings.game_context.data.get(template_key, None)
+
+            svg, track_xy = rm_bytes_to_svg(content, document, template_data.decode() if template_data else None)
+            # with open('save.svg', 'w') as f:
+            #     f.write(svg)
             expanded = rM_Lines_ExpandedNotebook(svg, track_xy, use_lock)
             expanded.get_frame_from_initial(0, 0, *(size if size else ()))
         except Exception as e:

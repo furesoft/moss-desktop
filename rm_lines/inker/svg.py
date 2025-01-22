@@ -4,6 +4,7 @@ Code originally from https://github.com/lschwetlick/maxio through
 https://github.com/chemag/maxio .
 """
 import io
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from traceback import print_exc
 from typing import Union
@@ -64,7 +65,7 @@ def read_template_svg(template_path: Path) -> str:
     return "\n".join(lines[2:-1])
 
 
-def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
+def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker, template: str = None):
     """Convert Tree to SVG."""
     if tree.scene_info and tree.scene_info.page_size:
         track_xy.frame_width, track_xy.frame_height = tree.scene_info.page_size
@@ -75,7 +76,9 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
     # output.write('<svg xmlns="http://www.w3.org/2000/svg">\n')
     output.write(SVG_HEADER)
 
+    output.write('    <g id="template">\n{template}\n    </g>\n')
     output.write('    <g id="p1" style="display:inline" transform="translate({x_shift},0)">\n')
+
     output.write('    <g id="priority">\n{priority_lines}\n    </g>\n')
 
     # output.write('        <filter id="blurMe"><feGaussianBlur in="SourceGraphic" stdDeviation="10" /></filter>\n')
@@ -99,7 +102,8 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker):
     output.write('    </g>\n')
     # END notebook
     output.write('</svg>\n')
-    final = output.format(**track_xy.format_kwargs, priority_lines=priority_lines.getvalue())
+
+    final = output.format(**track_xy.format_kwargs, priority_lines=priority_lines.getvalue(), template=template or '')
     output_file.write(final)
 
 

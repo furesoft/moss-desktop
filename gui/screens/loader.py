@@ -35,7 +35,12 @@ class ResizedIcon:
         self.scale = scale
 
 
-AcceptedLoadTypes = Union[str, ReusedIcon, ResizedIcon, InvertedIcon]
+class TreatAsData:
+    def __init__(self, item: str):
+        self.item = item
+
+
+AcceptedLoadTypes = Union[str, ReusedIcon, ResizedIcon, InvertedIcon, TreatAsData]
 
 
 class Loader(pe.ChildContext, LogoMixin):
@@ -84,7 +89,15 @@ class Loader(pe.ChildContext, LogoMixin):
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
         # Data files
-        'light_pdf': os.path.join(Defaults.DATA_DIR, 'light.pdf')
+        'light_pdf': os.path.join(Defaults.DATA_DIR, 'light.pdf'),
+
+        # Templates
+        **{
+            f"templates/{template.rsplit('.', 1)[0]}":
+                TreatAsData(os.path.join(Defaults.DATA_DIR, 'templates', template))
+            for template in os.listdir(os.path.join(Defaults.DATA_DIR, 'templates'))
+        }
+
     }
 
     LAYER = pe.AFTER_LOOP_LAYER
@@ -121,6 +134,8 @@ class Loader(pe.ChildContext, LogoMixin):
             self.__load(key, item.item)
             key_inverted = f'{key}_inverted'
             invert_icon(self, key, key_inverted)
+        elif isinstance(item, TreatAsData):
+            self.load_data(key, item.item)
         elif not isinstance(item, str):
             return
         elif item.endswith('.svg'):
