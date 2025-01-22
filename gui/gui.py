@@ -77,6 +77,7 @@ class ConfigDict(TypedDict):
     download_everything: bool
     download_last_opened_page_to_make_preview: bool
     save_last_opened_folder: bool
+    save_after_close: bool
     last_opened_folder: Union[None, str]
     last_prompt_directory: Union[None, str]
     scale: Number
@@ -106,6 +107,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'download_everything': False,
     'download_last_opened_page_to_make_preview': False,
     'save_last_opened_folder': True,
+    'save_after_close': True,
     'last_opened_folder': None,
     'last_prompt_directory': None,
     'scale': .9,

@@ -426,10 +426,13 @@ class DocumentViewer(pe.ChildContext):
     def close(self):
         self.document_renderer.close()
         self.api.remove_hook(self.EVENT_HOOK_NAME.format(id(self)))
-        self.document.content.c_pages.last_opened.value = self.document_renderer.last_opened_uuid
-        self.document.metadata.last_opened_page = self.document_renderer.current_page_index
-        self.document.metadata.last_opened = models.now_time()
-        threading.Thread(target=self.api.upload, args=(self.document,), kwargs={'unload': True}).start()
+        if self.config.save_after_close:
+            self.document.content.c_pages.last_opened.value = self.document_renderer.last_opened_uuid
+            self.document.metadata.last_opened_page = self.document_renderer.current_page_index
+            self.document.metadata.last_opened = models.now_time()
+            threading.Thread(target=self.api.upload, args=(self.document,), kwargs={'unload': True}).start()
+        else:
+            self.document.unload_files()
         del self.screens.queue[-1]
 
     def draw_close_indicator(self):
