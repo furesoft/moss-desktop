@@ -52,8 +52,8 @@ class AbstractRenderer(ABC):
 
     def get_enhance_scale(self):
         # Return an enhancement scale for when the page is zoomed in
-        # Will at most return between 1 and 3
-        scale = max(2, min(6, self.document_renderer.zoom // 0.5)) * 0.5
+        # Will at most return between 1 and 4.5
+        scale = max(2, min(9, self.document_renderer.zoom // 0.5)) * 0.5
         return scale / self.document_renderer.config.scale
 
 

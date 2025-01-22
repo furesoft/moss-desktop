@@ -37,9 +37,9 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         pdf_zoom_enhance = self.get_enhance_scale()
         task = self.task_get_page(page_index, pdf_zoom_enhance)
 
-        if not task.loaded:
-            pdf_zoom_enhance = 0.5
-            sprite = self.get_page(page_index, 0.5)
+        if not (task.loaded and self.document_renderer.zoom_ready):
+            pdf_zoom_enhance = 1
+            sprite = self.get_page(page_index, 1)
         else:
             sprite = task.sprite
 

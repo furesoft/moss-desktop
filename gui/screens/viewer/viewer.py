@@ -51,6 +51,7 @@ class DocumentRenderer(pe.ChildContext):
     PAGE_NAVIGATION_DELAY = 0.2  # Initial button press delay
     PAGE_NAVIGATION_SPEED = 0.1  # After initial button press delay
     ZOOM_SENSITIVITY = 10  # How fast the zoom changes
+    ZOOM_WAIT = 0.2  # How long to wait after zoom before handling intense scaling tasks
 
     def __init__(self, parent: 'GUI', document: 'Document'):
         self.document = document
@@ -63,6 +64,7 @@ class DocumentRenderer(pe.ChildContext):
         self.zoom = 1
         self.zoom_scaling_offset = (0, 0)
         self.zoom_reference_size = (100, 100)
+        self.last_zoom_time = time.time()
 
         # Check compatability
         if not self.document.content.usable:
@@ -103,6 +105,10 @@ class DocumentRenderer(pe.ChildContext):
             print(f"{Fore.RED}Notebook render mode `{self.config.notebook_render_mode}` unavailable{Fore.RESET}")
 
     @property
+    def zoom_ready(self):
+        return time.time() - self.last_zoom_time > self.ZOOM_WAIT
+
+    @property
     def center_x(self):
         return self.pos[0] + self.width // 2
 
@@ -136,27 +142,29 @@ class DocumentRenderer(pe.ChildContext):
             self.zoom = max(0.2, min(3, self.zoom))
             zoom_delta = zoom_before - self.zoom
 
-            # Handle proper panning offset
-            # noinspection PyTypeChecker
-            self.draggable.pos = self.pos = tuple(
-                int(
-                    pos -  # Finally subtract the offset from the current position
-                    ((
-                             (mp - center) /  # How offset the mouse is from the center
-                             (reference_size / 2)  # Half of size of the page
-                     )  # The influence from the center that the zoom offset should be
-                     * offset * zoom_delta  # Finally multiply by the offset and the zoom delta
-                     )
-                )  # Ensure the final value is an integer
-                for pos, mp, center, reference_size, offset in
-                zip(
-                    self.pos,
-                    pe.mouse.pos(),
-                    self.center,
-                    self.zoom_reference_size,
-                    self.zoom_scaling_offset
-                )  # Zip all required positional values
-            )
+            if zoom_delta:
+                # Handle proper panning offset
+                # noinspection PyTypeChecker
+                self.draggable.pos = self.pos = tuple(
+                    int(
+                        pos -  # Finally subtract the offset from the current position
+                        ((
+                                 (mp - center) /  # How offset the mouse is from the center
+                                 (reference_size / 2)  # Half of size of the page
+                         )  # The influence from the center that the zoom offset should be
+                         * offset * zoom_delta  # Finally multiply by the offset and the zoom delta
+                         )
+                    )  # Ensure the final value is an integer
+                    for pos, mp, center, reference_size, offset in
+                    zip(
+                        self.pos,
+                        pe.mouse.pos(),
+                        self.center,
+                        self.zoom_reference_size,
+                        self.zoom_scaling_offset
+                    )  # Zip all required positional values
+                )
+                self.last_zoom_time = time.time()
 
         if not self.hold_timer:
             if any([
