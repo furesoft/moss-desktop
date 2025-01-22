@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rm_api.models import Document
@@ -48,3 +48,8 @@ class AbstractRenderer(ABC):
     @abstractmethod
     def close(self):
         ...
+
+    def get_enhance_scale(self):
+        # Return an enhancement scale for when the page is zoomed in
+        # Will at most return between 1 and 3
+        return max(2, min(6, self.document_renderer.zoom // 0.5)) * 0.5

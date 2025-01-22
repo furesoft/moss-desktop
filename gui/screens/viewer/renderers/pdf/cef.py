@@ -1,7 +1,9 @@
 import base64
-from functools import lru_cache
 import os
+
 import pygameextra as pe
+
+from . import PDF_AbstractRenderer
 
 # noinspection PyBroadException
 try:
@@ -10,11 +12,10 @@ except Exception:
     CEFpygame = None
 
 from gui.defaults import Defaults
-from ..shared_model import AbstractRenderer
 
 
 # noinspection PyPep8Naming
-class PDF_CEF_Viewer(AbstractRenderer):
+class PDF_CEF_Viewer(PDF_AbstractRenderer):
     PDF_HTML = os.path.join(Defaults.HTML_DIR, 'pdf.html')
 
     def __init__(self, document_renderer):
@@ -23,16 +24,6 @@ class PDF_CEF_Viewer(AbstractRenderer):
         self.injected_js = False
         self.js_code = None
         self.url_should_be = None
-        self.current_page = self.document_renderer.current_page_index
-
-    @property
-    @lru_cache
-    def pdf_raw(self):
-        try:
-            return self.document.content_data[f'{self.document.uuid}.pdf']
-        except KeyError:
-            self.error = 'PDF file missing'
-            return None
 
     def load(self):
         if not self.pdf_raw:
