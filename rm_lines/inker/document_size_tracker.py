@@ -106,6 +106,9 @@ class DocumentSizeTracker(ABC):
             'width': self.track_width,
             'x_shift': self.frame_width / 2,
             'viewbox': f'{self.track_left} {self.track_top} {self.track_width} {self.track_height}',
+            'template_rotate': 90 if self._reverse_frame_size else 0,
+            'template_transform_y': RM_SCREEN_SIZE[0] if self._reverse_frame_size else 0,
+            'template_transform_x': RM_SCREEN_SIZE[1] - RM_SCREEN_SIZE[0] if self._reverse_frame_size else 0
         }
 
         if settings.config.debug_disable_lines_alignment:

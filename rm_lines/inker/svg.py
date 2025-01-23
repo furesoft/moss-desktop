@@ -4,11 +4,12 @@ Code originally from https://github.com/lschwetlick/maxio through
 https://github.com/chemag/maxio .
 """
 import io
-import xml.etree.ElementTree as ET
+import re
 from pathlib import Path
 from traceback import print_exc
 from typing import Union
 
+from rm_api.defaults import RM_SCREEN_SIZE
 from rm_lines.inker.document_size_tracker import DocumentSizeTracker
 from .writing_tools import (
     Pen, PenException,
@@ -65,6 +66,11 @@ def read_template_svg(template_path: Path) -> str:
     return "\n".join(lines[2:-1])
 
 
+def remove_template_background(template: str):
+    re_string = f'<rect[^>]*width="{RM_SCREEN_SIZE[0]}"[^>]*height="{RM_SCREEN_SIZE[1]}"[^>]*>'
+    return re.sub(re.compile(re_string, re.DOTALL), '', template)
+
+
 def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker, template: str = None):
     """Convert Tree to SVG."""
     if tree.scene_info and tree.scene_info.page_size:
@@ -76,7 +82,10 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker, tem
     # output.write('<svg xmlns="http://www.w3.org/2000/svg">\n')
     output.write(SVG_HEADER)
 
-    output.write('    <g id="template">\n{template}\n    </g>\n')
+    output.write(
+        '    <g id="template" transform="translate({template_transform_x}, {template_transform_y})">\n'
+        f'    <g id="template2" transform="rotate({{template_rotate}}, {RM_SCREEN_SIZE[0]}, 0)">\n'
+        f'{{template}}\n    </g></g>\n')
     output.write('    <g id="p1" style="display:inline" transform="translate({x_shift},0)">\n')
 
     output.write('    <g id="priority">\n{priority_lines}\n    </g>\n')
@@ -103,7 +112,11 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker, tem
     # END notebook
     output.write('</svg>\n')
 
-    final = output.format(**track_xy.format_kwargs, priority_lines=priority_lines.getvalue(), template=template or '')
+    final = output.format(
+        **track_xy.format_kwargs,
+        priority_lines=priority_lines.getvalue(),
+        template=remove_template_background(template) or ''
+    )
     output_file.write(final)
 
 
