@@ -115,7 +115,7 @@ def tree_to_svg(tree: SceneTree, output_file, track_xy: DocumentSizeTracker, tem
     final = output.format(
         **track_xy.format_kwargs,
         priority_lines=priority_lines.getvalue(),
-        template=remove_template_background(template) or ''
+        template=remove_template_background(template) if template else ''
     )
     output_file.write(final)
 
