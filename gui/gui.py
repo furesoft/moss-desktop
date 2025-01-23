@@ -320,7 +320,7 @@ class GUI(pe.GameContext):
         self.dirty_config = False
 
     def save_config_if_dirty(self):
-        if self.extension_manager.dirty_configs:
+        if getattr(self, 'extension_manager') and self.extension_manager.dirty_configs:
             self.extension_manager.save_configs()
         if self.dirty_config:
             self.save_config()
