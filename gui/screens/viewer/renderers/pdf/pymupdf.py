@@ -3,7 +3,7 @@ from typing import Optional
 
 import pygameextra as pe
 
-from rm_api.defaults import RM_SCREEN_SIZE
+from rm_api.defaults import RM_SCREEN_SIZE, ZoomModes
 from . import PDF_AbstractRenderer
 from ..shared_model import LoadTask
 
@@ -25,6 +25,7 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
         super().__init__(document_renderer)
         self.pdf = None
         self.extra_scale = {}
+        self.previous_page = None
 
     def load(self):
         if self.pdf_raw:
@@ -57,6 +58,17 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
 
         # Set the scale of the sprite
         sprite.scale = (scale, scale)
+
+        if task.loaded and self.previous_page != page_uuid and self.extra_scale.get(page_index, None) is not None:
+            # Automatically zoom the PDF to the width of the screen
+            best_zoom = tuple(screen / pdf for screen, pdf in zip(self.gui.maintain_aspect_size, sprite.size))
+            if self.document_renderer.document.content.zoom.zoom_mode == ZoomModes.BestFit:
+                self.document_renderer.base_zoom *= min(*best_zoom)
+            elif self.document_renderer.document.content.zoom.zoom_mode == ZoomModes.FitToWidth:
+                self.document_renderer.base_zoom *= best_zoom[0]
+            elif self.document_renderer.document.content.zoom.zoom_mode == ZoomModes.FitToHeight:
+                self.document_renderer.base_zoom *= best_zoom[1]
+            self.previous_page = page_uuid
 
         rect = pe.Rect(0, 0, *sprite.size)
         rect.center = self.document_renderer.center
@@ -104,11 +116,3 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
 
     def handle_event(self, event):
         pass
-
-    # def next(self):
-    #     if self.pdf:
-    #         self.pdf.browser.ExecuteJavascript('window.nextPage()')
-    #
-    # def previous(self):
-    #     if self.pdf:
-    #         self.pdf.browser.ExecuteJavascript('window.previousPage()')

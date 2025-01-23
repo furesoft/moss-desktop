@@ -64,6 +64,7 @@ class ColorFormatter(logging.Formatter):
 class ConfigDict(TypedDict):
     enable_fake_screen_refresh: bool
     wait_for_everything_to_load: bool
+    maintain_aspect_size: bool
     uri: str
     discovery_uri: str
     last_root: Union[None, str]
@@ -94,6 +95,7 @@ class ConfigDict(TypedDict):
 DEFAULT_CONFIG: ConfigDict = {
     'enable_fake_screen_refresh': False,
     'wait_for_everything_to_load': False,
+    'maintain_aspect_size': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
     'last_root': None,
@@ -194,6 +196,7 @@ class GUI(pe.GameContext):
         self.config = load_config()
 
         self.AREA = (self.WIDTH * self.config.scale, self.HEIGHT * self.config.scale)
+        self.original_size = self.AREA
         self.dirty_config = False
         self.screenshot = False
 
@@ -439,3 +442,9 @@ class GUI(pe.GameContext):
     @property
     def BACKGROUND(self):
         return Defaults.BACKGROUND
+
+    @property
+    def maintain_aspect_size(self):
+        if self.config.maintain_aspect_size:
+            return self.original_size
+        return self.size
