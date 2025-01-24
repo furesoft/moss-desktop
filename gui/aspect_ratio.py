@@ -87,15 +87,15 @@ class Ratios:
 
         # Document Viewer
         self.document_viewer_top_draggable_height = int(48 * scale)  # Accurate to device
-        self.document_viewer_top_arrow_rounding = int(20 * scale)  # Accurate to device
+        self.document_viewer_top_arrow_rounding = int(20 * scale)
         self.document_viewer_loading_square = int(100 * scale)
         self.document_viewer_loading_circle_radius = int(5 * scale)
         self.document_viewer_error_font_size = int(20 * scale)
-        self.document_viewer_x_margin = int(10 * scale)
-        self.document_viewer_x_rounding = int(5 * scale)
-        self.document_viewer_x_outline = int(2 * scale)
-        self.document_viewer_x_width = int(35 * scale)
-        self.document_viewer_x_height = self.document_viewer_x_width  # Square
+        self.document_viewer_top_margin = int(10 * scale)
+        self.document_viewer_top_rounding = int(5 * scale)
+        self.document_viewer_top_outline = int(2 * scale)
+        self.document_viewer_hint_size = int(15 * scale)
+        self.document_viewer_top_height = int(40 * scale)
         self.document_viewer_notebook_shadow_size = int(10 * scale)
         self.document_viewer_notebook_shadow_radius = int(7 * scale)
 

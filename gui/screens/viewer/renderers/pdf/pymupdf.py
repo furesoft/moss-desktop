@@ -68,6 +68,7 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
                 self.document_renderer.base_zoom *= best_zoom[0]
             elif self.document_renderer.document.content.zoom.zoom_mode == ZoomModes.FitToHeight:
                 self.document_renderer.base_zoom *= best_zoom[1]
+            self.document_renderer.align_top()
             self.previous_page = page_uuid
 
         rect = pe.Rect(0, 0, *sprite.size)

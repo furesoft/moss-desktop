@@ -1,13 +1,15 @@
 import threading
 import time
+from functools import lru_cache
 from typing import TYPE_CHECKING, Dict
 
 import pygameextra as pe
 from colorama import Fore
 
 from gui.defaults import Defaults
-from gui.pp_helpers import DraggablePuller
+from gui.pp_helpers import DraggablePuller, FullTextPopup
 from rm_api import models
+from rm_api.defaults import RM_SCREEN_SIZE, RM_SCREEN_CENTER
 from .renderers.notebook.rm_lines_svg_inker import Notebook_rM_Lines_Renderer
 from .renderers.pdf.pymupdf import PDF_PyMuPDF_Viewer
 from ...events import ResizeEvent
@@ -41,8 +43,9 @@ class DocumentRenderer(pe.ChildContext):
     ZOOM_SENSITIVITY = 10  # How fast the zoom changes
     ZOOM_WAIT = 0.2  # How long to wait after zoom before handling intense scaling tasks
 
-    def __init__(self, parent: 'GUI', document: 'Document'):
+    def __init__(self, parent: 'GUI', document: 'Document', ui: 'DocumentViewerUI'):
         self.document = document
+        self.ui = ui
         self.loading = 0
         self.began_loading = False
         self._error = None
@@ -52,7 +55,7 @@ class DocumentRenderer(pe.ChildContext):
         self.base_zoom = 1
         self._zoom = 1
         self.zoom_scaling_offset = (0, 0)
-        self.zoom_reference_size = (100, 100)
+        self.zoom_reference_size = RM_SCREEN_SIZE
         self.last_zoom_time = time.time()
 
         # Check compatability
@@ -183,6 +186,16 @@ class DocumentRenderer(pe.ChildContext):
                 self.hold_previous = False
                 self.hold_timer = None
 
+    def align_top(self):
+        if not self.zoom_reference_size:
+            self.draggable.pos = self.pos = (0, 0)
+            return
+        self.draggable.pos = self.pos = (
+            0, (-self.height / 2) + (
+                    RM_SCREEN_CENTER[1] * self.zoom * self.ratios.rm_scaled(RM_SCREEN_SIZE[0])
+            ) + self.ratios.document_viewer_top_height + self.ratios.document_viewer_top_margin * 2
+        )
+
     @property
     def can_do_next(self):
         # Technically if there are no more pages
@@ -196,10 +209,14 @@ class DocumentRenderer(pe.ChildContext):
 
     def do_next(self):
         if self.can_do_next:
+            self.base_zoom = 1
+            self._zoom = 1
             self.current_page_index += 1
 
     def do_previous(self):
         if self.can_do_previous:
+            self.base_zoom = 1
+            self._zoom = 1
             self.current_page_index -= 1
 
     def handle_event(self, event):
@@ -315,44 +332,148 @@ class DocumentRenderer(pe.ChildContext):
         )
 
 
+class TogglerButton:
+    instance: Dict
+
+    def __init__(self, ui: 'DocumentViewerUI'):
+        self.ui = ui
+
+
+class DocumentModeToggler(TogglerButton):
+    @property
+    def instance(self):
+        if self.ui.mode == 'free':
+            return {
+                'icon': 'free_mode',
+                'hint': 'Switch to view mode',
+                'action': self.switch_to_view_mode
+            }
+        else:
+            return {
+                'icon': 'glasses',
+                'hint': 'Switch to free mode',
+                'action': self.switch_to_free_mode
+            }
+
+    def switch_to_view_mode(self):
+        self.ui.mode = 'view'
+
+    def switch_to_free_mode(self):
+        self.ui.mode = 'free'
+
+
 class DocumentViewerUI(pe.ChildContext):
     LAYER = pe.BEFORE_POST_LAYER
+    R_BUTTONS = (
+        {
+            'icon': 'x_small',
+            'hint': 'Close',
+            'action': 'close'
+        },
+        'DocumentModeToggler'
+    )
+    L_BUTTONS = (
+
+    )
 
     def __init__(self, parent: 'GUI', viewer: 'DocumentViewer'):
         self.viewer = viewer
         self.document = viewer.document
-        self.x_rect = pe.Rect(0, 0, parent.ratios.document_viewer_x_width, parent.ratios.document_viewer_x_height)
-        self.x_icon = parent.icons['x_small']
-        self.x_icon_rect = pe.Rect(0, 0, *self.x_icon.size)
+        self._mode = parent.config.document_viewer_mode
+        self.rect: pe.Rect = None
+        self.button_rect: pe.Rect = None
         super().__init__(parent)
-        self.align_x_rect()
+        self.align_rects()
+
+        self.r_buttons = []
+        self.l_buttons = []
+        for button in self.R_BUTTONS:
+            if isinstance(button, str):
+                self.r_buttons.append(globals()[button](self))
+            else:
+                self.r_buttons.append(button)
+        for button in self.L_BUTTONS:
+            if isinstance(button, str):
+                self.l_buttons.append(globals()[button](self))
+            else:
+                self.l_buttons.append(button)
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        self._mode = value
+        self.config.document_viewer_mode = value
 
     def loop(self):
-        pe.draw.rect(Defaults.BUTTON_DISABLED_LIGHT_COLOR, self.x_rect,
-                     edge_rounding=self.ratios.document_viewer_x_rounding)
-        pe.draw.rect(Defaults.SELECTED, self.x_rect, self.ratios.document_viewer_x_outline,
-                     edge_rounding=self.ratios.document_viewer_x_rounding - self.ratios.document_viewer_x_outline)
-        self.x_icon.display(self.x_icon_rect.topleft)
-        pe.button.action(
-            self.x_rect, name=f'document_viewer_x<{id(self.viewer)}>',
-            action_set={
-                'l_click': {
-                    'action': self.viewer.close
-                },
-                'hover_draw': {
-                    'action': pe.draw.rect,
-                    'args': (Defaults.BUTTON_ACTIVE_COLOR, self.x_rect),
-                    'kwargs': {
-                        'edge_rounding': self.ratios.document_viewer_x_rounding
+        pe.draw.rect(Defaults.BACKGROUND, self.rect,
+                     edge_rounding=self.ratios.document_viewer_top_rounding)
+        pe.draw.rect(Defaults.SELECTED, self.rect, self.ratios.document_viewer_top_outline,
+                     edge_rounding=self.ratios.document_viewer_top_rounding - self.ratios.document_viewer_top_outline)
+
+        self.button_rect.right = self.rect.right
+        for right, items in zip(
+                (True, False), (
+                        enumerate(self.r_buttons),
+                        enumerate(self.l_buttons)
+                )
+        ):
+            for i, button in items:
+                if isinstance(button, TogglerButton):
+                    button = button.instance
+                if not right and i == 0:  # on the first left button
+                    self.button_rect.left = self.rect.left
+                icon = self.icons[button['icon']]
+                iron_rect = pe.Rect(0, 0, *icon.size)
+                iron_rect.center = self.button_rect.center
+                icon.display(iron_rect.topleft)
+                rect = self.button_rect.copy()
+                action = button['action']
+                pe.button.action(
+                    rect, name=f'document_viewer_x<{id(self.viewer)}><r{i}>',
+                    action_set={
+                        'l_click': {
+                            'action': getattr(self, action)
+                            if isinstance(action, str)
+                            else action,
+                        },
+                        'hover_draw': {
+                            'action': self.hover_draw,
+                            'args': (button.get('hint'), rect),
+                        }
                     }
-                }
-            }
+                )
+                if right:
+                    self.button_rect.x -= self.button_rect.width
+                else:  # left
+                    self.button_rect.x += self.button_rect.width
+
+    @lru_cache
+    def get_hint_text(self, text):
+        return pe.Text(
+            text, Defaults.BUTTON_FONT,
+            self.ratios.document_viewer_hint_size, colors=Defaults.TEXT_COLOR
         )
 
-    def align_x_rect(self):
-        self.x_rect.topright = (self.width, 0)
-        self.x_rect.move_ip(-self.ratios.document_viewer_x_margin, self.ratios.document_viewer_x_margin)
-        self.x_icon_rect.center = self.x_rect.center
+    def hover_draw(self, hint, rect):
+        pe.draw.rect(Defaults.BUTTON_ACTIVE_COLOR, rect, edge_rounding=self.ratios.document_viewer_top_rounding)
+        if hint:
+            hint_text = self.get_hint_text(hint)
+            hint_text.rect.midtop = rect.midbottom
+            FullTextPopup.create(self.parent_context, hint_text, hint_text)()
+
+    @property
+    def close(self):
+        return self.viewer.close
+
+    def align_rects(self):
+        self.rect = pe.Rect(0, 0, self.width - self.ratios.document_viewer_top_margin * 2,
+                            self.ratios.document_viewer_top_height)
+        self.rect.move_ip(self.ratios.document_viewer_top_margin, self.ratios.document_viewer_top_margin)
+
+        self.button_rect = pe.Rect(0, self.rect.top, self.rect.height, self.rect.height)
 
 
 class DocumentViewer(pe.ChildContext):
@@ -385,7 +506,7 @@ class DocumentViewer(pe.ChildContext):
         )
         self.ui = DocumentViewerUI(parent, self)
         try:
-            self.document_renderer = DocumentRenderer(parent, self.document)
+            self.document_renderer = DocumentRenderer(parent, self.document, self.ui)
         except UnusableContent:
             self.PROBLEMATIC_DOCUMENTS.add(document_uuid)
             raise CannotRenderDocument(self.document)
@@ -406,7 +527,7 @@ class DocumentViewer(pe.ChildContext):
         if isinstance(event, ResizeEvent):
             self.top_puller.rect.width = event.new_size[0]
             self.top_puller.draggable.area = (event.new_size[0], self.top_puller.draggable.area[1])
-            self.ui.align_x_rect()
+            self.ui.align_rects()
 
     def close(self):
         self.document_renderer.close()

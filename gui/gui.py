@@ -17,7 +17,8 @@ from colorama import Fore, Style
 from rm_api.auth import FailedToRefreshToken
 from rm_api.notifications.models import APIFatal
 from .events import ResizeEvent
-from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES, MAIN_MENU_LOCATIONS
+from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES, MAIN_MENU_LOCATIONS, \
+    DOCUMENT_VIEWER_MODES
 
 Defaults = None
 
@@ -71,6 +72,7 @@ class ConfigDict(TypedDict):
     last_guide: str
     pdf_render_mode: PDF_RENDER_MODES
     notebook_render_mode: NOTEBOOK_RENDER_MODES
+    document_viewer_mode: DOCUMENT_VIEWER_MODES
     download_everything: bool
     download_last_opened_page_to_make_preview: bool
     save_last_opened_folder: bool
@@ -102,6 +104,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'last_guide': 'welcome',
     'pdf_render_mode': 'pymupdf',
     'notebook_render_mode': 'rm_lines_svg_inker',
+    'document_viewer_mode': 'read',
     'download_everything': False,
     'download_last_opened_page_to_make_preview': False,
     'save_last_opened_folder': True,
