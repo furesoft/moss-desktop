@@ -21,16 +21,18 @@ class FullTextPopup(pe.ChildContext):
         else:
             self.text.rect.midbottom = pe.mouse.pos()
 
+        self.used_at = time.time()
+        super().__init__(parent)
+        self.align_in_screen()
+
+    def align_in_screen(self):
         # Make sure the text is inside the screen
-        screen_rect = pe.Rect(0, 0, *parent.size)
+        screen_rect = pe.Rect(0, 0, *self.size)
         screen_rect.scale_by_ip(.98, .98)
         if self.offset:
             self.text.rect.x += self.offset[0]
             self.text.rect.y += self.offset[1]
         self.text.rect.clamp_ip(screen_rect)
-
-        self.used_at = time.time()
-        super().__init__(parent)
 
     def pre_loop(self):
         outline_rect = self.text.rect.inflate(self.ratios.pixel(10), self.ratios.pixel(10))
@@ -49,6 +51,7 @@ class FullTextPopup(pe.ChildContext):
             cls.EXISTING[id(text)] = cls(parent, text, referral_text)
             return cls.EXISTING[id(text)]
         if time.time() - cls.EXISTING[id(text)].used_at < .05:
+            cls.EXISTING[id(text)].align_in_screen()
             return cls.EXISTING[id(text)]
         else:
             del cls.EXISTING[id(text)]
