@@ -154,13 +154,17 @@ class DocumentRenderer(pe.ChildContext):
                     for pos, mp, center, reference_size, offset in
                     zip(
                         self.pos,
-                        pe.mouse.pos(),
+                        pe.mouse.pos() if self.ui.mode == 'free' else tuple(v / 2 for v in self.size),
                         self.center,
                         self.zoom_reference_size,
                         self.zoom_scaling_offset
                     )  # Zip all required positional values
                 )
                 self.last_zoom_time = time.time()
+        elif event.type == pe.pygame.MOUSEWHEEL and self.ui.mode == 'read':
+            multiplier = (1, 0) if self.shift_hold else (0, 1)
+            scroll = event.y * self.height * self.delta_time
+            self.draggable.pos = self.pos = tuple(v + scroll * m for v, m in zip(self.pos, multiplier))
 
         if not self.hold_timer:
             if any([
@@ -296,7 +300,8 @@ class DocumentRenderer(pe.ChildContext):
             elif self.hold_previous:
                 self.do_previous()
             self.hold_timer = time.time() + self.PAGE_NAVIGATION_SPEED
-        _, self.pos = self.draggable.check()  # Check if user is panning
+        if self.ui.mode == 'free':
+            _, self.pos = self.draggable.check()  # Check if user is panning
         if self.config.debug:
             pe.draw.circle(pe.colors.red, self.pos, 5)
             self.debug_display.text = self.debug_text
@@ -345,8 +350,8 @@ class DocumentModeToggler(TogglerButton):
         if self.ui.mode == 'free':
             return {
                 'icon': 'free_mode',
-                'hint': 'Switch to view mode',
-                'action': self.switch_to_view_mode
+                'hint': 'Switch to read mode',
+                'action': self.switch_to_read_mode
             }
         else:
             return {
@@ -355,8 +360,8 @@ class DocumentModeToggler(TogglerButton):
                 'action': self.switch_to_free_mode
             }
 
-    def switch_to_view_mode(self):
-        self.ui.mode = 'view'
+    def switch_to_read_mode(self):
+        self.ui.mode = 'read'
 
     def switch_to_free_mode(self):
         self.ui.mode = 'free'

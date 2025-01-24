@@ -232,6 +232,7 @@ class GUI(pe.GameContext):
         self.ratios = Ratios(self.config.scale)
         self.icons = {}
         self.data = {}
+        self.shift_hold = False
         self.ctrl_hold = False
         self._import_screen: Union[ImportScreen, None] = None
         self.main_menu: Union['MainMenu', None] = None
@@ -390,6 +391,10 @@ class GUI(pe.GameContext):
             self.ctrl_hold = True
         elif pe.event.key_UP(pe.K_LCTRL) or pe.event.key_UP(pe.K_RCTRL):
             self.ctrl_hold = False
+        if pe.event.key_DOWN(pe.K_LSHIFT) or pe.event.key_DOWN(pe.K_RSHIFT):
+            self.shift_hold = True
+        elif pe.event.key_UP(pe.K_LSHIFT) or pe.event.key_UP(pe.K_RSHIFT):
+            self.shift_hold = False
         if pe.event.resize_check():
             self.api.spread_event(ResizeEvent(pe.display.get_size()))
         if self.screens.queue[-1].handle_event != self.handle_event:
