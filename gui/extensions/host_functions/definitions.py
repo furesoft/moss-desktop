@@ -128,14 +128,19 @@ def set_text_color(fn):
     @wraps(fn)
     def wrapper(key: str, colors: Annotated[TTextColor, Json]):
         color1 = (
-            (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'])
-            if colors['foreground']['a'] is not None and colors['foreground']['a'] == 255 else
+            (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'])  # no alpha
+            if colors['foreground']['a'] is None else
             (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'], colors['foreground']['a'])
+            # foreground with alpha
         )
         color2 = (
-            (colors['background']['r'], colors['background']['g'], colors['background']['b'])
-            if colors['background']['a'] is not None and colors['background']['a'] > 0 else None) \
-            if colors['background'] is not None else None
+            (colors['background']['r'], colors['background']['g'], colors['background']['b'])  # no alpha
+            if colors['background']['a'] is None else
+            None if colors['background']['a'] == 0 else  # no background - alpha is 0
+            (colors['background']['r'], colors['background']['g'], colors['background']['b'], colors['background']['a'])
+            # background with alpha
+        ) \
+            if colors['background'] is not None else None  # no background
         return fn(key, (color1, color2))
 
     return wrapper
