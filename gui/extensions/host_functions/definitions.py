@@ -63,11 +63,16 @@ def unpack(fn):
 
 
 def set_color(fn):
-    fn.__annotations__ = {'key': str, 'r': int, 'g': int, 'b': int, 'a': int}
+    fn.__annotations__ = {'key': str, 'color': Annotated[TColor, Json]}
 
     @wraps(fn)
-    def wrapper(key: str, r: int, g: int, b: int, a: int):
-        return fn(key, (r, g, b) if a == 255 else (r, g, b, a))
+    def wrapper(key: str, color: Annotated[TColor, Json]):
+        return fn(
+            key,
+            (color['r'], color['g'], color['b'])
+            if color['a'] is None else
+            (color['r'], color['g'], color['b'], color['a'])
+        )
 
     return wrapper
 
@@ -95,22 +100,19 @@ def get_text_color(fn):
     def wrapper(key: str):
         colors = fn(key)
         return {
-            'r1': colors[0][0],
-            'g1': colors[0][1],
-            'b1': colors[0][2],
-            'a1': colors[0][3] if len(colors[0]) == 4 else 255,
-            **(
+            'foreground': {
+                'r': colors[0][0],
+                'g': colors[0][1],
+                'b': colors[0][2],
+                'a': colors[0][3] if len(colors[0]) == 4 else None,
+            },
+            'background': (
                 {
-                    'r2': colors[1][0],
-                    'g2': colors[1][1],
-                    'b2': colors[1][2],
-                    'a2': colors[1][3] if len(colors[1]) == 4 else 255
-                } if colors[1] is not None else {
-                    'r2': 0,
-                    'g2': 0,
-                    'b2': 0,
-                    'a2': 0
-                }
+                    'r': colors[1][0],
+                    'g': colors[1][1],
+                    'b': colors[1][2],
+                    'a': colors[1][3] if len(colors[1]) == 4 else None
+                } if colors[1] is not None else None
             )
         }
 
@@ -120,14 +122,20 @@ def get_text_color(fn):
 def set_text_color(fn):
     fn.__annotations__ = {
         'key': str,
-        'r1': int, 'g1': int, 'b1': int, 'a1': int,
-        'r2': int, 'g2': int, 'b2': int, 'a2': int
+        'colors': Annotated[TTextColor, Json]
     }
 
     @wraps(fn)
-    def wrapper(key: str, r1: int, g1: int, b1: int, a1: int, r2: int, g2: int, b2: int, a2: int):
-        color1 = (r1, g1, b1) if a1 == 255 else (r1, g1, b1, a1)
-        color2 = (r2, g2, b2) if a2 == 255 else 0 if a2 == 0 else (r2, g2, b2)
+    def wrapper(key: str, colors: Annotated[TTextColor, Json]):
+        color1 = (
+            (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'])
+            if colors['foreground']['a'] is not None and colors['foreground']['a'] == 255 else
+            (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'], colors['foreground']['a'])
+        )
+        color2 = (
+            (colors['background']['r'], colors['background']['g'], colors['background']['b'])
+            if colors['background']['a'] is not None and colors['background']['a'] > 0 else None) \
+            if colors['background'] is not None else None
         return fn(key, (color1, color2))
 
     return wrapper
