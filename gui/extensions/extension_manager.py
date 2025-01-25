@@ -172,7 +172,7 @@ class ExtensionManager:
                 continue
             self.extensions_to_load.append(extension)
 
-    def load(self):
+    def load(self, loader):
         self.reset()
         self.gather_extensions()
         self._load()

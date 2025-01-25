@@ -154,6 +154,9 @@ class Loader(pe.ChildContext, LogoMixin):
         for key, item in self.TO_LOAD.items():
             self.__load(key, item)
             self.items_loaded += 1
+            
+        # Begin loading extensions
+        threading.Thread(target=self.load_extensions, daemon=True).start()
 
         # Wait for extensions to load
         while not self.extension_manager.extensions_loaded == self.extension_manager.extension_count:
@@ -178,7 +181,7 @@ class Loader(pe.ChildContext, LogoMixin):
 
     def load_extensions(self):
         try:
-            self.extension_manager.load()
+            self.extension_manager.load(self)
         except:
             print_exc()
 
@@ -273,6 +276,5 @@ class Loader(pe.ChildContext, LogoMixin):
     def pre_loop(self):
         if not self.initialized:
             threading.Thread(target=self.load, daemon=True).start()
-            threading.Thread(target=self.load_extensions, daemon=True).start()
             self.start_syncing()
             self.initialized = True
