@@ -70,6 +70,9 @@ class PDF_PyMuPDF_Viewer(PDF_AbstractRenderer):
                 self.document_renderer.base_zoom *= best_zoom[1]
             self.document_renderer.align_top()
             self.previous_page = page_uuid
+            return
+        elif not task.loaded and self.previous_page is None:
+            return
 
         rect = pe.Rect(0, 0, *sprite.size)
         rect.center = self.document_renderer.center
