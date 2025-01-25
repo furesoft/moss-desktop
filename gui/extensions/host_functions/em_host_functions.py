@@ -6,7 +6,6 @@ from . import definitions as d
 
 
 # Configs
-
 @d.host_fn()
 @d.transform_to_json
 def moss_em_config_get(key: str) -> Annotated[str, Json]:

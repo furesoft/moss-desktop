@@ -1,14 +1,42 @@
+from typing import Annotated, Any, Tuple, Optional
+
+from extism import Json
+
 from . import definitions as d
 from ...defaults import Defaults
 
 
-# Defaults
+@d.host_fn()
+@d.set_color
+def moss_defaults_set_color(key: str, color: Tuple[int, ...]):
+    setattr(Defaults, key, color)
+
 
 @d.host_fn()
-def moss_defaults_set_color(key: str, r: int, g: int, b: int, a: int):
-    setattr(Defaults, key, (r, g, b, a))
+@d.get_color
+def moss_defaults_get_color(key: str):
+    getattr(Defaults, key)
 
 
 @d.host_fn()
-def moss_defaults_set_text_color(key: str, r1: int, g1: int, b1: int, r2: int, g2: int, b2: int):
-    setattr(Defaults, key, [(r1, g1, b1), (r2, g2, b2) if r2 > 0 else None])
+@d.set_text_color
+def moss_defaults_set_text_color(key: str, colors: Tuple[Optional[Tuple[int, ...]], ...]):
+    setattr(Defaults, key, colors)
+
+
+@d.host_fn()
+@d.get_text_color
+def moss_defaults_get_text_color(key: str):
+    getattr(Defaults, key)
+
+
+@d.host_fn()
+@d.transform_to_json
+def moss_defaults_get(key: str) -> Annotated[str, Json]:
+    return getattr(Defaults, key)
+
+
+@d.host_fn()
+@d.unpack
+def moss_defaults_set(key: str, value: Any):
+    setattr(Defaults, key, value)
