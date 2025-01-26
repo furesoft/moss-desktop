@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List
 from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
+from ..export_types import TValue
 from ..input_types import color_from_tuple, color_to_tuple, TTextColor, TColor
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ def init_host_functions(_extension_manager: 'ExtensionManager'):
 
 def transform_to_json(fn):
     @wraps(fn)
-    def wrapper(*args, **kwargs) -> Annotated[dict, Json]:
+    def wrapper(*args, **kwargs) -> Annotated[TValue, Json]:
         return {
             'value': fn(*args, **kwargs)
         }

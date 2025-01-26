@@ -94,3 +94,11 @@ def color_to_tuple(color: Optional[TColor]) -> Optional[Tuple[int, ...]]:
 class TTextColor(TypedDict):
     foreground: TColor
     background: Optional[TColor]
+
+
+class TScreen(TypedDict):
+    key: str
+    screen_pre_loop: Optional[str]
+    screen_loop: str
+    screen_post_loop: Optional[str]
+    event_hook: Optional[str]

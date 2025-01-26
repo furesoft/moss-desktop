@@ -1,5 +1,6 @@
 import json
 import os.path
+from functools import lru_cache
 from io import StringIO
 from json import JSONDecodeError
 from pprint import pprint
@@ -47,6 +48,7 @@ class ExtensionManager:
         self.extra_items = {}
         self.extensions = {}
         self.context_menus = {}
+        self.screens = {}
         self.configs = {}
         self._reset()
         self._current_extension = None
@@ -77,6 +79,7 @@ class ExtensionManager:
         self.extra_items.clear()
         self.extensions.clear()
         self.context_menus.clear()
+        self.screens.clear()
         self.configs.clear()
         self.extension_count = 0
         self.extensions_loaded = 0
@@ -228,11 +231,12 @@ class ExtensionManager:
                 print_exc()
         self.opened_context_menus.clear()
 
+    @lru_cache
     def action(self, action: str, extension_name: str):
-        def _action():
+        def _action(**kwargs):
             self.current_extension = extension_name
             try:
-                self.extensions[extension_name].call(action, self.state)
+                self.extensions[extension_name].call(action, json.dumps(kwargs).encode())
             except ExtismError:
                 self.error(f"Extension {extension_name} failed to handle action {action}")
                 print_exc()
