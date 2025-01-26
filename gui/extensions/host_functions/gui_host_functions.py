@@ -15,6 +15,7 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
 
     class CustomContextMenu(ContextMenu):
         KEY = context_menu.key
+        EXTENSION_NAME = d.extension_manager.current_extension
         BUTTONS = tuple(
             {
                 key:
@@ -24,6 +25,16 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
             }
             for button in context_menu.buttons
         )
+        ACTIONS = tuple(
+            value for button in context_menu.buttons
+            for key, value in button.items()
+            if key == 'action' and value is not None
+        )
+
+        def __getattr__(self, item):
+            if item in self.ACTIONS:
+                return d.extension_manager.action(item, self.EXTENSION_NAME)
+            return super().__getattr__(item)
 
     d.extension_manager.log(f"Registered context menu {d.extension_manager.current_extension}.{context_menu.key}")
 

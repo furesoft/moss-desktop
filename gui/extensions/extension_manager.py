@@ -228,6 +228,17 @@ class ExtensionManager:
                 print_exc()
         self.opened_context_menus.clear()
 
+    def action(self, action: str, extension_name: str):
+        def _action():
+            self.current_extension = extension_name
+            try:
+                self.extensions[extension_name].call(action, self.state)
+            except ExtismError:
+                self.error(f"Extension {extension_name} failed to handle action {action}")
+                print_exc()
+
+        return _action
+
     @property
     def state(self):
         return json.dumps({
