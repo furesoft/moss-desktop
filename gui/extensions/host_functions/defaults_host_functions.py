@@ -39,4 +39,9 @@ def moss_defaults_get(key: str) -> Annotated[str, Json]:
 @d.host_fn()
 @d.unpack
 def moss_defaults_set(key: str, value: Any):
+    try:
+        getattr(Defaults, key)
+    except AttributeError:
+        if d.gui.config.debug:
+            print(f"Previously unset Defaults value has been set {key}: {value}")
     setattr(Defaults, key, value)
