@@ -32,6 +32,8 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
 
 @d.host_fn()
 def moss_gui_open_context_menu(key: str, x: int, y: int):
+    if not d.gui.main_menu:
+        return
     context_menu_class: Type[ContextMenu] = d.extension_manager.context_menus[key]
     context_menu = context_menu_class(d.gui.main_menu, (x, y))
     d.gui.main_menu.context_menus[key] = context_menu
