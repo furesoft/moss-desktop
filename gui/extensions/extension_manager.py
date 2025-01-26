@@ -248,8 +248,10 @@ class ExtensionManager:
                         )),
                 self.dirty_configs
         ):
+            if not config:
+                continue
             with open(config_path, 'w') as f:
-                json.dump(config, f)
+                json.dump(config, f, indent=4)
 
     @property
     def current_extension(self):
