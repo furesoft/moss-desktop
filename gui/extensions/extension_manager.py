@@ -2,6 +2,7 @@ import json
 import os.path
 from io import StringIO
 from json import JSONDecodeError
+from pprint import pprint
 from traceback import print_exc
 from typing import TYPE_CHECKING, Dict
 
@@ -49,6 +50,7 @@ class ExtensionManager:
         self.configs = {}
         self._reset()
         self._current_extension = None
+        self.gathered_extensions = False
         init_host_functions(self)
         extism.set_log_file('extism.log', 'info')
         self.init()
@@ -171,6 +173,7 @@ class ExtensionManager:
             if os.path.isfile(os.path.join(Defaults.EXTENSIONS_DIR, extension)):
                 continue
             self.extensions_to_load.append(extension)
+        self.gathered_extensions = True
 
     def load(self, loader):
         self.reset()
@@ -208,6 +211,9 @@ class ExtensionManager:
         ...
 
     def loop(self):
+        if len(self.extra_items) > 0:
+            pprint(self.extra_items)
+            return
         for extension_name, extension in self.extensions.items():
             if extension_name not in self.loaded_extensions:
                 continue

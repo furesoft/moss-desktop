@@ -320,6 +320,8 @@ class GUI(pe.GameContext):
             return
         if not self.warning or not getattr(self.warning, 'wait', False):
             self.screens.queue[-1]()
+        if getattr(self, 'extension_manager'):
+            self.extension_manager.loop()
 
     def save_config(self):
         with open("config.json", "w") as f:

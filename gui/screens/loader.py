@@ -154,12 +154,15 @@ class Loader(pe.ChildContext, LogoMixin):
         for key, item in self.TO_LOAD.items():
             self.__load(key, item)
             self.items_loaded += 1
-            
+
         # Begin loading extensions
         threading.Thread(target=self.load_extensions, daemon=True).start()
 
         # Wait for extensions to load
-        while not self.extension_manager.extensions_loaded == self.extension_manager.extension_count:
+        while not (
+                self.extension_manager.gathered_extensions and
+                self.extension_manager.extensions_loaded == self.extension_manager.extension_count
+        ):
             pass
 
         # Load extension data
@@ -172,6 +175,7 @@ class Loader(pe.ChildContext, LogoMixin):
             else:
                 self.load_data(key, item)
             self.items_loaded += 1
+        self.extension_manager.extra_items.clear()
 
     def load(self):
         try:
