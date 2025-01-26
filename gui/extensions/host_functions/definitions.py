@@ -87,7 +87,13 @@ def get_color(fn):
             'r': color[0],
             'g': color[1],
             'b': color[2],
-            'a': color[3] if len(color) == 4 else 255
+            **(
+                {
+                    'a': color[3] if color[3] != 255 else None
+                } if len(color) == 4 else {
+                    'a': None
+                }
+            )
         }
 
     return wrapper

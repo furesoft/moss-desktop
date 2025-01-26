@@ -15,7 +15,7 @@ def moss_defaults_set_color(key: str, color: Tuple[int, ...]):
 @d.host_fn()
 @d.get_color
 def moss_defaults_get_color(key: str):
-    getattr(Defaults, key)
+    return getattr(Defaults, key)
 
 
 @d.host_fn()
@@ -27,7 +27,7 @@ def moss_defaults_set_text_color(key: str, colors: Tuple[Optional[Tuple[int, ...
 @d.host_fn()
 @d.get_text_color
 def moss_defaults_get_text_color(key: str):
-    getattr(Defaults, key)
+    return getattr(Defaults, key)
 
 
 @d.host_fn()
