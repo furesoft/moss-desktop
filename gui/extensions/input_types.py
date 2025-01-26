@@ -1,4 +1,4 @@
-from typing import TypedDict, List
+from typing import TypedDict, List, Optional
 
 
 class TContextButton(TypedDict):
@@ -12,3 +12,6 @@ class TContextButton(TypedDict):
 class TContextMenu(TypedDict):
     key: str
     buttons: List[TContextButton]
+    pre_loop: Optional[str]
+    post_loop: Optional[str]
+    invert: bool

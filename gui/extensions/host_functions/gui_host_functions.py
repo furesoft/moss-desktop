@@ -30,6 +30,19 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
             for key, value in button.items()
             if key == 'action' and value is not None
         )
+        PRE_LOOP = context_menu.post_loop
+        POST_LOOP = context_menu.post_loop
+        INVERT = context_menu.invert
+
+        def pre_loop(self):
+            if self.PRE_LOOP:
+                d.extension_manager.action(self.PRE_LOOP, self.EXTENSION_NAME)()
+            super().pre_loop()
+
+        def post_loop(self):
+            super().post_loop()
+            if self.POST_LOOP:
+                d.extension_manager.action(self.POST_LOOP, self.EXTENSION_NAME)()
 
         def __getattr__(self, item):
             if item in self.ACTIONS:
