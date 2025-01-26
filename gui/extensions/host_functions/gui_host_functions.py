@@ -30,9 +30,9 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
             for key, value in button.items()
             if key == 'action' and value is not None
         )
-        PRE_LOOP = context_menu.post_loop
-        POST_LOOP = context_menu.post_loop
-        INVERT = context_menu.invert
+        PRE_LOOP = context_menu.get('pre_loop', None)
+        POST_LOOP = context_menu.get('post_loop', None)
+        INVERT = context_menu.get('invert', False)
 
         def pre_loop(self):
             if self.PRE_LOOP:

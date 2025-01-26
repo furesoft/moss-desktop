@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List
 from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
-from ..export_types import TColor, TTextColor
+from ..input_types import color_from_tuple, color_to_tuple, TTextColor, TColor
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -67,12 +67,7 @@ def set_color(fn):
 
     @wraps(fn)
     def wrapper(key: str, color: Annotated[TColor, Json]):
-        return fn(
-            key,
-            (color['r'], color['g'], color['b'])
-            if color['a'] is None else
-            (color['r'], color['g'], color['b'], color['a'])
-        )
+        return fn(key, color_to_tuple(color))
 
     return wrapper
 
@@ -83,18 +78,7 @@ def get_color(fn):
     @wraps(fn)
     def wrapper(key: str):
         color = fn(key)
-        return {
-            'r': color[0],
-            'g': color[1],
-            'b': color[2],
-            **(
-                {
-                    'a': color[3] if color[3] != 255 else None
-                } if len(color) == 4 else {
-                    'a': None
-                }
-            )
-        }
+        return color_from_tuple(color)
 
     return wrapper
 
@@ -106,20 +90,8 @@ def get_text_color(fn):
     def wrapper(key: str):
         colors = fn(key)
         return {
-            'foreground': {
-                'r': colors[0][0],
-                'g': colors[0][1],
-                'b': colors[0][2],
-                'a': colors[0][3] if len(colors[0]) == 4 else None,
-            },
-            'background': (
-                {
-                    'r': colors[1][0],
-                    'g': colors[1][1],
-                    'b': colors[1][2],
-                    'a': colors[1][3] if len(colors[1]) == 4 else None
-                } if colors[1] is not None else None
-            )
+            'foreground': color_from_tuple(colors[0]),
+            'background': color_from_tuple(colors[1], allow_turn_to_none=True)
         }
 
     return wrapper
@@ -133,20 +105,8 @@ def set_text_color(fn):
 
     @wraps(fn)
     def wrapper(key: str, colors: Annotated[TTextColor, Json]):
-        color1 = (
-            (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'])  # no alpha
-            if colors['foreground']['a'] is None else
-            (colors['foreground']['r'], colors['foreground']['g'], colors['foreground']['b'], colors['foreground']['a'])
-            # foreground with alpha
-        )
-        color2 = (
-            (colors['background']['r'], colors['background']['g'], colors['background']['b'])  # no alpha
-            if colors['background']['a'] is None else
-            None if colors['background']['a'] == 0 else  # no background - alpha is 0
-            (colors['background']['r'], colors['background']['g'], colors['background']['b'], colors['background']['a'])
-            # background with alpha
-        ) \
-            if colors['background'] is not None else None  # no background
-        return fn(key, (color1, color2))
+        foreground = color_to_tuple(colors['foreground'])
+        background = color_to_tuple(colors['background'])
+        return fn(key, (foreground, background))
 
     return wrapper
