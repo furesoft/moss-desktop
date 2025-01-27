@@ -1,3 +1,4 @@
+import json
 from typing import Any, Annotated
 
 from extism import Json
@@ -22,4 +23,4 @@ def moss_em_config_set(key: str, value: Any):
 
 @d.host_fn()
 def moss_em_get_state() -> Annotated[dict, Json]:
-    return d.extension_manager.raw_state
+    return json.loads(json.dumps(d.extension_manager.raw_state))

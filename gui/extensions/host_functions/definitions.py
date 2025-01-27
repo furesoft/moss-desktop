@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List
 
+from colorama import Fore
 from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
@@ -61,6 +62,16 @@ def unpack(fn):
     @wraps(fn)
     def wrapper(value: Annotated[dict, Json]):
         return fn(**value)
+
+    return wrapper
+
+
+def debug_result(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        print(f'{Fore.CYAN}HOST FUNCTION{Fore.RESET} - {fn.__name__} result: {result}')
+        return result
 
     return wrapper
 
