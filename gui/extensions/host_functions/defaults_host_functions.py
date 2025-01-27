@@ -1,6 +1,4 @@
-from typing import Annotated, Any, Tuple, Optional
-
-from extism import Json
+from typing import Any, Tuple, Optional
 
 from . import definitions as d
 from ...defaults import Defaults
@@ -32,7 +30,7 @@ def moss_defaults_get_text_color(key: str):
 
 @d.host_fn()
 @d.transform_to_json
-def moss_defaults_get(key: str) -> Annotated[str, Json]:
+def moss_defaults_get(key: str):
     return getattr(Defaults, key)
 
 

@@ -25,6 +25,8 @@ def init_host_functions(_extension_manager: 'ExtensionManager'):
 
 
 def transform_to_json(fn):
+    fn.__annotations__['return'] = Annotated[TValue, Json]
+
     @wraps(fn)
     def wrapper(*args, **kwargs) -> Annotated[TValue, Json]:
         return {

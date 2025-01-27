@@ -1,6 +1,4 @@
-from typing import Any, Annotated
-
-from extism import Json
+from typing import Any
 
 from . import definitions as d
 
@@ -8,7 +6,7 @@ from . import definitions as d
 # Configs
 @d.host_fn()
 @d.transform_to_json
-def moss_em_config_get(key: str) -> Annotated[str, Json]:
+def moss_em_config_get(key: str):
     return d.extension_manager.configs[d.extension_manager.current_extension].get(key)
 
 
