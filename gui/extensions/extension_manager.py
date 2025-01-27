@@ -233,10 +233,12 @@ class ExtensionManager:
 
     @lru_cache
     def action(self, action: str, extension_name: str):
+        print('making action:', action, extension_name)
+
         def _action(**kwargs):
             self.current_extension = extension_name
             try:
-                self.extensions[extension_name].call(action, json.dumps(kwargs).encode())
+                self.extensions[extension_name].call(action, json.dumps(kwargs).encode() if kwargs else b'')
             except ExtismError:
                 self.error(f"Extension {extension_name} failed to handle action {action}")
                 print_exc()

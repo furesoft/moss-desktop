@@ -27,6 +27,7 @@ def moss_pe_register_screen(screen: Annotated[TScreen, Json]):
 
     class CustomScreen(pe.ChildContext):
         KEY = screen.key
+        LAYER = pe.AFTER_LOOP_LAYER
         EXTENSION_NAME = d.extension_manager.current_extension
         PRE_LOOP = screen.get('screen_pre_loop', None)
         LOOP = screen.screen_loop
