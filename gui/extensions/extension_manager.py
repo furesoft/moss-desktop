@@ -246,14 +246,18 @@ class ExtensionManager:
         return _action
 
     @property
-    def state(self):
-        return json.dumps({
+    def raw_state(self):
+        return {
             'width': self.gui.width,
             'height': self.gui.height,
             'current_screen': self.gui.screens.queue[-1].__class__.__name__ if self.gui.screens.queue else "",
             'opened_context_menus': self.opened_context_menus,
             'icons': list(self.gui.icons.keys()),
-        }).encode()
+        }
+
+    @property
+    def state(self):
+        return json.dumps(self.raw_state).encode()
 
     def save_configs(self):
         for config, config_path in map(

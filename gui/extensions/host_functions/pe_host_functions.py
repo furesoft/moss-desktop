@@ -40,6 +40,10 @@ def moss_pe_register_screen(screen: Annotated[TScreen, Json]):
             d.api.add_hook(self.event_hook_id, self.handle_hook)
             super().__init__(parent)
 
+        @property
+        def state(self):
+            return d.extension_manager.raw_state
+
         def pre_loop(self):
             if self.PRE_LOOP:
                 d.extension_manager.action(self.PRE_LOOP, self.EXTENSION_NAME)()
@@ -80,4 +84,8 @@ def moss_pe_set_screen_value(key: str, value: Annotated[dict, Json]):
 @d.transform_to_json
 def moss_pe_get_screen_value(key: str):
     screen = d.gui.screens.queue[-1]
-    return screen.values[key]
+    try:
+        print(screen, key, getattr(screen, key))
+        return getattr(screen, key)
+    except AttributeError:
+        return screen.values[key]
