@@ -192,15 +192,32 @@ class ExtensionManager:
             if self.gui.config['extensions'].get(extension) is None:
                 self.gui.config['extensions'][extension] = False
                 self.gui.dirty_config = True
+            wasm_file_location = os.path.join(Defaults.EXTENSIONS_DIR, extension, f'{extension}.wasm')
+            info_file_location = os.path.join(Defaults.EXTENSIONS_DIR, extension, f'{extension}.info')
+            if os.path.exists(info_file_location):
+                with open(info_file_location, 'r') as f:
+                    info = json.load(f)
+                if file_location := info.get('file'):
+                    wasm_file_location = os.path.join(Defaults.EXTENSIONS_DIR, extension, file_location)
+                    if not wasm_file_location.startswith(os.path.join(Defaults.EXTENSIONS_DIR, extension)):
+                        self.error(f"Extension {extension} file location is invalid or dangerous")
+                        self.extension_count -= 1
+                        continue
+
+            if not os.path.exists(wasm_file_location):
+                self.error(f"Extension {extension} file not found")
+                self.extension_count -= 1
+                continue
+
             if self.gui.config['extensions'][extension]:
                 try:
                     self.load_wasm(
-                        os.path.join(Defaults.EXTENSIONS_DIR, extension, f'{extension}.wasm'),
+                        wasm_file_location,
                         os.path.join(Defaults.OPTIONS_DIR, f'{extension}.json'),
                         extension
                     )
                 except ExtismError:
-                    self.error(f"Extension {extension} failed to load")
+                    self.error(f"Extension {extension} failed to load.")
                     self.extension_count -= 1
                     print_exc()
             else:
