@@ -6,7 +6,7 @@ from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
 from ..export_types import TValue
-from ..input_types import color_from_tuple, color_to_tuple, TTextColor, TColor
+from ..input_types import color_from_tuple, color_to_tuple, TTextColors, TColor, text_colors_to_tuple
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -98,7 +98,7 @@ def get_color(fn):
 
 
 def get_text_color(fn):
-    fn.__annotations__ = {'key': str, 'return': Annotated[TTextColor, Json]}
+    fn.__annotations__ = {'key': str, 'return': Annotated[TTextColors, Json]}
 
     @wraps(fn)
     def wrapper(key: str):
@@ -114,13 +114,11 @@ def get_text_color(fn):
 def set_text_color(fn):
     fn.__annotations__ = {
         'key': str,
-        'colors': Annotated[TTextColor, Json]
+        'colors': Annotated[TTextColors, Json]
     }
 
     @wraps(fn)
-    def wrapper(key: str, colors: Annotated[TTextColor, Json]):
-        foreground = color_to_tuple(colors['foreground'])
-        background = color_to_tuple(colors['background'])
-        return fn(key, (foreground, background))
+    def wrapper(key: str, colors: Annotated[TTextColors, Json]):
+        return fn(key, text_colors_to_tuple(colors))
 
     return wrapper

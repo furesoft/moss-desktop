@@ -135,6 +135,7 @@ class Defaults(metaclass=DefaultsMeta):
     PROGRESS_COLOR = {
         "total": pe.colors.white,  # This should never get used!!!
     }
+    TEST = 5
 
 
 if pe.settings.config.debug:

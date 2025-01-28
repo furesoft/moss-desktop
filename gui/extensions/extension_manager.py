@@ -48,6 +48,7 @@ class ExtensionManager:
         self.extra_items = {}
         self.extensions = {}
         self.context_menus = {}
+        self.texts = {}
         self.screens = {}
         self.configs = {}
         self._reset()
@@ -79,6 +80,7 @@ class ExtensionManager:
         self.extra_items.clear()
         self.extensions.clear()
         self.context_menus.clear()
+        self.texts.clear()
         self.screens.clear()
         self.configs.clear()
         self.extension_count = 0

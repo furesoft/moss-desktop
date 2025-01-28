@@ -91,9 +91,13 @@ def color_to_tuple(color: Optional[TColor]) -> Optional[Tuple[int, ...]]:
     )
 
 
-class TTextColor(TypedDict):
+class TTextColors(TypedDict):
     foreground: TColor
     background: Optional[TColor]
+
+
+def text_colors_to_tuple(colors: TTextColors) -> Tuple[Tuple[int, ...], Optional[Tuple[int, ...]]]:
+    return color_to_tuple(colors['foreground']), color_to_tuple(colors['background'])
 
 
 class TScreen(TypedDict):

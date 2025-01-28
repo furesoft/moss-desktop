@@ -29,6 +29,7 @@ def moss_defaults_get_text_color(key: str):
 
 
 @d.host_fn()
+@d.debug_result
 @d.transform_to_json
 def moss_defaults_get(key: str):
     return getattr(Defaults, key)
