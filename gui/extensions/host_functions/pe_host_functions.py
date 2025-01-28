@@ -81,7 +81,6 @@ def moss_pe_set_screen_value(key: str, value: Annotated[dict, Json]):
 
 
 @d.host_fn()
-@d.debug_result
 @d.transform_to_json
 def moss_pe_get_screen_value(key: str):
     screen = d.gui.screens.queue[-1]
