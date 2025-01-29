@@ -378,6 +378,12 @@ class SideBar(ContextMenu):
                 "action": "debug",
                 "context_icon": "chevron_right",
             })
+        elif context.extension_manager.extension_count == 0:
+            self.BUTTONS = (
+                *self.BUTTONS[:4],
+                *self.BUTTONS[5:]
+            )
+            self.TOP_BUTTONS = 4
         super().__init__(context, *args, **kwargs)
         self.extensions_button_midright = None
         self.CONTEXT_MENU_OPEN_PADDING = self.ratios.seperator - self.ratios.line
