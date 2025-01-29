@@ -104,10 +104,13 @@ def color_to_tuple(color: Optional[TColor]) -> Optional[Tuple[int, ...]]:
     )
 
 
-def context_button_clean(button: TContextButton) -> TContextButton:
+def context_button_clean(button: TContextButton, append: str = '') -> TContextButton:
     return {
         key:
-            value if value else None
+            (
+                f'{append}{value}'
+                if key in ('action', 'context_menu') else value
+            ) if value else None
         for key, value in button.items()
         if value or key == "action" and not value
     }

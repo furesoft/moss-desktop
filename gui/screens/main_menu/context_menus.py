@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+from functools import lru_cache
 from typing import TYPE_CHECKING, List, Tuple, Optional
 
 import pygameextra as pe
@@ -8,6 +9,7 @@ import pyperclip
 
 from gui.cloud_action_helper import import_notebook_pages_to_cloud
 from gui.defaults import Defaults
+from gui.extensions.host_functions import ACTION_APPEND
 from gui.file_prompts import notebook_prompt, import_debug
 from gui.pp_helpers import ContextMenu
 from gui.preview_handler import PreviewHandler
@@ -260,6 +262,27 @@ class CustomExtensionsMenu(ContextMenu):
             self.initialized_position = True
             super().finalize_button_rect(buttons, width, height)
 
+    @lru_cache
+    def get_actions(self) -> List[Tuple[Optional[str], Optional[str], str]]:
+        return [
+            (
+                button.get('action'),
+                button.get('context_menu'),
+                button['_extension']
+            )
+            for button in self.extension_manager.extension_buttons
+        ]
+
+    def __getattr__(self, item):
+        if item.startswith(ACTION_APPEND):
+            for action, context_menu, extension in self.get_actions():
+                if item == action:
+                    return self.extension_manager.action(action[len(ACTION_APPEND):], extension)
+                if item == context_menu:
+                    function = self.extension_manager.action(context_menu[len(ACTION_APPEND):], extension)
+                    return lambda ideal_position: function(ideal_position=ideal_position)
+        return super().__getattr__(item)
+
     @property
     def BUTTONS(self):
         buttons = self.extension_manager.extension_buttons or self.DEFAULT_BUTTONS
@@ -269,6 +292,7 @@ class CustomExtensionsMenu(ContextMenu):
         if current_hash.digest() != self.previously_hashed_buttons:
             self.previously_hashed_buttons = current_hash.digest()
             self.handle_scales()
+            self.get_actions.clear_cache()
         return buttons
 
     def handle_scales(self):

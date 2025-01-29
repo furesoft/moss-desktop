@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 extension_manager: 'ExtensionManager'
 gui: 'GUI'
 api: 'API'
+ACTION_APPEND = '__em_action_'
 
 
 def init_host_functions(_extension_manager: 'ExtensionManager'):

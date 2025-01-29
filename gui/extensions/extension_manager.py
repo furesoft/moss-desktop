@@ -46,7 +46,7 @@ class ExtensionManager:
         self.dirty_configs = []
         self.extensions_to_load = []
         self.loaded_extensions = []
-        self.extension_buttons = []
+        self.extension_buttons: List[TContextButton] = []
         self.extra_items = {}
         self.extensions = {}
         self.context_menus = {}
