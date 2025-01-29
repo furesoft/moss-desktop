@@ -78,7 +78,7 @@ class ContextMenu(ContextBar, ABC):
             x += max_width
 
             total_width += max_width
-            max_height = max(max_height, y)
+            max_height = max(max_height, y - self.top)
             buttons_handled += len(column)
 
         self.rect = pe.Rect(self.left, self.top, total_width, max_height)
