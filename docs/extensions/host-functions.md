@@ -1,9 +1,9 @@
 ---
+icon: link
 description: >-
   This page details each host function and what it does. Each different module
   and group of functions are separated into their own section so you can quickly
   find what you need.
-icon: link
 ---
 
 # Host functions
@@ -166,11 +166,15 @@ PygameExtraRect:
 ```
 Screen & ChildScreen: - These are considered UI rendering objects and will have respective context handling
 - key: str - An identifier for the screen
-- screen_pre_loop: str - An extension function for the before loop call
+- screen_pre_loop: Optional[str] - An extension function for the before loop call
 - screen_loop: str - An extension function for the loop call
-- screen_post_loop: str - An extension function for the after loop call
-- event_hook: str - An extension function which will receive API events, must accept a single argument name: String
+- screen_post_loop: Optional[str] - An extension function for the after loop call
+- event_hook: Optional[str] - An extension function which will receive API events, must accept a single argument name: String
 ```
+
+{% hint style="info" %}
+Notice that everything except the key and loop are optional functions you can use and are not required to be passed!
+{% endhint %}
 
 ### Functions for drawing basic shapes
 
