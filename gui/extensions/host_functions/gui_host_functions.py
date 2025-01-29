@@ -4,7 +4,7 @@ from box import Box
 from extism import Json
 
 from . import definitions as d
-from ..input_types import TContextMenu
+from ..input_types import TContextMenu, context_button_clean
 from ...helpers import invert_icon
 from ...pp_helpers import ContextMenu
 
@@ -17,12 +17,7 @@ def moss_gui_register_context_menu(menu: Annotated[TContextMenu, Json]):
         KEY = context_menu.key
         EXTENSION_NAME = d.extension_manager.current_extension
         BUTTONS = tuple(
-            {
-                key:
-                    value if value else None
-                for key, value in button.items()
-                if value or key == "action" and not value
-            }
+            context_button_clean(button)
             for button in context_menu.buttons
         )
         ACTIONS = tuple(

@@ -6,9 +6,9 @@ import pygameextra as pe
 class TContextButton(TypedDict):
     text: str
     icon: str
-    context_icon: str
-    action: str
-    context_menu: str
+    context_icon: Optional[str]
+    action: Optional[str]
+    context_menu: Optional[str]
 
 
 class TContextMenu(TypedDict):
@@ -46,6 +46,19 @@ class TPygameExtraRect(TypedDict):
     rect: TRect
     width: int
     edge_rounding: Optional[TPygameExtraRectEdgeRounding]
+
+
+class TTextColors(TypedDict):
+    foreground: TColor
+    background: Optional[TColor]
+
+
+class TScreen(TypedDict):
+    key: str
+    screen_pre_loop: Optional[str]
+    screen_loop: str
+    screen_post_loop: Optional[str]
+    event_hook: Optional[str]
 
 
 def rect_to_pe_rect(rect: TRect) -> pe.Rect:
@@ -91,18 +104,14 @@ def color_to_tuple(color: Optional[TColor]) -> Optional[Tuple[int, ...]]:
     )
 
 
-class TTextColors(TypedDict):
-    foreground: TColor
-    background: Optional[TColor]
+def context_button_clean(button: TContextButton) -> TContextButton:
+    return {
+        key:
+            value if value else None
+        for key, value in button.items()
+        if value or key == "action" and not value
+    }
 
 
 def text_colors_to_tuple(colors: TTextColors) -> Tuple[Tuple[int, ...], Optional[Tuple[int, ...]]]:
     return color_to_tuple(colors['foreground']), color_to_tuple(colors['background'])
-
-
-class TScreen(TypedDict):
-    key: str
-    screen_pre_loop: Optional[str]
-    screen_loop: str
-    screen_post_loop: Optional[str]
-    event_hook: Optional[str]
