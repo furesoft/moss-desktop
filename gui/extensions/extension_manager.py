@@ -3,9 +3,8 @@ import os.path
 from functools import lru_cache
 from io import StringIO
 from json import JSONDecodeError
-from pprint import pprint
 from traceback import print_exc
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 
 import extism
 from colorama import Fore
@@ -15,6 +14,7 @@ from extism.extism import HOST_FN_REGISTRY
 
 from gui.defaults import Defaults
 from .host_functions import init_host_functions
+from .input_types import TContextButton
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -36,6 +36,7 @@ class ExtensionManager:
     extensions: Dict[str, Plugin]
     extension_load_log: StringIO
     context_menus: dict
+    extension_buttons: List[TContextButton]
 
     HOOK = 'em_extension_hook'
 
@@ -45,6 +46,7 @@ class ExtensionManager:
         self.dirty_configs = []
         self.extensions_to_load = []
         self.loaded_extensions = []
+        self.extension_buttons = []
         self.extra_items = {}
         self.extensions = {}
         self.context_menus = {}
@@ -77,6 +79,7 @@ class ExtensionManager:
     def _reset(self):
         self.extensions_to_load.clear()
         self.loaded_extensions.clear()
+        self.extension_buttons.clear()
         self.extra_items.clear()
         self.extensions.clear()
         self.context_menus.clear()
@@ -233,8 +236,7 @@ class ExtensionManager:
         ...
 
     def loop(self):
-        if len(self.extra_items) > 0:
-            pprint(self.extra_items)
+        if len(self.loaded_extensions) < self.extension_count:
             return
         for extension_name, extension in self.extensions.items():
             if extension_name not in self.loaded_extensions:
