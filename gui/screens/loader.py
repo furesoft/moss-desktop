@@ -71,6 +71,7 @@ class Loader(pe.ChildContext, LogoMixin):
         'glasses': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'glasses.svg')),
         'free_mode': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'free_mode.svg')),
         'rotate': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'rotate.svg')),
+        'puzzle': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'puzzle.svg')),
         'burger': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'burger.svg')),
         'filter': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'filter.svg')),
         'context_menu': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'context_menu.svg')),

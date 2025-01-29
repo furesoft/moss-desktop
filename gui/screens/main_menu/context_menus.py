@@ -1,6 +1,7 @@
+import hashlib
 import json
 import os
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Optional
 
 import pygameextra as pe
 import pyperclip
@@ -19,7 +20,7 @@ from rm_api.notifications.models import DocumentSyncProgress
 from rm_api.storage.common import FileHandle
 
 if TYPE_CHECKING:
-    pass
+    from gui.extensions.extension_manager import ExtensionManager
 
 
 class ImportContextMenu(ContextMenu):
@@ -235,8 +236,49 @@ class DebugContextMenu(ContextMenu):
         self.import_screen.add_item(document)
 
 
+class CustomExtensionsMenu(ContextMenu):
+    extension_manager: 'ExtensionManager'
+    DEFAULT_BUTTONS = (
+        {
+            "text": "No extension menus",
+            "icon": "puzzle",
+            "action": None
+        },
+    )
+
+    def __init__(self, parent: 'MainMenu', midright: Tuple[int, int]):
+        self.previously_hashed_buttons = None
+        super().__init__(parent, midright)
+        self.midright = midright
+        self.initialized_position = False
+
+    def finalize_button_rect(self, buttons, width, height):
+        super().finalize_button_rect(buttons, width, height)
+        if not self.initialized_position:
+            self.rect.midleft = self.midright
+            self.left, self.top = self.rect.topleft
+            super().finalize_button_rect(buttons, width, height)
+            self.initialized_position = True
+
+    @property
+    def BUTTONS(self):
+        buttons = self.extension_manager.extension_buttons or self.DEFAULT_BUTTONS
+        current_hash = hashlib.sha1()
+        for button in buttons:
+            current_hash.update(id(button).to_bytes(8, 'big'))
+        if current_hash.digest() != self.previously_hashed_buttons:
+            self.previously_hashed_buttons = current_hash.digest()
+            self.handle_scales()
+        return buttons
+
+    def handle_scales(self):
+        super().handle_scales()
+        self.initialized_position = False
+
+
 class SideBar(ContextMenu):
     ENABLE_OUTLINE = False
+    TOP_BUTTONS = 5
     BUTTONS = (
         {
             "text": "My Files",
@@ -268,6 +310,12 @@ class SideBar(ContextMenu):
             "disabled": True
         },
         {
+            "text": "Extensions",  # Maintain as index 4
+            "icon": "puzzle",
+            "action": "custom_extensions_menu",
+            "inverted_id": "extensions",
+        },
+        {
             "text": "Trash",
             "icon": "trashcan",
             "action": "set_location",
@@ -292,6 +340,8 @@ class SideBar(ContextMenu):
         }
     )
 
+    extensions_button_midright: Optional[Tuple[int, int]]
+
     def __init__(self, context, *args, **kwargs):
         if context.config.debug:
             self.BUTTONS = (*self.BUTTONS, {
@@ -301,6 +351,7 @@ class SideBar(ContextMenu):
                 "context_icon": "chevron_right",
             })
         super().__init__(context, *args, **kwargs)
+        self.extensions_button_midright = None
         self.CONTEXT_MENU_OPEN_PADDING = self.ratios.seperator - self.ratios.line
 
     def pre_loop(self):
@@ -331,18 +382,27 @@ class SideBar(ContextMenu):
             button.area.height = self.ratios.main_menu_top_height
             button.area.left = self.left
 
-        # Position the top 4 buttons
+        # Position the top buttons
         y = self.top
-        for button in buttons[:4]:
+        for button in buttons[:self.TOP_BUTTONS]:
             button.area.top = y
             y += button.area.height
 
+        self.extensions_button_midright = button.area.midright
+        pe.draw.circle(pe.colors.red, self.extensions_button_midright, 5, 0)
+
         # Position the bottom buttons
         y = self.height
-        for button in reversed(buttons[4:]):
+        for button in reversed(buttons[self.TOP_BUTTONS:]):
             button.area.bottom = y
             y -= button.area.height
         self.rect = pe.Rect(self.left, self.top, self.ratios.main_menu_side_bar_width, self.height)
+
+    def custom_extensions_menu(self):
+        self.handle_new_context_menu(self._custom_extensions_menu, 4)
+
+    def _custom_extensions_menu(self, ideal_position):
+        return CustomExtensionsMenu(self.main_menu, self.extensions_button_midright)
 
     @property
     def button_margin(self):
