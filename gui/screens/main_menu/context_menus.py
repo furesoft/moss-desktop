@@ -257,8 +257,8 @@ class CustomExtensionsMenu(ContextMenu):
         if not self.initialized_position:
             self.rect.midleft = self.midright
             self.left, self.top = self.rect.topleft
-            super().finalize_button_rect(buttons, width, height)
             self.initialized_position = True
+            super().finalize_button_rect(buttons, width, height)
 
     @property
     def BUTTONS(self):
@@ -314,6 +314,7 @@ class SideBar(ContextMenu):
             "icon": "puzzle",
             "action": "custom_extensions_menu",
             "inverted_id": "extensions",
+            "context_icon": "chevron_right"
         },
         {
             "text": "Trash",
@@ -389,7 +390,6 @@ class SideBar(ContextMenu):
             y += button.area.height
 
         self.extensions_button_midright = button.area.midright
-        pe.draw.circle(pe.colors.red, self.extensions_button_midright, 5, 0)
 
         # Position the bottom buttons
         y = self.height

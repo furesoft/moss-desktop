@@ -55,14 +55,33 @@ class ContextMenu(ContextBar, ABC):
             self.close()
 
     def finalize_button_rect(self, buttons, width, height):
-        max_width = max(button.area.width for button in buttons)
         x = self.left
-        y = self.top
-        for button in buttons:
-            button.area.topleft = x, y
-            button.area.width = max_width
-            y += button.area.height
-        self.rect = pe.Rect(self.left, self.top, max_width, y - self.top)
+        max_height = 0
+        total_width = 0
+        buttons_handled = 0
+        while len(buttons) - buttons_handled > 0:
+            column = []
+            height = self.top
+            for button in buttons[buttons_handled:]:
+                if height + button.area.height >= self.height:
+                    break
+                height += button.area.height
+                column.append(button)
+
+            max_width = max(button.area.width for button in column)
+
+            y = self.top
+            for button in column:
+                button.area.topleft = x, y
+                button.area.width = max_width
+                y += button.area.height
+            x += max_width
+
+            total_width += max_width
+            max_height = max(max_height, y)
+            buttons_handled += len(column)
+
+        self.rect = pe.Rect(self.left, self.top, total_width, max_height)
         self.rect.clamp_ip(pe.Rect(0, 0, self.width, self.height))
         if self.left != self.rect.left or self.top != self.rect.top:
             self.left, self.top = self.rect.topleft
