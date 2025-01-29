@@ -10,6 +10,7 @@ import pyperclip
 from gui.cloud_action_helper import import_notebook_pages_to_cloud
 from gui.defaults import Defaults
 from gui.extensions.host_functions import ACTION_APPEND
+from gui.extensions.input_types import rect_from_pe_rect
 from gui.file_prompts import notebook_prompt, import_debug
 from gui.pp_helpers import ContextMenu
 from gui.preview_handler import PreviewHandler
@@ -280,7 +281,9 @@ class CustomExtensionsMenu(ContextMenu):
                     return self.extension_manager.action(action[len(ACTION_APPEND):], extension)
                 if item == context_menu:
                     function = self.extension_manager.action(context_menu[len(ACTION_APPEND):], extension)
-                    return lambda ideal_position: function(ideal_position=ideal_position)
+                    return lambda ideal_position: function(
+                        **rect_from_pe_rect(pe.Rect(*ideal_position, 0, 0))
+                    )
         return super().__getattr__(item)
 
     @property
