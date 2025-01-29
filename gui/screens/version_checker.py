@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING
 import pygameextra as pe
 
 from gui.events import ResizeEvent
+from gui.gui import APP_NAME
 from gui.pp_helpers.popups import WarningPopup
 from gui.screens.mixins import LogoMixin
-
-from gui.gui import APP_NAME
 
 if TYPE_CHECKING:
     from gui.gui import GUI
@@ -29,7 +28,8 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                 self.versions = {
                     package: version
                     for package, version in
-                    map(lambda line: str.split(line, '=='), open('requirements.txt').read().splitlines())
+                    map(lambda line: str.split(line, '==') if '==' in line else (None, None),
+                        open('requirements.txt').read().splitlines())
                 }
         else:
             self.versions = None
