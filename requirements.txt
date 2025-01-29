@@ -11,4 +11,4 @@ pypdf2==3.0.1
 httpx==0.27.2
 aiohttp==3.11.6
 pymupdf==1.25.0
-extism@ git+https://github.com/JustRedTTG/python-sdk-3.9@main
+extism==1.0.4
