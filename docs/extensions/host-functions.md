@@ -37,15 +37,15 @@ ConfigSet[T]: - Make sure you serialize the value correctly when sending it
 
 ## GUI functions
 
-### Types
+### GUI types
 
 ```markup
 ContextButton:
 - text: str - The text on the button
 - icon: str - The icon to use for the button
-- context_icon: str - The bottom right icon used if your button is right clickable
+- context_icon: Optional[str] - The bottom right icon used if your button is right clickable
 - action: str - The extension function / callback to call when clicked
-- context_menu: str - The extension function to call to get the context menu when right clicked
+- context_menu: Optional[str] - The extension function to call to get the context menu when right clicked
 ```
 
 ```markup
@@ -134,9 +134,19 @@ moss_em_config_get(key: str) -> ConfigGet[T]
 <pre class="language-python"><code class="lang-python"><strong>_moss_em_config_set(value: ConfigSet[T])
 </strong></code></pre>
 
+### Functions for managing your extension
+
+You can find more info on ContextButton [above](host-functions.md#types)
+
+```python
+moss_em_register_extension_button(button: ContextButton)
+```
+
+This function registers one or more context buttons to be passed to the side menu "Extensions" context menu. It is recommended that if you choose to add a button you'd only add one and then that would open a context menu or a screen that can there allow the user to further interact with your extension.
+
 ## Pygame extra functions (PE)
 
-### Types
+### Pygame extra types
 
 ```
 PygameExtraRectEdgeRounding:

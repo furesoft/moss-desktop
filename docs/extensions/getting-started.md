@@ -1,8 +1,8 @@
 ---
+icon: books
 description: >-
   This page explains the basics when starting to develop new extensions for
   moss!
-icon: books
 ---
 
 # Getting started
@@ -33,7 +33,7 @@ Moss keeps all the extensions under the path `content/extensions/<Extension Name
 
 #### Wasi
 
-Moss also uses **wasi** so make sure your extension has that in it's build configuration as well!
+Moss also uses **wasi** so make sure your extension has that in its build configuration as well!
 
 #### Enable the extension
 
