@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 def output_to_dict(func):
     def wrapper(self, output, *args, **kwargs):
-        print('output:', bytes(output))
         return func(self, json.loads(bytes(output).decode()), *args, **kwargs)
 
     return wrapper
@@ -254,8 +253,6 @@ class ExtensionManager:
 
     @lru_cache
     def action(self, action: str, extension_name: str):
-        print('making action:', action, extension_name)
-
         def _action(**kwargs):
             self.current_extension = extension_name
             try:
