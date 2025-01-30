@@ -31,6 +31,11 @@ class DocumentDebugPopup(ContextMenu):
             "action": 'extract_files'
         },
         {
+            "text": "Extract as json",
+            "icon": "export",
+            "action": 'extract_json',
+        },
+        {
             "text": "Render pages",
             "icon": "pencil",
             "action": 'render_pages'
@@ -82,9 +87,9 @@ class DocumentDebugPopup(ContextMenu):
 
     @property
     @lru_cache
-    def extract_location(self):
-        return os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent),
-                            self.document.uuid)
+    def extract_location(self) -> str:
+        return str(os.path.join(os.path.dirname(Defaults.SYNC_FILE_PATH), 'sync_exports', str(self.document.parent),
+                                self.document.uuid))
 
     @property
     @lru_cache
@@ -140,6 +145,14 @@ class DocumentDebugPopup(ContextMenu):
                 if self.config.format_raw_exports and is_json:
                     data = json.dumps(json.loads(data), indent=4, sort_keys=True).encode()
                 f.write(data)
+
+    def extract_json(self):
+        self.clean_extract_location()
+        with open(os.path.join(
+                self.extract_location,
+                f'{self.clean_filename(self.document.metadata.visible_name)}.json'
+        ), 'w') as f:
+            f.write(json.dumps(self.document.__dict__, indent=4, sort_keys=True))
 
     def render_pages(self, important: bool = False):
         if important:
