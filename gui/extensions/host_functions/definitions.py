@@ -81,7 +81,6 @@ def unpack(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         value, *args = args
-        print(f'fn({args}, {({**value, **kwargs})})')
         return fn(*args, **value, **kwargs)
 
     return wrapper
