@@ -101,3 +101,8 @@ class TRM_Document(TypedDict):
     downloading: bool
     provision: bool
     available: bool
+
+
+class TRM_RootInfo(TypedDict):
+    generation: int
+    hash: str
