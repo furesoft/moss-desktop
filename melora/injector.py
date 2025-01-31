@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
 
-from rm_api import DocumentCollection, Metadata, make_uuid
-from gui import GUI
 import pygameextra as pe
+
+from gui import GUI
+from rm_api import DocumentCollection, Metadata, make_uuid
+from rm_api.defaults import DocumentTypes
 
 if TYPE_CHECKING:
     from .menu import InjectorMenu
@@ -40,7 +42,7 @@ class Injector(pe.ChildContext):
         uuid = make_uuid()
         self.api.document_collections[uuid] = DocumentCollection(
             [],
-            Metadata.new(name, self.gui.main_menu.navigation_parent, 'CollectionType'), uuid
+            Metadata.new(name, self.gui.main_menu.navigation_parent, DocumentTypes.Collection.value), uuid
         )
         self.gui.main_menu.set_parent(uuid)
         return uuid
