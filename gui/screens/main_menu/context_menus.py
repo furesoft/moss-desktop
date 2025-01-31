@@ -12,7 +12,7 @@ from gui.defaults import Defaults
 from gui.extensions.host_functions import ACTION_APPEND
 from gui.extensions.input_types import rect_from_pe_rect
 from gui.file_prompts import notebook_prompt, import_debug
-from gui.pp_helpers import ContextMenu
+from gui.pp_helpers import ContextMenu, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler
 from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
@@ -135,6 +135,11 @@ class DebugContextMenu(ContextMenu):
             "action": "import_from_directory"
         },
         {
+            "text": "Export directory to json",
+            "icon": "export",
+            "action": "export_directory_json"
+        },
+        {
             "text": "Hot reload",
             "icon": "rotate",
             "action": "hot_reload"
@@ -237,6 +242,15 @@ class DebugContextMenu(ContextMenu):
         document.randomize_uuids()
 
         self.import_screen.add_item(document)
+
+    def export_directory_json(self):
+        if not self.main_menu.navigation_parent:
+            return
+        debug = DocumentDebugPopup(
+            self.parent_context,
+            self.api.document_collections[self.main_menu.navigation_parent]
+        )
+        debug.extract_json()
 
 
 class CustomExtensionsMenu(ContextMenu):

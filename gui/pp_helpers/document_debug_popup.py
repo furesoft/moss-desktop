@@ -54,13 +54,13 @@ class DocumentDebugPopup(ContextMenu):
 
     ratios: 'Ratios'
 
-    def __init__(self, parent: 'GUI', document: 'Document', position: Tuple[int, int]):
+    def __init__(self, parent: 'GUI', document: 'Document', position: Tuple[int, int] = (0, 0)):
         self.document = document
         super().__init__(parent.main_menu, (0, 0))
         self.check_position(position)
 
     def check_position(self, position):
-        self.left, self.top = tuple(p + o for p, o in zip(position, pe.display.display_reference.pos))
+        self.left, self.top = tuple(p + o for p, o in zip(position, pe.display.display_reference.pos or (0, 0)))
         if self.rect.left != self.left or self.rect.top != self.top:
             self.initialized = False
 
