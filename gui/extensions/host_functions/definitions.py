@@ -79,7 +79,9 @@ def unpack(fn):
     fn.__name__ = f'_{fn.__name__}'
 
     @wraps(fn)
-    def wrapper(*args, value: Annotated[dict, Json], **kwargs):
+    def wrapper(*args, **kwargs):
+        value, *args = args
+        print(f'fn({args}, {({**value, **kwargs})})')
         return fn(*args, **value, **kwargs)
 
     return wrapper
