@@ -193,6 +193,7 @@ class GUI(pe.GameContext):
     FAKE_SCREEN_REFRESH_TIME = .1
 
     extension_manager: 'ExtensionManager'
+    loader: 'Loader'
 
     def __init__(self):
         global Defaults

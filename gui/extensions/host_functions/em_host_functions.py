@@ -31,3 +31,13 @@ def moss_em_get_state() -> Annotated[dict, Json]:
 def moss_em_register_extension_button(button: Annotated[dict, Json]):
     button['_extension'] = d.extension_manager.current_extension
     d.extension_manager.extension_buttons.append(context_button_clean(button, append=d.ACTION_APPEND))
+
+
+@d.host_fn()
+@d.transform_to_json
+def moss_em_loader_progress() -> float:
+    if not d.gui.loader.files_to_load:
+        return 1.0
+    if not d.gui.loader.files_loaded:
+        return 0.0
+    return d.gui.loader.files_to_load / d.gui.loader.files_loaded

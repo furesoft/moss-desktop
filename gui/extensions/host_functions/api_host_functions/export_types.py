@@ -39,7 +39,7 @@ class TRM_CPages(TypedDict):
     pages: List[TRM_Page]
     original: TRM_TimestampedValue
     last_opened: TRM_TimestampedValue
-    uuid: List[TRM_CPagesUUID]
+    uuids: List[TRM_CPagesUUID]
 
 
 class TRM_Zoom(TypedDict):  # RAW

@@ -123,6 +123,7 @@ class Loader(pe.ChildContext, LogoMixin):
         self.current_progress = 0
         self.initialized = False
         self.to_load = len(self.TO_LOAD)
+        parent.loader = self
 
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()

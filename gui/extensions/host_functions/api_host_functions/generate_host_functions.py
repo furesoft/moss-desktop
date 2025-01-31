@@ -113,6 +113,7 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
         can_set[name] = _t
 
     @d.host_fn(f"{prefix}get")
+    @d.debug_result
     @d.transform_to_json
     @wrapper
     def _func(item: item_type, key: str):
@@ -125,6 +126,7 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
         return getattr(item, key)
 
     @d.host_fn(f"{prefix}set")
+    @d.debug_result
     @wrapper
     def _func(item: item_type, key: str, value: Annotated[Any, Json]):
         value_type = can_set.get(item, None)
@@ -139,6 +141,7 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
         return setattr(item, key, value)
 
     @d.host_fn(f"{prefix}get_all")
+    @d.debug_result
     @wrapper
     def _func(item: t) -> Annotated[t, Json]:
         return item.__dict__
