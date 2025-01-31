@@ -99,7 +99,7 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
         if is_dict:
             _t = Annotated[_t, Json]
 
-        can_get[item_type] = _t
+        can_get[name] = _t
 
         if is_dict:
             continue
@@ -107,7 +107,10 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
         if (prop := getattr(item_type, name, None)) and isinstance(prop, property) and prop.fset is None:
             continue
 
-        can_set[item_type] = _t
+        if get_origin(_t) is list:
+            continue
+
+        can_set[name] = _t
 
     @d.host_fn(f"{prefix}get")
     @d.transform_to_json
