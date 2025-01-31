@@ -35,6 +35,8 @@ class ExtensionManager:
     extensions: Dict[str, Plugin]
     extension_load_log: StringIO
     context_menus: dict
+    metadata_objects: dict
+    content_objects: dict
     extension_buttons: List[TContextButton]
 
     HOOK = 'em_extension_hook'
@@ -49,6 +51,8 @@ class ExtensionManager:
         self.extra_items = {}
         self.extensions = {}
         self.context_menus = {}
+        self.metadata_objects = {}
+        self.content_objects = {}
         self.texts = {}
         self.screens = {}
         self.configs = {}
@@ -82,6 +86,8 @@ class ExtensionManager:
         self.extra_items.clear()
         self.extensions.clear()
         self.context_menus.clear()
+        self.metadata_objects.clear()
+        self.content_objects.clear()
         self.texts.clear()
         self.screens.clear()
         self.configs.clear()

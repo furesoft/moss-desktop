@@ -1,6 +1,8 @@
+import inspect
 from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List
+from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin
 
+import pygameextra as pe
 from colorama import Fore
 from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
@@ -44,11 +46,26 @@ def host_fn(
         signature: Optional[Tuple[List[ValType], List[ValType]]] = None,
         user_data: Optional[Union[bytes, List[bytes]]] = None,
 ):
-    func = extism_host_fn(name, namespace, signature, user_data)
+    extism_wrapper = extism_host_fn(name, namespace, signature, user_data)
 
-    @wraps(func)
+    @wraps(extism_wrapper)
+    def wrapped_extism(fn):
+        if pe.settings.config.debug_log:
+            sig = inspect.signature(fn)
+            params = ", ".join(
+                str(param.annotation.__args__[0] if get_origin(param.annotation) is Annotated else param)
+                for param in sig.parameters.values()
+            )
+            return_annotation = (sig.return_annotation.__args__[0]
+                                 if get_origin(sig.return_annotation) is Annotated else sig.return_annotation) \
+                if sig.return_annotation is not sig.empty else None
+            return_type = f" -> {return_annotation.__name__}" if return_annotation else ""
+            print(f'HOST FUNCTION - {name or fn.__name__}({params}){return_type}')
+        return extism_wrapper(fn)
+
+    @wraps(wrapped_extism)
     def wrapper(fn):
-        result = func(fn)
+        result = wrapped_extism(fn)
         setattr(HOST_FN_REGISTRY[-1], 'moss', True)
 
         return result
@@ -57,12 +74,13 @@ def host_fn(
 
 
 def unpack(fn):
-    fn.__annotations__ = {'value': Annotated[dict, Json]}
+    fn.__annotations__.pop('key')
+    fn.__annotations__['value'] = Annotated[dict, Json]
     fn.__name__ = f'_{fn.__name__}'
 
     @wraps(fn)
-    def wrapper(value: Annotated[dict, Json]):
-        return fn(**value)
+    def wrapper(*args, value: Annotated[dict, Json], **kwargs):
+        return fn(*args, **value, **kwargs)
 
     return wrapper
 
