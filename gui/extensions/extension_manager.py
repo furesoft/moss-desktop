@@ -241,7 +241,7 @@ class ExtensionManager:
         ...
 
     def loop(self):
-        if len(self.loaded_extensions) < self.extension_count:
+        if self.extra_items or len(self.loaded_extensions) < self.extension_count:
             return
         for extension_name, extension in self.extensions.items():
             if extension_name not in self.loaded_extensions:
