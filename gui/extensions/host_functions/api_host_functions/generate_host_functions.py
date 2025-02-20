@@ -9,7 +9,6 @@ from .. import definitions as d
 
 
 def document_wrapper(func):
-    print(func.__name__, func.__annotations__)
     func.__annotations__.pop('item')
     ref = func.__annotations__.pop('ref', None)
     func.__annotations__ = {'document_uuid': str, **func.__annotations__}

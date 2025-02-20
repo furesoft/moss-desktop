@@ -94,7 +94,8 @@ def debug_result(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
         result = fn(*args, **kwargs)
-        print(f'{Fore.CYAN}HOST FUNCTION{Fore.RESET} - {fn.__name__} result: {result}')
+        if pe.settings.config.debug_log:
+            print(f'{Fore.CYAN}HOST FUNCTION{Fore.RESET} - {fn.__name__} result: {result}')
         return result
 
     return wrapper
