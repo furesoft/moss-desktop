@@ -9,25 +9,28 @@ from rm_api import API, get_file, put_file, File, update_root, DocumentSyncProgr
 
 colorama.init()
 
-with open('config.json', 'r') as f:
-    config = json.load(f)
-
-api = API(uri=config['uri'], discovery_uri=config['discovery_uri'])
-api.debug = True
-api.ignore_error_protection = True
-
 with SlashR(False) as sr:
-    sr.print(f"{Fore.YELLOW}Hold on, fetching documents using API{Fore.RESET}")
+    sr.print(f"{Fore.BLUE}Loading configuration...{Fore.RESET}")
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+
+    sr.print(f"{Fore.BLUE}Logging in using the API{Fore.RESET}")
+    api = API(uri=config['uri'], discovery_uri=config['discovery_uri'])
+    api.debug = True
+    api.ignore_error_protection = True
+
+    sr.print(f"{Fore.YELLOW}Hold on, fetching documents using the API{Fore.RESET}")
     api.get_documents()
+    print(f"{Fore.LIGHTBLACK_EX}Current root hash: {api.last_root}{Fore.RESET}")
     sr.print(
         f"{Fore.GREEN}Got {len(api.documents)} Documents and "
         f"{len(api.document_collections)} Document Collections{Fore.RESET}")
+
 _, files = get_file(api, api.last_root)
 file_uuids = (
         [document.uuid for document in api.documents.values()] +
         [document_collection.uuid for document_collection in api.document_collections.values()]
 )
-print(f"Current root hash: {api.last_root}")
 
 with SlashR(False) as sr:
     files_invalid = 0
