@@ -9,12 +9,16 @@ from .. import definitions as d
 
 
 def document_wrapper(func):
+    print(func.__name__, func.__annotations__)
     func.__annotations__.pop('item')
+    ref = func.__annotations__.pop('ref', None)
     func.__annotations__ = {'document_uuid': str, **func.__annotations__}
 
     @wraps(func)
     def wrapper(document_uuid: str, *args, **kwargs):
         document = d.api.documents[document_uuid]
+        if ref:
+            kwargs['ref'] = document
         return func(document, *args, **kwargs)
 
     return wrapper
@@ -23,11 +27,14 @@ def document_wrapper(func):
 def document_sub_wrapper(sub_attribute: str):
     def wrapper(func):
         func.__annotations__.pop('item')
+        ref = func.__annotations__.pop('ref', None)
         func.__annotations__ = {'document_uuid': str, **func.__annotations__}
 
         @wraps(func)
         def inner_wrapper(document_uuid: str, *args, **kwargs):
             document = d.api.documents[document_uuid]
+            if ref:
+                kwargs['ref'] = document
             return func(getattr(document, sub_attribute), *args, **kwargs)
 
         return inner_wrapper
@@ -50,11 +57,14 @@ def collection_wrapper(func):
 def collection_sub_wrapper(sub_attribute: str):
     def wrapper(func):
         func.__annotations__.pop('item')
+        ref = func.__annotations__.pop('ref', None)
         func.__annotations__ = {'document_collection_uuid': str, **func.__annotations__}
 
         @wraps(func)
         def inner_wrapper(document_collection_uuid: str, *args, **kwargs):
             document_collection = d.api.collections[document_collection_uuid]
+            if ref:
+                kwargs['ref'] = document_collection
             return func(getattr(document_collection, sub_attribute), *args, **kwargs)
 
         return inner_wrapper
@@ -86,11 +96,40 @@ def content_wrapper(func):
     return wrapper
 
 
+def document_ref_wrapper(use_ref: bool = True):
+    def wrapper(func):
+        @wraps(func)
+        def wrapped(item: Any, *args, **kwargs):
+            ref = kwargs.pop('ref')
+            document_dict = func(item, *args, **kwargs)
+            document_dict['metadata']['document_uuid'] = ref.uuid
+            document_dict['content']['document_uuid'] = ref.uuid
+            return document_dict
+
+        return wrapped
+
+    if use_ref:
+        def ref_wrapper(func):
+            wrapped = wrapper(func)
+
+            @wraps(wrapped)
+            def ref_wrapped(item: Document, *args, **kwargs):
+                return wrapped(item, *args, ref=item, **kwargs)
+
+            return ref_wrapped
+
+        return ref_wrapper
+    else:
+        wrapper.__annotations__['ref'] = True
+
+    return wrapper
+
+
 def check_is_dict(_t: Type[TypedDict]):
     return isinstance(_t, type) and issubclass(_t, dict) or get_origin(_t) is dict
 
 
-def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper):
+def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper, extra_item_data_wrapper=lambda x: x):
     can_get = {}
     can_set = {}
     for name, _t in t.__annotations__.items():
@@ -125,14 +164,15 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
             return getattr(item, key).__dict__
         return getattr(item, key)
 
-    @d.host_fn(f"{prefix}set")
+    @d.host_fn(f"_{prefix}set")
     @d.debug_result
+    @d.unpack
     @wrapper
     def _func(item: item_type, key: str, value: Annotated[Any, Json]):
-        value_type = can_set.get(item, None)
+        value_type = can_set.get(key, None)
         if not value_type:
             raise ValueError(f"Can't set {key} on {item_type.__name__}")
-        if type(value) is value_type:
+        if type(value) is not value_type:
             raise ValueError(
                 f"Can't set {key} on {item_type.__name__} "
                 f"because type {type(value)} "
@@ -143,17 +183,19 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper)
     @d.host_fn(f"{prefix}get_all")
     @d.debug_result
     @wrapper
+    @extra_item_data_wrapper
     def _func(item: t) -> Annotated[t, Json]:
         return item.__dict__
 
 
 # Top most objects
-generate_for_type(et.TRM_Document, Document, "moss_api_document_", document_wrapper)
+generate_for_type(et.TRM_Document, Document, "moss_api_document_", document_wrapper, document_ref_wrapper())
 generate_for_type(et.TRM_DocumentCollection, DocumentCollection, "moss_api_collection_", collection_wrapper)
 
 # Metadata
+generate_for_type(et.TRM_MetadataDocument, Metadata, "moss_api_document_metadata_", document_sub_wrapper('metadata'),
+                  document_ref_wrapper(False))
 generate_for_type(et.TRM_MetadataBase, Metadata, "moss_api_collection_metadata_", collection_sub_wrapper('metadata'))
-generate_for_type(et.TRM_MetadataDocument, Metadata, "moss_api_document_metadata_", document_sub_wrapper('metadata'))
 generate_for_type(et.TRM_MetadataDocument, Metadata, "moss_api_metadata_", metadata_wrapper)
 
 # Content

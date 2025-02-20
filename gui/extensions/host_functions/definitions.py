@@ -76,12 +76,16 @@ def host_fn(
 def unpack(fn):
     fn.__annotations__.pop('key')
     fn.__annotations__['value'] = Annotated[dict, Json]
+    for i, annotation in enumerate(fn.__annotations__.keys()):
+        if annotation == 'value':
+            args_index = i
+            break
     fn.__name__ = f'_{fn.__name__}'
 
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        value, *args = args
-        return fn(*args, **value, **kwargs)
+        args_left, value, args_right = args[:args_index], args[args_index], args[args_index + 1:]
+        return fn(*args_left, value['key'], value['value'], *args_right, **kwargs)
 
     return wrapper
 
