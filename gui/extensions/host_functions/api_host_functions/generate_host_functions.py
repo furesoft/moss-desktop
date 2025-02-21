@@ -55,16 +55,19 @@ def document_sub_wrapper(sub_attribute: str):
 
 def collection_wrapper(func):
     """
-    This wrapper is for collections. Takes in document_collection_uuid.
+    This wrapper is for collections. Takes in collection_uuid.
 
-    api.collections[document_collection_uuid] will be returned.
+    api.collections[collection_uuid] will be returned.
     """
     func.__annotations__.pop('item')
-    func.__annotations__ = {'document_collection_uuid': str, **func.__annotations__}
+    ref = func.__annotations__.pop('ref', None)  # The function might accept the reference to the collection
+    func.__annotations__ = {'collection_uuid': str, **func.__annotations__}
 
     @wraps(func)
-    def wrapper(document_collection_uuid: str, *args, **kwargs):
-        document_collection = d.api.document_collections[document_collection_uuid]
+    def wrapper(collection_uuid: str, *args, **kwargs):
+        document_collection = d.api.document_collections[collection_uuid]
+        if ref:
+            kwargs['ref'] = document_collection
         return func(document_collection, *args, **kwargs)
 
     return wrapper
@@ -72,20 +75,20 @@ def collection_wrapper(func):
 
 def collection_sub_wrapper(sub_attribute: str):
     """
-    This wrapper is for sub attributes of a collection. Takes in document_collection_uuid.
+    This wrapper is for sub attributes of a collection. Takes in collection_uuid.
 
-    api.collections[document_collection_uuid].sub_attribute will be returned.
+    api.collections[collection_uuid].sub_attribute will be returned.
     :param sub_attribute: The sub attribute of the document collection that will be affected
     """
 
     def wrapper(func):
         func.__annotations__.pop('item')
         ref = func.__annotations__.pop('ref', None)  # The function might accept the reference to the collection
-        func.__annotations__ = {'document_collection_uuid': str, **func.__annotations__}
+        func.__annotations__ = {'collection_uuid': str, **func.__annotations__}
 
         @wraps(func)
-        def inner_wrapper(document_collection_uuid: str, *args, **kwargs):
-            document_collection = d.api.document_collections[document_collection_uuid]
+        def inner_wrapper(collection_uuid: str, *args, **kwargs):
+            document_collection = d.api.document_collections[collection_uuid]
             if ref:
                 kwargs['ref'] = document_collection  # Pass the document collection to the function per request
             return func(getattr(document_collection, sub_attribute), *args, **kwargs)
@@ -128,15 +131,16 @@ def content_wrapper(func):
     return wrapper
 
 
-def document_ref_wrapper(use_ref: bool = True):
-    # Create a basic wrapper which will add document_uuid to the metadata and content
+def ref_wrapper(ref_uuid_key: str, use_ref: bool = True):
+    # Create a basic wrapper which will add uuid_key to the metadata and content
     def wrapper(func):
         @wraps(func)
         def wrapped(item: Any, *args, ref, **kwargs):
-            # Accepts the document through ref, cause item might be the metadata or content
+            # Accepts the item through ref, cause item might be the metadata or content
             document_dict = func(item, *args, **kwargs)
-            document_dict['metadata']['document_uuid'] = ref.uuid
-            document_dict['content']['document_uuid'] = ref.uuid
+            document_dict['metadata'][ref_uuid_key] = ref.uuid
+            if 'content' in document_dict:
+                document_dict['content'][ref_uuid_key] = ref.uuid
             return document_dict
 
         return wrapped
@@ -152,7 +156,7 @@ def document_ref_wrapper(use_ref: bool = True):
             return ref_wrapped
 
         return ref_wrapper
-    # If the item is not the document, then the ref should be passed from other wrappers
+    # If the item is not the document or collection, then the ref should be passed from other wrappers
 
     return wrapper
 
@@ -230,14 +234,18 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
 
 
 # Top most objects
-generate_for_type(et.TRM_Document, Document, "moss_api_document_", document_wrapper, document_ref_wrapper())
-generate_for_type(et.TRM_DocumentCollection, DocumentCollection, "moss_api_collection_", collection_wrapper)
+generate_for_type(et.TRM_Document, Document, "moss_api_document_",
+                  document_wrapper, ref_wrapper('document_uuid'))
+generate_for_type(et.TRM_DocumentCollection, DocumentCollection, "moss_api_collection_",
+                  collection_wrapper, ref_wrapper('collection_uuid'))
 
 # Metadata
 generate_for_type(et.TRM_MetadataDocument, Metadata,  # Metadata of a document
-                  "moss_api_document_metadata_", document_sub_wrapper('metadata'), document_ref_wrapper(False))
+                  "moss_api_document_metadata_", document_sub_wrapper('metadata'),
+                  ref_wrapper('document_uuid', False))
 generate_for_type(et.TRM_MetadataBase, Metadata,  # Metadata of a collection
-                  "moss_api_collection_metadata_", collection_sub_wrapper('metadata'))
+                  "moss_api_collection_metadata_", collection_sub_wrapper('metadata'),
+                  ref_wrapper('collection_uuid', False))
 generate_for_type(et.TRM_MetadataDocument, Metadata,  # Standalone metadata
                   "moss_api_metadata_", metadata_wrapper)
 
