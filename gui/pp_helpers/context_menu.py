@@ -61,7 +61,7 @@ class ContextMenu(ContextBar, ABC):
         buttons_handled = 0
         while len(buttons) - buttons_handled > 0:
             column = []
-            height = self.top
+            height = 0
             for button in buttons[buttons_handled:]:
                 if height + button.area.height >= self.height:
                     break
