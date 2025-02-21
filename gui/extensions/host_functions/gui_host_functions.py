@@ -62,14 +62,3 @@ def moss_gui_open_context_menu(key: str, x: int, y: int):
 @d.host_fn()
 def moss_gui_invert_icon(key: str, result_key: str):
     invert_icon(d.gui, key, result_key)
-
-
-@d.host_fn()
-def moss_gui_make_text(key: str, text: str, font: str, color: str):
-    """
-    key - the key of the text object
-    text - the text to display
-    font - the font to use, file or defaults
-    color - defaults
-    """
-    ...
