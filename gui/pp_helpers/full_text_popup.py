@@ -32,6 +32,7 @@ class FullTextPopup(pe.ChildContext):
         if self.offset:
             self.text.rect.x += self.offset[0]
             self.text.rect.y += self.offset[1]
+            self.offset = None
         self.text.rect.clamp_ip(screen_rect)
 
     def pre_loop(self):
