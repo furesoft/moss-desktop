@@ -90,6 +90,7 @@ class ConfigDict(TypedDict):
     debug_disable_lines_alignment: bool
     debug_lines: bool
     debug_viewer: bool
+    allow_statistics: bool
     portable_mode: bool
     extensions: dict
 
@@ -123,6 +124,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'debug_lines': False,
     'debug_viewer': False,
     'debug_button_rects': False,
+    'allow_statistics': False,
     'portable_mode': False,
     'extensions': {}
 }
@@ -260,6 +262,7 @@ class GUI(pe.GameContext):
         self.api.add_hook('GUI', self.handle_api_event)
         pe.display.set_icon(Defaults.APP_ICON)
         makedirs(Defaults.EXTENSIONS_DIR, exist_ok=True)
+        makedirs(Defaults.TEMP_DIR, exist_ok=True)
         makedirs(Defaults.OPTIONS_DIR, exist_ok=True)
         makedirs(Defaults.THUMB_FILE_PATH, exist_ok=True)
 

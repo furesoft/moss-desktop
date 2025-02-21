@@ -148,6 +148,11 @@ class DebugContextMenu(ContextMenu):
             "text": "Copy folder UUID",
             "icon": "copy",
             "action": "copy_uuid"
+        },
+        {
+            "text": "Export statistics",
+            "icon": "copy",
+            "action": "export_statistics"
         }
     )
 
@@ -251,6 +256,9 @@ class DebugContextMenu(ContextMenu):
             self.api.document_collections[self.main_menu.navigation_parent]
         )
         debug.extract_json()
+
+    def export_statistics(self):
+        self.parent_context.extension_manager.export_statistical_data()
 
 
 class CustomExtensionsMenu(ContextMenu):

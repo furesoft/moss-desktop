@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from ..extension_manager import ExtensionManager
 
 extension_manager: 'ExtensionManager'
+host_functions = set()
 gui: 'GUI'
 api: 'API'
 ACTION_APPEND = '__em_action_'
@@ -40,6 +41,28 @@ def transform_to_json(fn):
     return wrapper
 
 
+def statistical_call_tracker(name: str = None):
+    def wrapper(fn):
+        host_functions.add(fn_name := name or fn.__name__)
+
+        @wraps(fn)
+        def wrapped_fn(*args, **kwargs):
+            extension_calls = extension_manager.call_statistics.get(extension_manager.current_extension)
+            if not extension_calls:
+                extension_calls = {
+                    function_name: 0
+                    for function_name in
+                    host_functions
+                }
+                extension_manager.call_statistics[extension_manager.current_extension] = extension_calls
+            extension_calls[fn_name] = extension_calls.get(fn_name, 0) + 1
+            return fn(*args, **kwargs)
+
+        return wrapped_fn
+
+    return wrapper
+
+
 def host_fn(
         name: Optional[str] = None,
         namespace: Optional[str] = None,
@@ -50,6 +73,8 @@ def host_fn(
 
     @wraps(extism_wrapper)
     def wrapped_extism(fn):
+        if pe.settings.config.allow_statistics:
+            fn = statistical_call_tracker(name)(fn)
         if pe.settings.config.debug_log:
             sig = inspect.signature(fn)
             params = ", ".join(

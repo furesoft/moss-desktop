@@ -63,6 +63,7 @@ class Defaults(metaclass=DefaultsMeta):
     LOG_FILE = os.path.join(SCRIPT_DIR, 'moss.log')
 
     CONTENT_DIR = os.path.join(SCRIPT_DIR, 'content')
+    TEMP_DIR = os.path.join(CONTENT_DIR, '.temporary')
     EXTENSIONS_DIR = os.path.join(CONTENT_DIR, 'extensions')
     OPTIONS_DIR = os.path.join(CONTENT_DIR, 'options')
 

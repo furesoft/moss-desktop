@@ -46,6 +46,7 @@ class ExtensionManager:
         self.opened_context_menus = []
         self.dirty_configs = []
         self.extensions_to_load = []
+        self.call_statistics = {}
         self.loaded_extensions = []
         self.extension_buttons: List[TContextButton] = []
         self.extra_items = {}
@@ -311,3 +312,9 @@ class ExtensionManager:
         if not self.current_extension:
             return None
         return self.extensions[self.current_extension]
+
+    def export_statistical_data(self):
+        with open(os.path.join(Defaults.TEMP_DIR, 'extension_calls.json'), 'w') as f:
+            json.dump(self.call_statistics, f, indent=4)
+        if self.gui.config.debug:
+            print("Exported extension calls data to extension_calls.json")
