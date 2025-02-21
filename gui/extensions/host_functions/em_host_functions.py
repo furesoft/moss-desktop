@@ -33,6 +33,11 @@ def moss_em_register_extension_button(button: Annotated[dict, Json]):
     d.extension_manager.extension_buttons.append(context_button_clean(button, append=d.ACTION_APPEND))
 
 
+@d.host_fn(signature=([], []))
+def moss_em_export_statistical_data(*args):
+    d.extension_manager.export_statistical_data()
+
+
 @d.host_fn()
 @d.transform_to_json
 def moss_em_loader_progress() -> float:
