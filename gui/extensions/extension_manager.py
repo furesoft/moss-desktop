@@ -146,7 +146,19 @@ class ExtensionManager:
         self.load_wasm_source(data, extension_name)
 
     def load_wasm_source(self, source: bytes, extension_name: str):
-        extension = Plugin(source, True, functions=[
+        extension = Plugin({
+            'wasm': [{
+                'data': source
+            }],
+            'allowed_paths': {
+                Defaults.TEMP_DIR: 'temp',
+                os.path.join(Defaults.EXTENSIONS_DIR, extension_name): 'extension',
+                Defaults.OPTIONS_DIR: 'options',
+                Defaults.SYNC_FILE_PATH: 'sync',
+                Defaults.THUMB_FILE_PATH: 'thumbnails',
+                Defaults.ASSET_DIR: 'assets',
+            }
+        }, True, functions=[
             fn for fn in HOST_FN_REGISTRY if getattr(fn, 'moss', False)
         ])
         self.extensions[extension_name] = extension
