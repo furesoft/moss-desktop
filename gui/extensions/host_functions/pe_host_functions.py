@@ -59,6 +59,11 @@ def moss_pe_register_screen(screen: Annotated[TScreen, Json]):
             if self.EVENT_HOOK:
                 d.extension_manager.action(self.EVENT_HOOK, self.EXTENSION_NAME)(event=event.__class__.__name__)
 
+        def close(self):
+            d.api.remove_hook(self.event_hook_id)
+            del d.gui.screens.queue[-1]
+            del self
+
     CustomScreen.__name__ = screen.key
 
     d.extension_manager.log(f"Registered screen {d.extension_manager.current_extension}.{screen.key}")
@@ -71,6 +76,15 @@ def moss_pe_open_screen(key: str, initial_values: Annotated[dict, Json]):
     screen_class = d.extension_manager.screens[key]
     screen = screen_class(d.gui, initial_values)
     d.gui.screens.put(screen)
+
+
+@d.host_fn(signature=([], []))
+def moss_pe_open_screen(*args):
+    current_screen = d.gui.screens.queue[-1]
+    if close_function := getattr(current_screen, "close", None):
+        close_function()
+    else:
+        raise ReferenceError("The current screen has no close procedure")
 
 
 @d.host_fn()
