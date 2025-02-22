@@ -94,7 +94,7 @@ def generate_html(call_data, output_file="coverage.html"):
                 calledFunctions.forEach(func => {{
                     const item = document.createElement("div");
                     item.className = "todo-item completed";
-                    item.textContent = func.replace(/_/g, " ");
+                    item.textContent = func;
                     todoList.appendChild(item);
                 }});
 
