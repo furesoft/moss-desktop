@@ -79,7 +79,7 @@ def moss_pe_open_screen(key: str, initial_values: Annotated[dict, Json]):
 
 
 @d.host_fn(signature=([], []))
-def moss_pe_open_screen(*args):
+def moss_pe_close_screen(*args):
     current_screen = d.gui.screens.queue[-1]
     if close_function := getattr(current_screen, "close", None):
         close_function()
