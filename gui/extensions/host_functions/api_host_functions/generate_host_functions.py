@@ -105,10 +105,10 @@ def metadata_wrapper(func):
     em.metadata_objects[metadata_id] will be returned.
     """
     func.__annotations__.pop('item')
-    func.__annotations__ = {'metadata_id': str, **func.__annotations__}
+    func.__annotations__ = {'metadata_id': int, **func.__annotations__}
 
     @wraps(func)
-    def wrapper(metadata_id: str, *args, **kwargs):
+    def wrapper(metadata_id: int, *args, **kwargs):
         metadata = d.extension_manager.metadata_objects[metadata_id]
         return func(metadata, *args, **kwargs)
 
@@ -121,10 +121,10 @@ def content_wrapper(func):
     em.content_objects[content_id] will be returned
     """
     func.__annotations__.pop('item')
-    func.__annotations__ = {'content_id': str, **func.__annotations__}
+    func.__annotations__ = {'content_id': int, **func.__annotations__}
 
     @wraps(func)
-    def wrapper(content_id: str, *args, **kwargs):
+    def wrapper(content_id: int, *args, **kwargs):
         content = d.extension_manager.content_objects[content_id]
         return func(content, *args, **kwargs)
 
