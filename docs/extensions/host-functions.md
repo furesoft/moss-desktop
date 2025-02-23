@@ -242,10 +242,10 @@ moss_pe_register_screen(screen: Screen)
 This function will register your screen with Moss, you can also use to register children screens, which are screens to be rendered on top of other screens (things like popups, context menus for example, but Moss already has those for you)
 
 ```python
-_moss_pe_open_screen(key: str, initial_values: dict)
+_moss_pe_open_screen(key: str, initial_values: dict) -> int
 ```
 
-This function will open a new instance of your screen in Moss. Your [SDK](getting-started.md#choosing-an-sdk) should manage the initial\_values to be serialized before passing through extism
+This function will open a new instance of your screen in Moss. Your [SDK](getting-started.md#choosing-an-sdk) should manage the initial\_values to be serialized before passing through extism. It returns the id of the screen in Moss.
 
 ```python
 moss_pe_get_screen_value(key: str) -> ConfigGet[T]
