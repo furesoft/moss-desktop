@@ -151,7 +151,7 @@ class DebugContextMenu(ContextMenu):
         },
         {
             "text": "Export statistics",
-            "icon": "copy",
+            "icon": "export",
             "action": "export_statistics"
         }
     )
