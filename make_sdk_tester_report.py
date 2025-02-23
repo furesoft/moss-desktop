@@ -107,7 +107,7 @@ def generate_html(call_data, output_file="coverage.html"):
     </html>
     """
 
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding='utf-8') as f:
         f.write(html_content)
 
 
