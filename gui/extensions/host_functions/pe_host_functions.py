@@ -98,6 +98,8 @@ def moss_pe_set_screen_value(key: str, value: Annotated[dict, Json]):
 @d.transform_to_json
 def moss_pe_get_screen_value(key: str):
     screen = d.gui.screens.queue[-1]
+    if key == 'id':
+        return id(screen)
     try:
         print(screen, key, getattr(screen, key))
         return getattr(screen, key)
