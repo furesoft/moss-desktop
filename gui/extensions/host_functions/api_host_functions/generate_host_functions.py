@@ -285,5 +285,6 @@ generate_for_type(et.TRM_MetadataDocument, Metadata,  # Standalone metadata
                   "moss_api_metadata_", metadata_wrapper)
 
 # Content
-generate_for_type(et.TRM_Content, Content, "moss_api_document_content_", document_sub_wrapper('content'))
+generate_for_type(et.TRM_Content, Content, "moss_api_document_content_", document_sub_wrapper('content'),
+                  ref_wrapper('document_uuid', False))
 generate_for_type(et.TRM_Content, Content, "moss_api_content_", content_wrapper)
