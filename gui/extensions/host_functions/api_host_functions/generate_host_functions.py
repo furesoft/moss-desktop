@@ -8,6 +8,16 @@ from . import export_types as et
 from .. import definitions as d
 
 
+def check_ref(func):
+    """
+    Check if the function accepts a reference to the document or collection.
+    """
+    has_ref = 'ref' in func.__annotations__
+    if has_ref:
+        func.__annotations__.pop('ref')
+    return has_ref
+
+
 def document_wrapper(func):
     """
     This wrapper is for documents. Takes in document_uuid.
@@ -15,7 +25,7 @@ def document_wrapper(func):
     api.documents[document_uuid] will be returned.
     """
     func.__annotations__.pop('item')
-    ref = func.__annotations__.pop('ref', None)
+    ref = check_ref(func)
     func.__annotations__ = {'document_uuid': str, **func.__annotations__}
 
     @wraps(func)
@@ -38,7 +48,7 @@ def document_sub_wrapper(sub_attribute: str):
 
     def wrapper(func):
         func.__annotations__.pop('item')
-        ref = func.__annotations__.pop('ref', None)  # The function might accept the reference to the document
+        ref = check_ref(func)  # The function might accept the reference to the document
         func.__annotations__ = {'document_uuid': str, **func.__annotations__}
 
         @wraps(func)
@@ -60,7 +70,7 @@ def collection_wrapper(func):
     api.collections[collection_uuid] will be returned.
     """
     func.__annotations__.pop('item')
-    ref = func.__annotations__.pop('ref', None)  # The function might accept the reference to the collection
+    ref = check_ref(func)  # The function might accept the reference to the collection
     func.__annotations__ = {'collection_uuid': str, **func.__annotations__}
 
     @wraps(func)
@@ -83,7 +93,7 @@ def collection_sub_wrapper(sub_attribute: str):
 
     def wrapper(func):
         func.__annotations__.pop('item')
-        ref = func.__annotations__.pop('ref', None)  # The function might accept the reference to the collection
+        ref = check_ref(func)  # The function might accept the reference to the collection
         func.__annotations__ = {'collection_uuid': str, **func.__annotations__}
 
         @wraps(func)
@@ -131,32 +141,56 @@ def content_wrapper(func):
     return wrapper
 
 
-def ref_wrapper(ref_uuid_key: str, use_ref: bool = True):
+def ref_wrapper(ref_uuid_key: str, use_item: bool = True):
     # Create a basic wrapper which will add uuid_key to the metadata and content
+    def wrapper_generator(item_type):
+        def wrapper(func):
+            func.__annotations__['ref'] = True
+
+            @wraps(func)
+            def wrapped(item: Any, *args, ref, **kwargs):
+                # Accepts the item through ref, cause item might be the metadata or content
+                item_dict = func(item, *args, **kwargs)
+                if (is_document := item_type == Document) or item_type == DocumentCollection:
+                    item_dict['metadata'][ref_uuid_key] = ref.uuid
+                if is_document:
+                    item_dict['content'][ref_uuid_key] = ref.uuid
+                if item_type == Metadata or item_type == Content:
+                    item_dict[ref_uuid_key] = ref.uuid
+                return item_dict
+
+            return wrapped
+
+        return wrapper
+
+    if use_item:  # By default, pass the item as the ref, cause the item would be the document
+        def item_wrapper_generator(item_type):
+            def item_wrapper(func):
+                wrapper = wrapper_generator(item_type)
+                wrapped = wrapper(func)
+                wrapped.__annotations__.pop('ref')
+
+                @wraps(wrapped)
+                def item_wrapped(item: Document, *args, **kwargs):
+                    return wrapped(item, *args, ref=item, **kwargs)
+
+                return item_wrapped
+
+            return item_wrapper
+
+        return item_wrapper_generator
+    # If the item is not the document or collection, then the ref should be passed from other wrappers
+
+    return wrapper_generator
+
+
+def blank_ref_wrapper(item_type):
     def wrapper(func):
         @wraps(func)
-        def wrapped(item: Any, *args, ref, **kwargs):
-            # Accepts the item through ref, cause item might be the metadata or content
-            document_dict = func(item, *args, **kwargs)
-            document_dict['metadata'][ref_uuid_key] = ref.uuid
-            if 'content' in document_dict:
-                document_dict['content'][ref_uuid_key] = ref.uuid
-            return document_dict
+        def wrapped(item: item_type, *args, **kwargs):
+            return func(item, *args, **kwargs)
 
         return wrapped
-
-    if use_ref:  # By default, pass the item as the ref, cause the item would be the document
-        def ref_wrapper(func):
-            wrapped = wrapper(func)
-
-            @wraps(wrapped)
-            def ref_wrapped(item: Document, *args, **kwargs):
-                return wrapped(item, *args, ref=item, **kwargs)
-
-            return ref_wrapped
-
-        return ref_wrapper
-    # If the item is not the document or collection, then the ref should be passed from other wrappers
 
     return wrapper
 
@@ -165,7 +199,8 @@ def check_is_dict(_t: Type[TypedDict]):
     return isinstance(_t, type) and issubclass(_t, dict) or get_origin(_t) is dict
 
 
-def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper, extra_item_data_wrapper=lambda x: x):
+def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
+                      extra_item_data_wrapper=blank_ref_wrapper):
     """
     Helper function to generate host functions for a TypedDict type.
 
@@ -228,7 +263,7 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
     @d.host_fn(f"{prefix}get_all")
     @d.debug_result
     @wrapper
-    @extra_item_data_wrapper
+    @extra_item_data_wrapper(item_type)
     def _func(item: t) -> Annotated[t, Json]:
         return item.__dict__
 
