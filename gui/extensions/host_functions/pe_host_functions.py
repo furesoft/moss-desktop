@@ -72,10 +72,11 @@ def moss_pe_register_screen(screen: Annotated[TScreen, Json]):
 
 
 @d.host_fn(name='_moss_pe_open_screen')
-def moss_pe_open_screen(key: str, initial_values: Annotated[dict, Json]):
+def moss_pe_open_screen(key: str, initial_values: Annotated[dict, Json]) -> int:
     screen_class = d.extension_manager.screens[key]
     screen = screen_class(d.gui, initial_values)
     d.gui.screens.put(screen)
+    return id(screen)
 
 
 @d.host_fn(signature=([], []))
