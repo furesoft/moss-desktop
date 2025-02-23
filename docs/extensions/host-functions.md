@@ -35,6 +35,23 @@ ConfigSet[T]: - Make sure you serialize the value correctly when sending it
 - value: T - The typed value to set
 ```
 
+```
+MossState:
+- width: int - The width and of the moss window
+- height: int
+- current_screen: str - The class name of the current moss screen
+- opened_context_menus: List[str] - A list of class names of all opened context menus
+- icons: List[str] - A list of all the icons loaded by moss
+```
+
+{% hint style="success" %}
+Moss will not start loading extensions until all assets are loaded
+{% endhint %}
+
+{% hint style="warning" %}
+Moss will only load extension specified assets after all extensions are loaded
+{% endhint %}
+
 ## GUI functions
 
 ### GUI types
@@ -143,6 +160,26 @@ moss_em_register_extension_button(button: ContextButton)
 ```
 
 This function registers one or more context buttons to be passed to the side menu "Extensions" context menu. It is recommended that if you choose to add a button you'd only add one and then that would open a context menu or a screen that can there allow the user to further interact with your extension.
+
+### Functions of the extension manager
+
+```python
+moss_em_export_statistical_data()
+```
+
+This function exports the extension manager's statistical call data to `TEMP_DIR/extension_calls.json` , the data is stored in the following format:
+
+`dictionary -> extension_name : dictionary -> function_name : call count`&#x20;
+
+{% hint style="warning" %}
+Statistics have to be enabled by the user for Moss to setup the proper statistic tools
+{% endhint %}
+
+```python
+moss_em_get_state() -> MossState
+```
+
+This function is useful if you need the state of Moss but are running code outside the loop function which would otherwise receive the state automatically.
 
 ## Pygame extra functions (PE)
 
@@ -271,3 +308,85 @@ moss_text_display(text_id: int)
 ```
 
 There's not much special about this function, it will display the text at the topleft of the rect, the size of the rect is determined by the text size so the text should be effectively be drawn within this are. Please note that the text background you passed is automatically drawn too as part of this operation.
+
+## Basic API usage
+
+There's a lot of functions here that you can work with, your [SDK](getting-started.md#choosing-an-sdk) should implement these in a OOP way.\
+here they will be listed in rapid succession, you'll see that most of them share similar patterns, the data they access is relevant to the function name so it should be obvious what each function does.
+
+### Managing document data
+
+```python
+moss_api_document_get(document_uuid: str, key: str) -> ConfigGet[T]
+_moss_api_document_set(document_uuid: str, value: ConfigSet[T])
+moss_api_document_get_all(document_uuid: str) -> RM_Document
+```
+
+### Managing document sub data
+
+#### Metadata
+
+```python
+moss_api_document_metadata_get(document_uuid: str, key: str) -> ConfigGet[T]
+_moss_api_document_metadata_set(document_uuid: str, value: ConfigSet[T])
+moss_api_document_metadata_get_all(document_uuid: str) -> RM_Metadata
+```
+
+#### Content
+
+```python
+moss_api_document_content_get(document_uuid: str, key: str) -> ConfigGet[T]
+_moss_api_document_content_set(document_uuid: str, value: ConfigSet[T])
+moss_api_document_content_get_all(document_uuid: str) -> RM_Content
+```
+
+### Managing collection data
+
+```python
+moss_api_collection_get(collection_uuid: str, key: str) -> ConfigGet[T]
+_moss_api_collection_set(collection_uuid: str, value: ConfigSet[T])
+moss_api_collection_get_all(collection_uuid: str) -> RM_DocumentCollection
+```
+
+### Managing collection sub data
+
+```python
+moss_api_collection_metadata_get(collection_uuid: str, key: str) -> ConfigGet[T]
+_moss_api_collection_metadata_set(collection_uuid: str, value: ConfigSet[T])
+moss_api_collection_metadata_get_all(collection_uuid: str) -> RM_MetadataBase
+```
+
+### Managing metadata and content standalone objects
+
+{% hint style="info" %}
+All standalone metadata and content objects are stored by the extension manager, these objects are referenced by id which is an integer
+{% endhint %}
+
+#### Metadata
+
+Here are the functions for creating standalone metadata objects
+
+...
+
+Here are the functions for managing the fields
+
+```python
+moss_api_metadata_get(metadata_id: int, key: str) -> ConfigGet[T]
+_moss_api_metadata_set(metadata_id: int, value: ConfigSet[T])
+moss_api_metadata_get_all(metadata_id: int) -> RM_MetadataDocument
+```
+
+#### Content
+
+Here are the functions for creating standalone content objects
+
+...
+
+Here are the functions for managing the fields
+
+```python
+moss_api_content_get(content_id: int, key: str) -> ConfigGet[T]
+_moss_api_content_set(content_id: int, value: ConfigSet[T])
+moss_api_content_get_all(content_id: int) -> TRM_Content
+```
+
