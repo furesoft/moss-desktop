@@ -236,7 +236,7 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
     @d.transform_to_json
     @wrapper
     def _func(item: item_type, key: str):
-        value_type = can_get.get(item, None)
+        value_type = can_get.get(key, None)
         if not value_type:
             raise ValueError(f"Can't get {key} from {item_type.__name__}")
 
