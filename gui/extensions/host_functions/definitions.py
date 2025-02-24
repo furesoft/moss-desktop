@@ -3,7 +3,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin
 
 import pygameextra as pe
-from colorama import Fore
+from colorama import Fore, Style
 from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
@@ -85,7 +85,8 @@ def host_fn(
                                  if get_origin(sig.return_annotation) is Annotated else sig.return_annotation) \
                 if sig.return_annotation is not sig.empty else None
             return_type = f" -> {return_annotation.__name__}" if return_annotation else ""
-            print(f'HOST FUNCTION - {name or fn.__name__}({params}){return_type}')
+            print(
+                f'{Style.BRIGHT}\033[4m{Fore.YELLOW}HOST FUNCTION - {name or fn.__name__}({params}){return_type}{Fore.RESET}{Style.NORMAL}')
         return extism_wrapper(fn)
 
     @wraps(wrapped_extism)
@@ -120,7 +121,7 @@ def debug_result(fn):
     def wrapper(*args, **kwargs):
         result = fn(*args, **kwargs)
         if pe.settings.config.debug_log:
-            print(f'{Fore.CYAN}HOST FUNCTION{Fore.RESET} - {fn.__name__} result: {result}')
+            print(f'{Fore.MAGENTA}HOST FUNCTION{Fore.RESET} - {fn.__name__} result: {result}')
         return result
 
     return wrapper
