@@ -86,7 +86,9 @@ def host_fn(
                 if sig.return_annotation is not sig.empty else None
             return_type = f" -> {return_annotation.__name__}" if return_annotation else ""
             print(
-                f'{Style.BRIGHT}\033[4m{Fore.YELLOW}HOST FUNCTION - {name or fn.__name__}({params}){return_type}{Fore.RESET}{Style.NORMAL}')
+                f'{Style.BRIGHT}\033[4m{Fore.YELLOW}'
+                f'HOST FUNCTION - {name or fn.__name__}({params}){return_type}'
+                f'{Fore.RESET}{Style.NORMAL}')
         return extism_wrapper(fn)
 
     @wraps(wrapped_extism)
