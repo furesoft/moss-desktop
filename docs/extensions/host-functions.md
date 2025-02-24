@@ -311,8 +311,164 @@ There's not much special about this function, it will display the text at the to
 
 ## Basic API usage
 
+### API Models
+
+```
+RM_File:
+- content_count: int - The amount of sub data included in the file
+- hash: str - The file hash
+- rm_filename: str - A reference to the rm_filename Header for this file
+- size: int - The total byte size of all sub data(s) / data combined
+- uuid: str - The uuid of the file (This can include the file extension typically)
+```
+
+```
+RM_TimestampedValue:
+- timestamp: str - A string formatted datetime
+- value: T - The stored typed value
+```
+
+```
+RM_Tag:
+- name: str - The name of the tag
+- timestamp: int - The last time it was added
+```
+
+```
+RM_Page:
+- id: str
+- index: RM_TimestampedValue
+- template: RM_TimestampedValue
+- redirect: Optional[RM_TimestampedValue]
+- scroll_time: Optional[RM_TimestampedValue]
+- vertical_scroll: Optional[RM_TimestampedValue]
+```
+
+```
+RM_CPagesUUID:
+- first: str - Author uuid
+- second: int - Index?
+```
+
+```
+RM_CPages:
+- pages: List[RM_Page]
+- original: RM_TimestampedValue
+- last_opened: RM_TimestampedValue
+- uuids: List[RM_CPagesUUID] - The uuids of the authors
+```
+
+```
+RM_Zoom: # RAW
+- zoomMode: ZoomModes
+- customZoomCenterX: int
+- customZoomCenterY: int
+- customZoomPageHeight: int
+- customZoomPageWidth: int
+- customZoomScale: float
+```
+
+```
+RM_Content:
+- hash: str - The hash of the content file
+- c_pages: RM_CPages - The full page information
+- cover_page_number: int - Either 0 or -1, aka last page or first page
+- file_type: FileTypes - The type of document, like notebook or epub...
+- version: int - Should be 2, Moss will always convert version 1 to 2
+- usable: bool - Used by moss to signify if it was able to fully parse the content
+- zoom: RM_Zoom - The zoom preference on the document
+- orientation: Orientations - The document's orientations
+- tags: List[RM_Tag] - A list of the tags on the document
+- size_in_bytes: int - The length in bytes of all the content data files combined
+- dummy_document: bool - IDK ask reMarkable
+```
+
+```
+RM_Metadata:
+- hash: str - The hash of the metadata file
+- type: DocumentTypes - If it is a document or a collection
+- parent: Optional[str] - if None then the parent is `My files` or "trash" otherwise uuid of collection
+- created_time: int
+- last_modified: int
+- visible_name: str
+- metadata_modified: bool
+- modified: bool - IDK ask reMarkable
+- synced: bool - IDK ask reMarkable
+- version: Optional[int]
+# The metadata of documents includes this additional information
+- last_opened: int - A timestamp of the last time the document was opened
+- last_opened_page: int - The index of the last page opened
+```
+
+```
+RM_DocumentCollection:
+- tags: List[RM_Tag] - The list of tags on the collection
+- metadata: RM_Metadata - The metadata for the collection
+- uuid: str - The uuid of the collection, set parent to this to move a document
+- has_items: bool - A variable provided by rmapi to indicate if it scanned any documents with this collection as the parent
+```
+
+```
+RM_Document:
+- files: List[RM_File] - All the files on this document
+- content_data: Dict[str, bytes] - Includes the data of any loaded files
+- content: RM_Content - The content information
+- metadata: RM_Metadata - The document metadata
+- uuid: str - The uuid of the document
+- server_hash: str - The hash of this file as it was last on the server (for checking changes)
+- files_available: List[str] - A list of uuid(s) of the files that have been checked
+- downloading: bool - If Moss has an operation to download data
+- provision: bool - Used by Moss to signify if the document is staged for uploading
+- available: bool - A property that shows if all the files are in the available files
+```
+
+```
+RM_RootInfo:
+- generation: int - A number for reference (IDK ask reMarkable)
+- hash: str - The hash of the file that is root / to be root
+```
+
+{% hint style="warning" %}
+The above are made for connectivity of the extensions, some data is only used by Moss!Changing some things may not result in permanent changes, especially if the value is not a reMarkable value to begin with, or if you forgot to upload to the cloud!
+{% endhint %}
+
+Additionally here are some of the enums that you may have noticed above.
+
+```
+ZoomModes:
+- 'bestFit' - Default
+- 'customFit'
+- 'fitToWidth'
+- 'fitToHeight'
+```
+
+```
+FileTypes:
+- 'pdf'
+- 'epub'
+- 'notebook'
+```
+
+```
+Orientations:
+- 'portrait'
+- 'landscape'
+```
+
+```
+DocumentTypes:
+- 'DocumentType'
+- 'CollectionType'
+```
+
+### Important information for SDK usage
+
 There's a lot of functions here that you can work with, your [SDK](getting-started.md#choosing-an-sdk) should implement these in a OOP way.\
 here they will be listed in rapid succession, you'll see that most of them share similar patterns, the data they access is relevant to the function name so it should be obvious what each function does.
+
+{% hint style="success" %}
+A note for SDK developers, your RM\_Metadata / RM\_Content objects will receive accessor reference. This is either `document_uuid` or `collection_uuid`. The purpose of these are to help you with which set of functions to use for **set**/**get** operations, but ideally you could just use **set** since most document data won't change.
+{% endhint %}
 
 ### Managing document data
 
@@ -358,8 +514,9 @@ moss_api_collection_metadata_get_all(collection_uuid: str) -> RM_MetadataBase
 
 ### Managing metadata and content standalone objects
 
-{% hint style="info" %}
-All standalone metadata and content objects are stored by the extension manager, these objects are referenced by id which is an integer
+{% hint style="success" %}
+All standalone metadata and content objects are stored by the extension manager, these objects are referenced by id which is an integer. \
+The accessor references are: `metadata_id` and `content_id`
 {% endhint %}
 
 #### Metadata
