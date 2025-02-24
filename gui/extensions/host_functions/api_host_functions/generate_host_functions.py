@@ -1,6 +1,9 @@
 from functools import wraps
+from pprint import pformat
 from typing import TypedDict, Type, Annotated, get_origin, Any
 
+import pygameextra as pe
+from colorama import Style, Fore
 from extism import Json
 
 from rm_api import Document, Metadata, Content, DocumentCollection
@@ -211,7 +214,9 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
     :param extra_item_data_wrapper: A wrapper to update the return value of the host functions to add extra data
     """
     can_get = {}
+    cannot_get = {}
     can_set = {}
+    cannot_set = {}
     for name, _t in t.__annotations__.items():
         is_dict = check_is_dict(_t)
 
@@ -220,13 +225,12 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
 
         can_get[name] = _t
 
-        if is_dict:
-            continue
-
-        if (prop := getattr(item_type, name, None)) and isinstance(prop, property) and prop.fset is None:
-            continue
-
-        if get_origin(_t) is list:
+        if (
+                is_dict or
+                (prop := getattr(item_type, name, None)) and isinstance(prop, property) and prop.fset is None or
+                get_origin(_t) is list
+        ):
+            cannot_set[name] = _t
             continue
 
         can_set[name] = _t
@@ -266,6 +270,12 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
     @extra_item_data_wrapper(item_type)
     def _func(item: t) -> Annotated[t, Json]:
         return item.__dict__
+
+    if pe.settings.config.debug_log:
+        print(f"Generated host functions for `{Style.BRIGHT}{t.__name__}{Style.NORMAL}` "
+              f"please not the following restrictions:\n"
+              f"CANNOT SET: {Fore.LIGHTGREEN_EX}{pformat(cannot_set)}{Fore.RESET}\n"
+              f"CANNOT GET: {Fore.LIGHTYELLOW_EX}{pformat(cannot_get)}{Fore.RESET}")
 
 
 # Top most objects
