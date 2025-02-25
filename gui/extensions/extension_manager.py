@@ -50,6 +50,7 @@ class ExtensionManager:
         self.loaded_extensions = []
         self.extension_buttons: List[TContextButton] = []
         self.extra_items = {}
+        self.extensions_allowed_paths = {}
         self.extensions = {}
         self.context_menus = {}
         self.metadata_objects = {}
@@ -85,6 +86,7 @@ class ExtensionManager:
         self.loaded_extensions.clear()
         self.extension_buttons.clear()
         self.extra_items.clear()
+        self.extensions_allowed_paths.clear()
         self.extensions.clear()
         self.context_menus.clear()
         self.metadata_objects.clear()
@@ -146,21 +148,23 @@ class ExtensionManager:
         self.load_wasm_source(data, extension_name)
 
     def load_wasm_source(self, source: bytes, extension_name: str):
+        allowed_paths = {
+            Defaults.TEMP_DIR: 'temp',
+            os.path.join(Defaults.EXTENSIONS_DIR, extension_name): 'extension',
+            Defaults.OPTIONS_DIR: 'options',
+            Defaults.SYNC_FILE_PATH: 'sync',
+            Defaults.THUMB_FILE_PATH: 'thumbnails',
+            Defaults.ASSET_DIR: 'assets',
+        }
         extension = Plugin({
             'wasm': [{
                 'data': source
             }],
-            'allowed_paths': {
-                Defaults.TEMP_DIR: 'temp',
-                os.path.join(Defaults.EXTENSIONS_DIR, extension_name): 'extension',
-                Defaults.OPTIONS_DIR: 'options',
-                Defaults.SYNC_FILE_PATH: 'sync',
-                Defaults.THUMB_FILE_PATH: 'thumbnails',
-                Defaults.ASSET_DIR: 'assets',
-            }
+            'allowed_paths': allowed_paths
         }, True, functions=[
             fn for fn in HOST_FN_REGISTRY if getattr(fn, 'moss', False)
         ])
+        self.extensions_allowed_paths[extension_name] = allowed_paths
         self.extensions[extension_name] = extension
         self.current_extension = extension_name
         if extension.function_exists('_start'):
@@ -330,3 +334,28 @@ class ExtensionManager:
             json.dump(self.call_statistics, f, indent=4)
         if self.gui.config.debug:
             print("Exported extension calls data to extension_calls.json")
+
+    def organize_path(self, path: str):
+        if not isinstance(path, str):
+            return path
+        allowed_paths = self.extensions_allowed_paths[self.current_extension]
+
+        # Undo aliases
+        for allowed_path, alias in allowed_paths.items():
+            if path.startswith(alias):
+                unaliased_path = path.replace(alias, allowed_path, 1)
+                break
+        else:
+            unaliased_path = path
+
+        final_path = os.path.abspath(unaliased_path)
+        for allowed_path in allowed_paths:
+            if final_path.startswith(allowed_path):
+                break
+        else:
+            raise ValueError(f"Extension tried to access invalid path {final_path}")
+
+        return final_path
+
+    def organize_paths(self, paths: List[str]):
+        return [self.organize_path(path) for path in paths]

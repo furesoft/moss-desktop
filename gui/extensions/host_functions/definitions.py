@@ -33,12 +33,12 @@ def transform_to_json(fn):
     fn.__annotations__['return'] = Annotated[TValue, Json]
 
     @wraps(fn)
-    def wrapper(*args, **kwargs) -> Annotated[TValue, Json]:
+    def wrapped(*args, **kwargs) -> Annotated[TValue, Json]:
         return {
             'value': fn(*args, **kwargs)
         }
 
-    return wrapper
+    return wrapped
 
 
 def statistical_call_tracker(name: str = None):
@@ -92,13 +92,13 @@ def host_fn(
         return extism_wrapper(fn)
 
     @wraps(wrapped_extism)
-    def wrapper(fn):
+    def wrapped(fn):
         result = wrapped_extism(fn)
         setattr(HOST_FN_REGISTRY[-1], 'moss', True)
 
         return result
 
-    return wrapper
+    return wrapped
 
 
 def unpack(fn):
@@ -111,57 +111,57 @@ def unpack(fn):
     fn.__name__ = f'_{fn.__name__}'
 
     @wraps(fn)
-    def wrapper(*args, **kwargs):
+    def wrapped(*args, **kwargs):
         args_left, value, args_right = args[:args_index], args[args_index], args[args_index + 1:]
         return fn(*args_left, value['key'], value['value'], *args_right, **kwargs)
 
-    return wrapper
+    return wrapped
 
 
 def debug_result(fn):
     @wraps(fn)
-    def wrapper(*args, **kwargs):
+    def wrapped(*args, **kwargs):
         result = fn(*args, **kwargs)
         if pe.settings.config.debug_log:
             print(f'{Fore.MAGENTA}HOST FUNCTION{Fore.RESET} - {fn.__name__} result: {result}')
         return result
 
-    return wrapper
+    return wrapped
 
 
 def set_color(fn):
     fn.__annotations__ = {'key': str, 'color': Annotated[TColor, Json]}
 
     @wraps(fn)
-    def wrapper(key: str, color: Annotated[TColor, Json]):
+    def wrapped(key: str, color: Annotated[TColor, Json]):
         return fn(key, color_to_tuple(color))
 
-    return wrapper
+    return wrapped
 
 
 def get_color(fn):
     fn.__annotations__ = {'key': str, 'return': Annotated[TColor, Json]}
 
     @wraps(fn)
-    def wrapper(key: str):
+    def wrapped(key: str):
         color = fn(key)
         return color_from_tuple(color)
 
-    return wrapper
+    return wrapped
 
 
 def get_text_color(fn):
     fn.__annotations__ = {'key': str, 'return': Annotated[TTextColors, Json]}
 
     @wraps(fn)
-    def wrapper(key: str):
+    def wrapped(key: str):
         colors = fn(key)
         return {
             'foreground': color_from_tuple(colors[0]),
             'background': color_from_tuple(colors[1], allow_turn_to_none=True)
         }
 
-    return wrapper
+    return wrapped
 
 
 def set_text_color(fn):
@@ -171,7 +171,7 @@ def set_text_color(fn):
     }
 
     @wraps(fn)
-    def wrapper(key: str, colors: Annotated[TTextColors, Json]):
+    def wrapped(key: str, colors: Annotated[TTextColors, Json]):
         return fn(key, text_colors_to_tuple(colors))
 
-    return wrapper
+    return wrapped
