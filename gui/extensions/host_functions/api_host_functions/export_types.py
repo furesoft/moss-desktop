@@ -95,7 +95,7 @@ class TRM_Document(TypedDict):
     content: TRM_Content
     metadata: TRM_MetadataDocument
     uuid: str
-    server_hash: str
+    server_hash: Optional[str]
     files_available: List[str]
     downloading: bool
     provision: bool
