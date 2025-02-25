@@ -8,6 +8,7 @@ from extism import Json
 
 from rm_api import Document, Metadata, Content, DocumentCollection
 from . import export_types as et
+from .export_types import TRM_Tag, TRM_Zoom
 from .. import definitions as d
 
 
@@ -221,14 +222,15 @@ def generate_for_type(t: Type[TypedDict], item_type: type, prefix: str, wrapper,
         is_dict = check_is_dict(_t)
 
         if is_dict:
-            _t = Annotated[_t, Json]
+            _original = _t
+            _t = Annotated[_original, Json]
 
         can_get[name] = _t
 
         if (
-                is_dict or
+                (is_dict and _original not in (TRM_Zoom,)) or
                 (prop := getattr(item_type, name, None)) and isinstance(prop, property) and prop.fset is None or
-                get_origin(_t) is list
+                (get_origin(_t) is list and not _t.__args__[0] in (int, str, float, TRM_Tag))
         ):
             cannot_set[name] = _t
             continue
