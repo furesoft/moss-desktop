@@ -13,7 +13,7 @@ class TRM_File(TypedDict):
 
 class TRM_TimestampedValue(TypedDict):
     timestamp: str
-    value: Any
+    value: Optional[Any]
 
 
 class TRM_Tag(TypedDict):
