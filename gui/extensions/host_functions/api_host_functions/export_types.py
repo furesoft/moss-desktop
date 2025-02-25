@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict, TypedDict
+from typing import Any, Optional, List, TypedDict
 
 from rm_api.defaults import ZoomModes, FileTypes, Orientations, DocumentTypes
 
@@ -92,7 +92,6 @@ class TRM_DocumentCollection(TypedDict):
 
 class TRM_Document(TypedDict):
     files: List[TRM_File]
-    content_data: Dict[str, bytes]
     content: TRM_Content
     metadata: TRM_MetadataDocument
     uuid: str
