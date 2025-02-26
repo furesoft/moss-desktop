@@ -275,7 +275,10 @@ class ExtensionManager:
         self.opened_context_menus.clear()
 
     @lru_cache
-    def action(self, action: str, extension_name: str):
+    def action(self, action: str, extension_name: str = None):
+        if not extension_name:
+            extension_name = self.current_extension
+
         def _action(**kwargs):
             self.current_extension = extension_name
             try:
