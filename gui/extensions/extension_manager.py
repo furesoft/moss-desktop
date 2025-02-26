@@ -3,8 +3,9 @@ import os.path
 from functools import lru_cache
 from io import StringIO
 from json import JSONDecodeError
+from threading import Lock
 from traceback import print_exc
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import extism
 from colorama import Fore
@@ -49,6 +50,7 @@ class ExtensionManager:
         self.call_statistics = {}
         self.loaded_extensions = []
         self.extension_buttons: List[TContextButton] = []
+        self.lock = Lock()
         self.extra_items = {}
         self.extensions_allowed_paths = {}
         self.extensions = {}
@@ -85,6 +87,8 @@ class ExtensionManager:
         self.extensions_to_load.clear()
         self.loaded_extensions.clear()
         self.extension_buttons.clear()
+        if self.lock.locked():
+            self.lock.release()
         self.extra_items.clear()
         self.extensions_allowed_paths.clear()
         self.extensions.clear()
@@ -263,6 +267,9 @@ class ExtensionManager:
         for extension_name, extension in self.extensions.items():
             if extension_name not in self.loaded_extensions:
                 continue
+            if self.lock.locked():
+                return
+            self.lock.acquire()
             self.current_extension = extension_name
             try:
                 extension.call(
@@ -272,6 +279,8 @@ class ExtensionManager:
             except ExtismError:
                 self.error(f"Extension {extension} failed to loop")
                 print_exc()
+            finally:
+                self.lock.release()
         self.opened_context_menus.clear()
 
     @lru_cache
@@ -280,12 +289,15 @@ class ExtensionManager:
             extension_name = self.current_extension
 
         def _action(**kwargs):
-            self.current_extension = extension_name
-            try:
-                self.extensions[extension_name].call(action, json.dumps(kwargs).encode() if kwargs else b'')
-            except ExtismError:
-                self.error(f"Extension {extension_name} failed to handle action {action}")
-                print_exc()
+            with self.lock:
+                self.current_extension = extension_name
+                try:
+                    arg: Optional[str] = kwargs.get('_arg', None) if kwargs else None
+                    self.extensions[extension_name].call(action, arg if arg else json.dumps(
+                        kwargs).encode('utf-8') if kwargs else b'')
+                except ExtismError:
+                    self.error(f"Extension {extension_name} failed to handle action {action}")
+                    print_exc()
 
         return _action
 
