@@ -644,7 +644,7 @@ moss_api_document_ensure_download(document_uuid: str)
 This function is very similar to the above, but it does not run a callback. It will halt until the document is finished downloading.
 
 {% hint style="success" %}
-The above download functions also load the data from cache where available!
+The above download functions will also load the data, including using cache!
 {% endhint %}
 
 ```python
