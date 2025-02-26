@@ -323,9 +323,9 @@ RM_File:
 ```
 
 ```
-RM_TimestampedValue:
+RM_TimestampedValue[T]:
 - timestamp: str - A string formatted datetime
-- value: T - The stored typed value
+- value: Optional[T] - The stored typed value
 ```
 
 ```
@@ -411,11 +411,10 @@ RM_DocumentCollection:
 ```
 RM_Document:
 - files: List[RM_File] - All the files on this document
-- content_data: Dict[str, bytes] - Includes the data of any loaded files
 - content: RM_Content - The content information
 - metadata: RM_Metadata - The document metadata
 - uuid: str - The uuid of the document
-- server_hash: str - The hash of this file as it was last on the server (for checking changes)
+- server_hash: Optional[str] - The hash of this file as it was last on the server (for checking changes)
 - files_available: List[str] - A list of uuid(s) of the files that have been checked
 - downloading: bool - If Moss has an operation to download data
 - provision: bool - Used by Moss to signify if the document is staged for uploading
@@ -460,6 +459,45 @@ DocumentTypes:
 - 'DocumentType'
 - 'CollectionType'
 ```
+
+### Data models
+
+These models are referenced below when creating new instance of API objects
+
+{% hint style="warning" %}
+Your extension is allowed to pass data only using file paths! This can either be downloaded content like pdfs, rm files or epub, but must be passed in as a path for Moss to read in and save RAM.
+{% endhint %}
+
+```
+DocumentNewNotebook:
+- name: str - This is the visible name
+- parent: Optional[str] - Null is `My Files` and so on...
+- document_uuid: Optional[str]
+- page_count: int - Just pass 1 for default
+- notebook_data: List[str] - A list of paths to .rm files
+- metadata_id: Optional[str]
+- content_id: Optional[str]
+```
+
+```
+DocumentNewPDF:
+- name: str
+- pdf_data: str - The path to the PDF
+- parent: Optional[str]
+- document_uuid: Optional[str]
+```
+
+```
+DocumentNewEPUB:
+- name: str
+- epub_data: str - The path to the EPUB
+- parent: Optional[str]
+- document_uuid: Optional[str]
+```
+
+{% hint style="success" %}
+Not passing a document\_uuid will use a randomly generated uuid which you'll receive from the function. See below.
+{% endhint %}
 
 ### Important information for SDK usage
 
@@ -547,3 +585,66 @@ _moss_api_content_set(content_id: int, value: ConfigSet[T])
 moss_api_content_get_all(content_id: int) -> TRM_Content
 ```
 
+### Functions for documents
+
+All the functions here are related to either creating or managing documents
+
+#### Creating documents
+
+{% hint style="info" %}
+Each creating function below returns the new document's UUID.
+{% endhint %}
+
+{% hint style="warning" %}
+Refer to your [SDK](getting-started.md#choosing-an-sdk) for specific implementations. Typically since most fields are not required, the SDK should use a builder with defaults for the fields that aren't needed.
+{% endhint %}
+
+```python
+moss_api_document_new_notebook(value: DocumentNewNotebook) -> str
+moss_api_document_new_pdf(value: DocumentNewPDF) -> str
+moss_api_document_new_epub(value: DocumentNewEPUB) -> str
+```
+
+#### Managing documents
+
+```python
+moss_api_document_duplicate(document_uuid: str) -> str
+```
+
+Returns the UUID of the new duplicate. This function randomizes a lot of the UUIDs of the document, it will also update timestamps and set the document to provision.
+
+```python
+moss_api_document_randomize_uuids(document_uuid: str) -> str
+```
+
+This function is self explanatory, it will modify all the document UUIDs including nested UUID references to a new random UUID and return the new UUID.
+
+```python
+moss_api_document_unload_files(document_uuid: str)
+```
+
+Simply unloads any files that Moss has loaded on the document. Documents will usually be automatically unloaded upon closing. If your extension loaded files though, this is the way to unload them and you should!
+
+```python
+moss_api_document_load_files_from_cache(document_uuid: str)
+```
+
+This function loads all the files enforcing cache usage only. If the cache misses a file, it will not be downloaded.
+
+```python
+moss_api_document_ensure_download_and_callback(document_uuid: str, callback: str)
+```
+
+Document downloads are threaded, this is one way to check for when your document has finished downloading. The callback as all other extension functions accepts the name of your extension callback function.
+
+```python
+moss_api_document_ensure_download(document_uuid: str)
+```
+
+This function is very similar to the above, but it does not run a callback when the document is finished downloading.
+
+```python
+moss_api_document_export(document_uuid: str)
+```
+
+This function prepares the document for uploading to the cloud. It prepares data and hashes converting the metadata and content data into raw data for upload.
