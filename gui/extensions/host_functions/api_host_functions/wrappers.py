@@ -2,7 +2,6 @@ from functools import wraps
 from typing import TypedDict, Type, get_origin, Any
 
 from rm_api import Document, Metadata, Content, DocumentCollection
-from .wrappers import check_ref
 from .. import definitions as d
 
 
