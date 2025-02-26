@@ -4,7 +4,7 @@ import sys
 
 def generate_html(call_data, output_file="coverage.html"):
     functions = list(call_data.keys())
-    called_functions = {f for f, count in call_data.items() if count > 0}
+    called_functions = [f for f, count in call_data.items() if count > 0]
     uncalled_functions = [f for f in functions if f not in called_functions]
 
     html_content = f"""
