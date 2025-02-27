@@ -465,7 +465,7 @@ DocumentTypes:
 These models are referenced below when creating new instance of API objects
 
 {% hint style="warning" %}
-Your extension is allowed to pass data only using file paths! This can either be downloaded content like pdfs, rm files or epub, but must be passed in as a path for Moss to read in and save RAM.
+You can either pass the data as bytes or file paths which are more efficient. Both of these values are otherwise optional, but Moss will complain if you didn't pass one!
 {% endhint %}
 
 ```
@@ -474,15 +474,25 @@ DocumentNewNotebook:
 - parent: Optional[str] - Null is `My Files` and so on...
 - document_uuid: Optional[str]
 - page_count: int - Just pass 1 for default
-- notebook_data: List[str] - A list of paths to .rm files
+
+- notebook_data: Optional[List[bytes]] - A list of raw .rm file bytes
+or
+- notebook_files: Optional[List[str]] - A list of paths to .rm files
+
 - metadata_id: Optional[str]
 - content_id: Optional[str]
 ```
 
+
+
 ```
 DocumentNewPDF:
 - name: str
-- pdf_data: str - The path to the PDF
+
+- pdf_data: Optional[bytes] - The raw PDF bytes
+or
+- pdf_file: Optional[str] - The path to the PDF
+
 - parent: Optional[str]
 - document_uuid: Optional[str]
 ```
@@ -490,7 +500,11 @@ DocumentNewPDF:
 ```
 DocumentNewEPUB:
 - name: str
-- epub_data: str - The path to the EPUB
+
+- epub_data: Optional[bytes] - The raw EPUB bytes
+or
+- epub_file: Optional[str] - The path to the EPUB
+
 - parent: Optional[str]
 - document_uuid: Optional[str]
 ```
