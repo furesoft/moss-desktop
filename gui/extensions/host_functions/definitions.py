@@ -3,10 +3,12 @@ from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin
 
 import pygameextra as pe
+from box import Box
 from colorama import Fore, Style
 from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
+from rm_api.storage.common import FileHandle
 from ..export_types import TValue
 from ..input_types import color_from_tuple, color_to_tuple, TTextColors, TColor, text_colors_to_tuple
 
@@ -175,3 +177,19 @@ def set_text_color(fn):
         return fn(key, text_colors_to_tuple(colors))
 
     return wrapped
+
+
+def get_data_from_box(box: Box, key, is_list=False) -> Union[bytes, FileHandle, List[bytes], List[FileHandle]]:
+    data_key = f'{key}_data'
+    file_key = f'{key}_file{"s" if is_list else ""}'
+    if data_key in box:
+        return box[data_key]
+    elif file_key in box:
+        if is_list:
+            return [
+                FileHandle(file)
+                for file in
+                extension_manager.organize_paths(box[file_key])
+            ]
+        return FileHandle(extension_manager.organize_path(box[file_key]))
+    raise ValueError(f'No {key} data found in {box}')
