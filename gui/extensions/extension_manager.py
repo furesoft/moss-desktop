@@ -256,7 +256,10 @@ class ExtensionManager:
     @output_to_dict
     def handle_register_output(self, output: dict, extension_name: str):
         for file in output['files']:
-            self.extra_items[file['key']] = os.path.join(Defaults.EXTENSIONS_DIR, extension_name, file['path'])
+            self.extra_items[file['key']] = os.path.join(
+                Defaults.EXTENSIONS_DIR, extension_name,
+                self.organize_path(file['path'])
+            )
 
     def handle_hook(self, event):
         ...
