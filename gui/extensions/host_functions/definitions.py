@@ -1,3 +1,4 @@
+import base64
 import inspect
 from functools import wraps
 from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin
@@ -182,8 +183,8 @@ def set_text_color(fn):
 def get_data_from_box(box: Box, key, is_list=False) -> Union[bytes, FileHandle, List[bytes], List[FileHandle]]:
     data_key = f'{key}_data'
     file_key = f'{key}_file{"s" if is_list else ""}'
-    if data_key in box:
-        return box[data_key]
+    if data_key in box and (data := box[data_key]):
+        return base64.b64decode(data)
     elif file_key in box:
         if is_list:
             return [
