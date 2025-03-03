@@ -87,7 +87,10 @@ def host_fn(
             return_annotation = (sig.return_annotation.__args__[0]
                                  if get_origin(sig.return_annotation) is Annotated else sig.return_annotation) \
                 if sig.return_annotation is not sig.empty else None
-            return_type = f" -> {return_annotation.__name__}" if return_annotation else ""
+            try:
+                return_type = f" -> {return_annotation.__name__}" if return_annotation else ""
+            except:
+                return_type = " -> ???"
             print(
                 f'{Style.BRIGHT}\033[4m{Fore.YELLOW}'
                 f'HOST FUNCTION - {name or fn.__name__}({params}){return_type}'

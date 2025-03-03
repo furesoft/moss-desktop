@@ -55,6 +55,8 @@ class ExtensionManager:
         self.extensions_allowed_paths = {}
         self.extensions = {}
         self.context_menus = {}
+        self.document_objects = {}
+        self.collection_objects = {}
         self.metadata_objects = {}
         self.content_objects = {}
         self.texts = {}
@@ -93,6 +95,8 @@ class ExtensionManager:
         self.extensions_allowed_paths.clear()
         self.extensions.clear()
         self.context_menus.clear()
+        self.document_objects.clear()
+        self.collection_objects.clear()
         self.metadata_objects.clear()
         self.content_objects.clear()
         self.texts.clear()

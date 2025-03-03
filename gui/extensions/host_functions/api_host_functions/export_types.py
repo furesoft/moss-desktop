@@ -1,4 +1,7 @@
+from enum import Enum
 from typing import Any, Optional, List, TypedDict
+
+from box import Box
 
 from rm_api.defaults import ZoomModes, FileTypes, Orientations, DocumentTypes
 
@@ -105,3 +108,42 @@ class TRM_Document(TypedDict):
 class TRM_RootInfo(TypedDict):
     generation: int
     hash: str
+
+
+class AccessorTypes(Enum):
+    # Document API SUB
+    APIDocumentMetadata = 'api_document_metadata'
+    APIDocumentContent = 'api_document_content'
+
+    # Collection API SUB
+    APICollectionMetadata = 'api_collection_metadata'
+
+    # API
+    APIDocument = 'api_document'
+    APICollection = 'api_collection'
+
+    # Document Standalone SUB
+    StandaloneDocumentMetadata = 'document_metadata'
+    StandaloneDocumentContent = 'document_content'
+
+    # Collection Standalone SUB
+    StandaloneCollectionMetadata = 'collection_metadata'
+
+    # Standalone
+    StandaloneDocument = 'document'
+    StandaloneCollection = 'collection'
+
+    StandaloneMetadata = 'metadata'
+    StandaloneContent = 'content'
+
+
+class AccessorInstance(TypedDict):
+    type: AccessorTypes
+    uuid: Optional[str]
+    id: Optional[str]
+
+
+class AccessorInstanceBox(Box):
+    type: str
+    uuid: Optional[str]
+    id: Optional[str]
