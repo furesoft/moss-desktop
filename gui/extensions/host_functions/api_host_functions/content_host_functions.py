@@ -2,7 +2,7 @@ from rm_api import Content
 from .. import definitions as d
 
 
-@d.host_fn()
+@d.host_fn(signature=([], []))
 def moss_api_content_new_notebook(page_count: int = 1):
     content = Content.new_notebook(d.api.author_id, page_count)
 
@@ -11,7 +11,7 @@ def moss_api_content_new_notebook(page_count: int = 1):
     return id(content)
 
 
-@d.host_fn()
+@d.host_fn(signature=([], []))
 def moss_api_content_new_pdf():
     content = Content.new_pdf()
 
@@ -20,7 +20,7 @@ def moss_api_content_new_pdf():
     return id(content)
 
 
-@d.host_fn()
+@d.host_fn(signature=([], []))
 def moss_api_content_new_epub():
     content = Content.new_epub()
 
