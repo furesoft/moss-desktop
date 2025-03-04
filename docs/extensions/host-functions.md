@@ -381,6 +381,8 @@ RM_Content:
 - tags: List[RM_Tag] - A list of the tags on the document
 - size_in_bytes: int - The length in bytes of all the content data files combined
 - dummy_document: bool - IDK ask reMarkable
+
+- accessor: Accessor - Used to identify the location of the content
 ```
 
 ```
@@ -395,6 +397,9 @@ RM_Metadata:
 - modified: bool - IDK ask reMarkable
 - synced: bool - IDK ask reMarkable
 - version: Optional[int]
+
+- accessor: Accessor - Used to identify the location of the metadata
+
 # The metadata of documents includes this additional information
 - last_opened: int - A timestamp of the last time the document was opened
 - last_opened_page: int - The index of the last page opened
@@ -406,6 +411,8 @@ RM_DocumentCollection:
 - metadata: RM_Metadata - The metadata for the collection
 - uuid: str - The uuid of the collection, set parent to this to move a document
 - has_items: bool - A variable provided by rmapi to indicate if it scanned any documents with this collection as the parent
+
+- accessor: Accessor - Used to identify the location of the collection
 ```
 
 ```
@@ -419,6 +426,8 @@ RM_Document:
 - downloading: bool - If Moss has an operation to download data
 - provision: bool - Used by Moss to signify if the document is staged for uploading
 - available: bool - A property that shows if all the files are in the available files
+
+- accessor: Accessor - Used to identify the location of the document
 ```
 
 ```
@@ -460,6 +469,74 @@ DocumentTypes:
 - 'CollectionType'
 ```
 
+### Accessors
+
+Let's cover everything there is to know about how your extension manages document data inside of Moss. There are a few terms that will be used often and here's what they mean
+
+* **API** item - The item is stored on **rm\_api** meaning that it will visible to menus and the api itself.
+* **Standalone** item - The item is stored inside of the extension manager and not visible to **rm\_api** and won't show up in menus.
+* **Sub** item - This can refer to a metadata/content inside of a document or collection. If this accessor is used, the uuid refers to the document or collection that the item is inside of.
+
+{% hint style="warning" %}
+Be careful since **rm\_api** is very particular about documents and will ensure only uploaded documents are in its list if synced.
+{% endhint %}
+
+#### The accessor data model
+
+```
+Accessor:
+- type: str - The accessor item type
+- uuid: Optional[str] - A potential uuid if the item exists
+- id: Optional[int] - A potential id if the item exists
+```
+
+{% hint style="info" %}
+It's important to note that some functions will not accept your accessor if they aren't made to handle it. For example you obviously cannot pass a metadata accessor to a document management function. It will throw a violation error.
+{% endhint %}
+
+{% hint style="warning" %}
+The only models that use id for their accessor reference are the standalone metadata and content!
+{% endhint %}
+
+#### Accessors footnote
+
+Moss has a way of dealing with the diverse quantity of data combinations. It uses what's called the accessor system, where each item access type is referenced by an accessor field.
+
+{% hint style="success" %}
+A note for SDK developers, your RM objects will receive their respective accessor reference. You do not need to worry much about the accessor, only making an updated copy in the case that you perform operations that change the identification of the object, such as **duplicate** or randomizing UUIDs!
+{% endhint %}
+
+#### The accessor list
+
+The accessors are strings. You should check how your [SDK](getting-started.md#choosing-an-sdk) provides them if at all, these should otherwise be automatically handled by your [SDK](getting-started.md#choosing-an-sdk).
+
+```
+// Document API SUB
+ACCESSOR_API_DOCUMENT_METADATA = "api_document_metadata"
+ACCESSOR_API_DOCUMENT_CONTENT = "api_document_content"
+
+// Collection API SUB
+ACCESSOR_API_COLLECTION_METADATA = "api_collection_metadata"
+
+// API
+ACCESSOR_API_DOCUMENT = "api_document"
+ACCESSOR_API_COLLECTION = "api_collection"
+
+// Document Standalone SUB
+ACCESSOR_STANDALONE_DOCUMENT_METADATA = "document_metadata"
+ACCESSOR_STANDALONE_DOCUMENT_CONTENT = "document_content"
+
+// Collection Standalone SUB
+ACCESSOR_STANDALONE_COLLECTION_METADATA= "collection_metadata"
+
+// Standalone
+ACCESSOR_STANDALONE_DOCUMENT = "document"
+ACCESSOR_STANDALONE_COLLECTION = "collection"
+
+ACCESSOR_STANDALONE_METADATA = "metadata
+ACCESSOR_STANDALONE_CONTENT= "content"
+```
+
 ### Data models
 
 These models are referenced below when creating new instance of API objects
@@ -472,7 +549,7 @@ You can either pass the data as bytes or file paths which are more efficient. Bo
 DocumentNewNotebook:
 - name: str - This is the visible name
 - parent: Optional[str] - Null is `My Files` and so on...
-- document_uuid: Optional[str]
+- accessor: Accessor - You can leave uuid blank to get a random one by Moss
 - page_count: int - Just pass 1 for default
 
 - notebook_data: Optional[List[bytes]] - A list of raw .rm file bytes
@@ -483,8 +560,6 @@ or
 - content_id: Optional[str]
 ```
 
-
-
 ```
 DocumentNewPDF:
 - name: str
@@ -494,7 +569,7 @@ or
 - pdf_file: Optional[str] - The path to the PDF
 
 - parent: Optional[str]
-- document_uuid: Optional[str]
+- accessor: Accessor - You can leave uuid blank to get a random one by Moss
 ```
 
 ```
@@ -506,98 +581,32 @@ or
 - epub_file: Optional[str] - The path to the EPUB
 
 - parent: Optional[str]
-- document_uuid: Optional[str]
+- accessor: Accessor - You can leave uuid blank to get a random one by Moss
 ```
 
 {% hint style="success" %}
 Not passing a document\_uuid will use a randomly generated uuid which you'll receive from the function. See below.
 {% endhint %}
 
-### Important information for SDK usage
-
-There's a lot of functions here that you can work with, your [SDK](getting-started.md#choosing-an-sdk) should implement these in a OOP way.\
-here they will be listed in rapid succession, you'll see that most of them share similar patterns, the data they access is relevant to the function name so it should be obvious what each function does.
-
-{% hint style="success" %}
-A note for SDK developers, your RM\_Metadata / RM\_Content objects will receive accessor reference. This is either `document_uuid` or `collection_uuid`. The purpose of these are to help you with which set of functions to use for **set**/**get** operations, but ideally you could just use **set** since most document data won't change.
-{% endhint %}
-
-### Managing document data
+### Main accessor functions
 
 ```python
-moss_api_document_get(document_uuid: str, key: str) -> ConfigGet[T]
-_moss_api_document_set(document_uuid: str, value: ConfigSet[T])
-moss_api_document_get_all(document_uuid: str) -> RM_Document
+moss_api_get(accessor: Accessor, key: str) -> ConfigGet[T]
 ```
 
-### Managing document sub data
+This function gets only one field from the accessor.
 
-#### Metadata
+```
+_moss_api_set(accessor: Accessor, value: ConfigSet[T])
+```
+
+This function sets only one field of the accessor.
 
 ```python
-moss_api_document_metadata_get(document_uuid: str, key: str) -> ConfigGet[T]
-_moss_api_document_metadata_set(document_uuid: str, value: ConfigSet[T])
-moss_api_document_metadata_get_all(document_uuid: str) -> RM_Metadata
+moss_api_get_all(accessor: Accessor) -> ConfigGet[T]
 ```
 
-#### Content
-
-```python
-moss_api_document_content_get(document_uuid: str, key: str) -> ConfigGet[T]
-_moss_api_document_content_set(document_uuid: str, value: ConfigSet[T])
-moss_api_document_content_get_all(document_uuid: str) -> RM_Content
-```
-
-### Managing collection data
-
-```python
-moss_api_collection_get(collection_uuid: str, key: str) -> ConfigGet[T]
-_moss_api_collection_set(collection_uuid: str, value: ConfigSet[T])
-moss_api_collection_get_all(collection_uuid: str) -> RM_DocumentCollection
-```
-
-### Managing collection sub data
-
-```python
-moss_api_collection_metadata_get(collection_uuid: str, key: str) -> ConfigGet[T]
-_moss_api_collection_metadata_set(collection_uuid: str, value: ConfigSet[T])
-moss_api_collection_metadata_get_all(collection_uuid: str) -> RM_MetadataBase
-```
-
-### Managing metadata and content standalone objects
-
-{% hint style="success" %}
-All standalone metadata and content objects are stored by the extension manager, these objects are referenced by id which is an integer. \
-The accessor references are: `metadata_id` and `content_id`
-{% endhint %}
-
-#### Metadata
-
-Here are the functions for creating standalone metadata objects
-
-...
-
-Here are the functions for managing the fields
-
-```python
-moss_api_metadata_get(metadata_id: int, key: str) -> ConfigGet[T]
-_moss_api_metadata_set(metadata_id: int, value: ConfigSet[T])
-moss_api_metadata_get_all(metadata_id: int) -> RM_MetadataDocument
-```
-
-#### Content
-
-Here are the functions for creating standalone content objects
-
-...
-
-Here are the functions for managing the fields
-
-```python
-moss_api_content_get(content_id: int, key: str) -> ConfigGet[T]
-_moss_api_content_set(content_id: int, value: ConfigSet[T])
-moss_api_content_get_all(content_id: int) -> TRM_Content
-```
+This function will fetch the entire accessor with all it's fields.
 
 ### Functions for documents
 
@@ -606,7 +615,7 @@ All the functions here are related to either creating or managing documents
 #### Creating documents
 
 {% hint style="info" %}
-Each creating function below returns the new document's UUID.
+Each creating function below returns the new document's UUID. Your [SDK](getting-started.md#choosing-an-sdk) should apply it to the accessor automatically.
 {% endhint %}
 
 {% hint style="warning" %}
@@ -622,37 +631,37 @@ moss_api_document_new_epub(value: DocumentNewEPUB) -> str
 #### Managing documents
 
 ```python
-moss_api_document_duplicate(document_uuid: str) -> str
+moss_api_document_duplicate(accessor: Accessor) -> str
 ```
 
 Returns the UUID of the new duplicate. This function randomizes a lot of the UUIDs of the document, it will also update timestamps and set the document to provision.
 
 ```python
-moss_api_document_randomize_uuids(document_uuid: str) -> str
+moss_api_document_randomize_uuids(accessor: Accessor) -> str
 ```
 
 This function is self explanatory, it will modify all the document UUIDs including nested UUID references to a new random UUID and return the new UUID.
 
 ```python
-moss_api_document_unload_files(document_uuid: str)
+moss_api_document_unload_files(accessor: Accessor)
 ```
 
 Simply unloads any files that Moss has loaded on the document. Documents will usually be automatically unloaded upon closing. If your extension loaded files though, this is the way to unload them and you should!
 
 ```python
-moss_api_document_load_files_from_cache(document_uuid: str)
+moss_api_document_load_files_from_cache(accessor: Accessor)
 ```
 
 This function loads all the files enforcing cache usage only. If the cache misses a file, it will not be downloaded.
 
 ```python
-moss_api_document_ensure_download_and_callback(document_uuid: str, callback: str)
+moss_api_document_ensure_download_and_callback(accessor: Accessor, callback: str)
 ```
 
 Document downloads are threaded, this is one way to check for when your document has finished downloading. The callback as all other extension functions accepts the name of your extension callback function.
 
 ```python
-moss_api_document_ensure_download(document_uuid: str)
+moss_api_document_ensure_download(accessor: Accessor)
 ```
 
 This function is very similar to the above, but it does not run a callback. It will halt until the document is finished downloading.
@@ -662,7 +671,11 @@ The above download functions will also load the data, including using cache!
 {% endhint %}
 
 ```python
-moss_api_document_export(document_uuid: str)
+moss_api_document_export(accessor: Accessor)
 ```
 
 This function prepares the document for uploading to the cloud. It prepares data and hashes converting the metadata and content data into raw data for upload.
+
+{% hint style="warning" %}
+This function does not upload the document to the cloud. Nor should you need to use it unless you are doing some form of manual upload processing. This function is internally automatically used by Moss before the upload happens, as the raw document data needs to be ready before upload, this means you can't modify anything during this process if you use the automatic **rm\_api** upload functionality.
+{% endhint %}
