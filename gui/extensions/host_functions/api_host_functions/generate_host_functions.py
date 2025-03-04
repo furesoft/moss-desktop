@@ -2,6 +2,7 @@ from pprint import pformat
 from typing import Annotated, get_origin, Any, Dict, Callable, Tuple
 
 import pygameextra as pe
+from box import Box
 from colorama import Style, Fore
 from extism import Json
 
@@ -79,7 +80,7 @@ def generate_for_type(prefix, list_of_types):
     def _func(accessor: Annotated[AccessorInstance, Json], key: str):
         accessor_type = AccessorTypes(accessor['type'])
         item_info = _items[accessor_type]
-        obj, _ = _function_mapping[accessor_type](accessor)
+        obj, _ = _function_mapping[accessor_type](Box(accessor))
         value_type = item_info.can_get.get(key, None)
         if not value_type:
             raise ValueError(f"Can't get {key} from {item_info.name}")
@@ -94,7 +95,7 @@ def generate_for_type(prefix, list_of_types):
     def _func(accessor: Annotated[AccessorInstance, Json], key: str, value: Annotated[Any, Json]):
         accessor_type = AccessorTypes(accessor['type'])
         item_info = _items[accessor_type]
-        obj, _ = _function_mapping[accessor_type](accessor)
+        obj, _ = _function_mapping[accessor_type](Box(accessor))
         value_type = item_info.can_set.get(key, None)
         if not value_type:
             raise ValueError(f"Can't set {key} on {item_info.name}")
@@ -109,7 +110,7 @@ def generate_for_type(prefix, list_of_types):
     @d.host_fn(f"{prefix}_get_all")
     @d.debug_result
     def _func(accessor: Annotated[AccessorInstance, Json]) -> Annotated[Any, Json]:
-        obj, accessor_adder = _function_mapping[AccessorTypes(accessor['type'])](accessor)
+        obj, accessor_adder = _function_mapping[AccessorTypes(accessor['type'])](Box(accessor))
         final_data = obj.__dict__
         accessor_adder(final_data)
         return final_data
