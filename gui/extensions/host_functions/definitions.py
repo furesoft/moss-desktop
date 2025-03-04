@@ -25,6 +25,11 @@ api: 'API'
 ACTION_APPEND = '__em_action_'
 
 
+class InvalidAccessor(ValueError):
+    def __init__(self):
+        super().__init__("An invalid accessor was provided for this function or check.")
+
+
 def init_host_functions(_extension_manager: 'ExtensionManager'):
     global gui, api, extension_manager
     extension_manager = _extension_manager

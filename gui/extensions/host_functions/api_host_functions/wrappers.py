@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import TypedDict, Type, get_origin, Annotated
 
+from box import Box
 from extism import Json
 
 from .accessor_handlers import document_inferred
@@ -38,11 +39,16 @@ def document_wrapper(func):
         Takes in accessor.
     """
     func.__annotations__.pop('item')
+    needs_accessor = 'accessor' in func.__annotations__
+    if needs_accessor:
+        func.__annotations__.pop('accessor')
     func.__annotations__ = {'accessor': Annotated[AccessorInstance, Json], **func.__annotations__}
 
     @wraps(func)
     def wrapper(accessor: Annotated[AccessorInstance, Json], *args, **kwargs):
-        document, _ = document_inferred(accessor)
+        document, _ = document_inferred(box := Box(accessor))
+        if needs_accessor:
+            args = (box, *args)
         return func(document, *args, **kwargs)
 
     return wrapper

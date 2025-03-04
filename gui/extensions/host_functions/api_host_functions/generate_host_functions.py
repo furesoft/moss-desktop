@@ -74,46 +74,60 @@ def generate_for_type(prefix, list_of_types):
                   f"CANNOT SET: {Fore.LIGHTGREEN_EX}{pformat(cannot_set)}{Fore.RESET}\n"
                   f"CANNOT GET: {Fore.LIGHTYELLOW_EX}{pformat(cannot_get)}{Fore.RESET}")
 
+    # noinspection PyBroadException
     @d.host_fn(f"{prefix}_get")
-    @d.debug_result
     @d.transform_to_json
     def _func(accessor: Annotated[AccessorInstance, Json], key: str):
-        accessor_type = AccessorTypes(accessor['type'])
-        item_info = _items[accessor_type]
-        obj, _ = _function_mapping[accessor_type](Box(accessor))
-        value_type = item_info.can_get.get(key, None)
-        if not value_type:
-            raise ValueError(f"Can't get {key} from {item_info.name}")
+        try:
+            accessor_type = AccessorTypes(accessor['type'])
+            item_info = _items[accessor_type]
+            obj, _ = _function_mapping[accessor_type](Box(accessor))
+            value_type = item_info.can_get.get(key, None)
+            if not value_type:
+                raise ValueError(f"Can't get {key} from {item_info.name}")
 
-        if check_is_dict(value_type):
-            return getattr(obj, key).__dict__
-        return getattr(obj, key)
+            if check_is_dict(value_type):
+                return getattr(obj, key).__dict__
+            return getattr(obj, key)
+        except Exception as e:
+            d.extension_manager.error(f"Failed to [get]<{key}> with {accessor} {e.__class__.__name__}")
+            raise e
 
+    # noinspection PyBroadException
     @d.host_fn(f"_{prefix}_set")
-    @d.debug_result
     @d.unpack
     def _func(accessor: Annotated[AccessorInstance, Json], key: str, value: Annotated[Any, Json]):
-        accessor_type = AccessorTypes(accessor['type'])
-        item_info = _items[accessor_type]
-        obj, _ = _function_mapping[accessor_type](Box(accessor))
-        value_type = item_info.can_set.get(key, None)
-        if not value_type:
-            raise ValueError(f"Can't set {key} on {item_info.name}")
-        if type(value) is not value_type:
-            raise ValueError(
-                f"Can't set {key} on {item_info.name} "
-                f"because type {type(value)} "
-                f"does not match required type {value_type}"
-            )
-        return setattr(obj, key, value)
+        try:
+            accessor_type = AccessorTypes(accessor['type'])
+            item_info = _items[accessor_type]
+            obj, _ = _function_mapping[accessor_type](Box(accessor))
+            value_type = item_info.can_set.get(key, None)
+            if not value_type:
+                raise ValueError(f"Can't set {key} on {item_info.name}")
+            if type(value) is not value_type:
+                raise ValueError(
+                    f"Can't set {key} on {item_info.name} "
+                    f"because type {type(value)} "
+                    f"does not match required type {value_type}"
+                )
+            return setattr(obj, key, value)
+        except Exception as e:
+            d.extension_manager.error(
+                f"Failed to [set]<{key}><{value if len(value) < 100 else '...'}> with {accessor} {e.__class__.__name__}")
+            raise e
 
+    # noinspection PyBroadException
     @d.host_fn(f"{prefix}_get_all")
-    @d.debug_result
+    @d.transform_to_json
     def _func(accessor: Annotated[AccessorInstance, Json]) -> Annotated[Any, Json]:
-        obj, accessor_adder = _function_mapping[AccessorTypes(accessor['type'])](Box(accessor))
-        final_data = obj.__dict__
-        accessor_adder(final_data)
-        return final_data
+        try:
+            obj, accessor_adder = _function_mapping[AccessorTypes(accessor['type'])](Box(accessor))
+            final_data = obj.__dict__
+            accessor_adder(final_data)
+            return final_data
+        except Exception as e:
+            d.extension_manager.error(f"Failed to [get_all] with {accessor} {e.__class__.__name__}")
+            raise e
 
 
 # Top most objects
