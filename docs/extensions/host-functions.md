@@ -634,6 +634,13 @@ or
 - accessor: Accessor - You can leave uuid blank to get a random one by Moss
 ```
 
+```
+MetadataNew:
+- name: str - Referring to the visible name
+- parent: Optional[str] - The UUID of the parent collection or None so on...
+- document_type: Optional[DocumentTypes] - The type of metadata to create
+```
+
 {% hint style="success" %}
 Not passing a document\_uuid will use a randomly generated uuid which you'll receive from the function. See below.
 {% endhint %}
@@ -729,3 +736,11 @@ This function prepares the document for uploading to the cloud. It prepares data
 {% hint style="warning" %}
 This function does not upload the document to the cloud. Nor should you need to use it unless you are doing some form of manual upload processing. This function is internally automatically used by Moss before the upload happens, as the raw document data needs to be ready before upload, this means you can't modify anything during this process if you use the automatic **rm\_api** upload functionality.
 {% endhint %}
+
+### Functions for metadata
+
+```python
+moss_api_metadata_new(value: MetadataNew) -> int
+```
+
+Creates a new standalone metadata object and returns the id of it.
