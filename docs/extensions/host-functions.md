@@ -8,6 +8,10 @@ description: >-
 
 # Host functions
 
+## In-Depth starter info
+
+I recommend you read these first few sections before getting started.
+
 ### Global Types
 
 ```
@@ -44,6 +48,13 @@ MossState:
 - icons: List[str] - A list of all the icons loaded by moss
 ```
 
+```
+ExtensionInfo:
+- files: List[str] - A list of extension safe paths to load.
+These can be any type as long as Moss loader supports loading them.
+You would usually pass any custom icons as files.
+```
+
 {% hint style="success" %}
 Moss will not start loading extensions until all assets are loaded
 {% endhint %}
@@ -51,6 +62,45 @@ Moss will not start loading extensions until all assets are loaded
 {% hint style="warning" %}
 Moss will only load extension specified assets after all extensions are loaded
 {% endhint %}
+
+### Safe paths
+
+Your extension will most of the time only be allowed several types. Moss will check these to ensure security. You can also access these paths in your extension where the filesystem access is handled by extism and not Moss.
+
+```
+temp - Links to Defaults.TEMP_DIR
+extension - Dynamically links to your extension folder
+options - Links to Defaults.OPTIONS_DIR
+sync - Links to Defaults.SYNC_FILE_PATH
+thumbnails - Links to Defaults.THUMB_FILE_PATH
+assets - Links to Defaults.ASSET_DIR
+```
+
+For example if I had an asset in my extension folder `assets/ico.svg` I could simply refer to it as `extension/assets/ico.svg`&#x20;
+
+Or if you wanted to do some manual evaluation of the cached sync files you could do something like `sync/{hash}` and so on...
+
+### Registering your extension
+
+Moss has 3 main functions that **must** be defined. These functions are your entrypoints.
+
+```python
+moss_extension_register(state: MossState) -> ExtensionInfo
+```
+
+<mark style="color:purple;">This function will be initially called by Moss when</mark> <mark style="color:purple;"></mark><mark style="color:purple;">**loading**</mark> <mark style="color:purple;"></mark><mark style="color:purple;">your extension</mark>. Its job is to define any extension wide values, prepare config, change defaults, register context menus and so forth. You are also required to return your extension information.
+
+```python
+moss_extension_loop(state: MossState)
+```
+
+This function is called once every frame. <mark style="color:yellow;">Please note that this function will</mark> <mark style="color:yellow;"></mark><mark style="color:yellow;">**not be called**</mark> <mark style="color:yellow;"></mark><mark style="color:yellow;">until the</mark> <mark style="color:yellow;"></mark><mark style="color:yellow;">**loading**</mark> <mark style="color:yellow;"></mark><mark style="color:yellow;">of Moss</mark> <mark style="color:yellow;"></mark><mark style="color:yellow;">**is completed!**</mark>
+
+```python
+moss_extension_unregister()
+```
+
+This function serves as a last chance for your extension to clean up any files or do any last minute configuration updates. <mark style="color:green;">This function gets called during</mark> <mark style="color:green;"></mark><mark style="color:green;">**reloads**</mark> <mark style="color:green;"></mark><mark style="color:green;">and when</mark> <mark style="color:green;"></mark><mark style="color:green;">**closing**</mark> <mark style="color:green;"></mark><mark style="color:green;">Moss.</mark>
 
 ## GUI functions
 
