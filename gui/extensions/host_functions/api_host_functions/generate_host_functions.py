@@ -88,7 +88,7 @@ def generate_for_type(prefix, list_of_types):
             return getattr(obj, key).__dict__
         return getattr(obj, key)
 
-    @d.host_fn(f"{prefix}_set")
+    @d.host_fn(f"_{prefix}_set")
     @d.debug_result
     @d.unpack
     def _func(accessor: Annotated[AccessorInstance, Json], key: str, value: Annotated[Any, Json]):
