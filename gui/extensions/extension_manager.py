@@ -59,6 +59,8 @@ class ExtensionManager:
         self.collection_objects = {}
         self.metadata_objects = {}
         self.content_objects = {}
+        self.file_sync_progress_objects = {}
+        self.document_sync_progress_objects = {}
         self.texts = {}
         self.screens = {}
         self.configs = {}
@@ -99,6 +101,8 @@ class ExtensionManager:
         self.collection_objects.clear()
         self.metadata_objects.clear()
         self.content_objects.clear()
+        self.file_sync_progress_objects.clear()
+        self.document_sync_progress_objects.clear()
         self.texts.clear()
         self.screens.clear()
         self.configs.clear()
