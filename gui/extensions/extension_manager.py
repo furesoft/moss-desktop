@@ -136,24 +136,30 @@ class ExtensionManager:
                 end=''
             )
 
-    def load_wasm(self, extension_path: str, config_path: str, extension_name: str):
+    def load_wasm(self, extension_path: str, default_config_path: str, config_path: str, extension_name: str):
         if not os.path.exists(extension_path):
             self.error(f"Extension {extension_path} file not found")
             self.extension_count -= 1
             return
+        if not os.path.exists(default_config_path):
+            default_config = {}
+        else:
+            try:
+                with open(default_config_path, 'r', encoding='utf-8') as f:
+                    default_config = json.load(f)
+            except JSONDecodeError:
+                self.warn(f"Extension {extension_path} default config could not be parsed.")
+                default_config = {}
         if not os.path.exists(config_path):
-            self.configs[extension_name] = {}
+            self.configs[extension_name] = default_config
             self.dirty_configs = [extension_name]
         else:
             try:
-                with open(config_path, 'r') as f:
-                    self.configs[extension_name] = json.load(f)
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    self.configs[extension_name] = {**default_config, **json.load(f)}
             except JSONDecodeError:
-                self.warn(f"Extension {extension_path} config could not be parsed. Resetting!")
-                self.configs[extension_name] = {}
-            except UnicodeDecodeError:
-                self.warn(f"Extension {extension_path} config could not be read. Resetting!")
-                self.configs[extension_name] = {}
+                self.warn(f"Extension {extension_path} config could not be parsed. Resetting the config!")
+                self.configs[extension_name] = default_config
 
         with open(extension_path, 'rb') as f:
             data = f.read()
@@ -200,21 +206,21 @@ class ExtensionManager:
         self.extensions_loaded += 1
 
     def gather_extensions(self):
-        for extension in os.listdir(Defaults.EXTENSIONS_DIR):
-            if extension.startswith('_'):
+        for extension_name in os.listdir(Defaults.EXTENSIONS_DIR):
+            if extension_name.startswith('_'):
                 continue
-            if extension.endswith('.wasm'):
-                extension_name = extension[:-5]
+            if extension_name.endswith('.wasm'):
+                extension_name = extension_name[:-5]
                 os.makedirs(os.path.join(Defaults.EXTENSIONS_DIR, extension_name), exist_ok=True)
                 os.rename(
-                    os.path.join(Defaults.EXTENSIONS_DIR, extension),
-                    os.path.join(Defaults.EXTENSIONS_DIR, extension_name, extension)
+                    os.path.join(Defaults.EXTENSIONS_DIR, extension_name),
+                    os.path.join(Defaults.EXTENSIONS_DIR, extension_name, extension_name)
                 )
                 self.extensions_to_load.append(extension_name)
                 continue
-            if os.path.isfile(os.path.join(Defaults.EXTENSIONS_DIR, extension)):
+            if os.path.isfile(os.path.join(Defaults.EXTENSIONS_DIR, extension_name)):
                 continue
-            self.extensions_to_load.append(extension)
+            self.extensions_to_load.append(extension_name)
         self.gathered_extensions = True
 
     def load(self, loader):
@@ -250,6 +256,7 @@ class ExtensionManager:
                 try:
                     self.load_wasm(
                         wasm_file_location,
+                        os.path.join(Defaults.EXTENSIONS_DIR, extension, f'options.json'),
                         os.path.join(Defaults.OPTIONS_DIR, f'{extension}.json'),
                         extension
                     )
