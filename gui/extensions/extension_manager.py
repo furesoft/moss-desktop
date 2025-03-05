@@ -75,17 +75,21 @@ class ExtensionManager:
         self.gui.api.add_hook(self.HOOK, self.handle_hook)
 
     def reset(self):
+        self.unregister()
+        self.gui.api.remove_hook(self.HOOK)
+        self.extension_load_log.close()
+        self._reset()
+
+    def unregister(self):
         for extension_name, extension in self.extensions.items():
             self.current_extension = extension_name
             try:
                 extension.call('moss_extension_unregister', b'')
+                self.log(f"Unregisted extension {extension_name}")
             except ExtismError:
                 self.error(f"Extension {extension} failed to unregister")
                 print_exc()
             del extension
-        self.gui.api.remove_hook(self.HOOK)
-        self.extension_load_log.close()
-        self._reset()
 
     def _reset(self):
         self.extensions_to_load.clear()
@@ -121,7 +125,6 @@ class ExtensionManager:
 
     def write(self, message: str):
         self.extension_load_log.write(message)
-        self.gui.api.log(message[:-1], enable_print=False)
         if self.gui.config.debug:
             print(
                 "DEBUG EM:",
@@ -135,6 +138,8 @@ class ExtensionManager:
                 f"{Fore.RESET}",
                 end=''
             )
+        else:
+            self.gui.api.log(message[:-1], enable_print=False)
 
     def load_wasm(self, extension_path: str, default_config_path: str, config_path: str, extension_name: str):
         if not os.path.exists(extension_path):

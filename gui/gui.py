@@ -16,7 +16,7 @@ from colorama import Fore, Style
 
 from rm_api.auth import FailedToRefreshToken
 from rm_api.notifications.models import APIFatal
-from .events import ResizeEvent
+from .events import ResizeEvent, MossFatal
 from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES, MAIN_MENU_LOCATIONS, \
     DOCUMENT_VIEWER_MODES
 
@@ -412,6 +412,7 @@ class GUI(pe.GameContext):
 
     def quit(self):
         self.running = False
+        self.extension_manager.unregister()
         self.save_config_if_dirty()
 
     def quit_check(self):
@@ -424,8 +425,12 @@ class GUI(pe.GameContext):
     def handle_api_event(self, e):
         if isinstance(e, APIFatal):
             self.quit_check()
-            self.api.log("A FATAL API ERROR OCCURRED, CRASHING!")
-            raise AssertionError("A FATAL API ERROR OCCURRED, CRASHING!")
+            self.api.log(msg := "A FATAL API ERROR OCCURRED, CRASHING!")
+            raise AssertionError(msg)
+        if isinstance(e, MossFatal):
+            self.quit_check()
+            self.api.log(msg := "A FATAL MOSS ERROR OCCURRED, CRASHING! May have been caused by an extension.")
+            raise AssertionError(msg)
 
     @property
     def import_screen(self):
