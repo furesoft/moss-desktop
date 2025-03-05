@@ -22,8 +22,12 @@ if TYPE_CHECKING:
 
 
 def output_to_dict(func):
-    def wrapper(self, output, *args, **kwargs):
-        return func(self, json.loads(bytes(output).decode()), *args, **kwargs)
+    def wrapper(self: 'ExtensionManager', output, *args, **kwargs):
+        try:
+            return func(self, json.loads(bytes(output).decode()), *args, **kwargs)
+        except JSONDecodeError:
+            self.error(f"Expected a serializable object from {self.current_extension}. Instead got: {output}")
+            raise
 
     return wrapper
 
