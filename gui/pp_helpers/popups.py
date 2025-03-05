@@ -88,6 +88,13 @@ class ConfirmPopup(Popup):
                                  action=self.ok, name=f'popup_{id(self)}_confirm', text_infront=True)
 
 
+class InstallPopup(ConfirmPopup):
+    BUTTON_TEXTS = {
+        'confirm': "Install",
+        'close': "",
+    }
+
+
 class GUIConfirmPopup(ConfirmPopup):
     LAYER = pe.AFTER_POST_LAYER
     TYPE: str = None

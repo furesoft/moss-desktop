@@ -239,7 +239,7 @@ class GUI(pe.GameContext):
         self.ctrl_hold = False
         self._import_screen: Union[ImportScreen, None] = None
         self.main_menu: Union['MainMenu', None] = None
-        from gui.screens.version_checker import VersionChecker
+        from gui.screens.integrity_checker import IntegrityChecker
 
         if self.api.token or self.api.offline_mode:
             from gui.screens.loader import Loader
@@ -250,7 +250,7 @@ class GUI(pe.GameContext):
         if not pe.settings.indev and not self.config.debug and not self.config.portable_mode and not Defaults.INSTALLED:
             from gui.screens.installer import Installer
             self.screens.put(Installer(self))
-        self.screens.put(VersionChecker(self))
+        self.screens.put(IntegrityChecker(self))
         self.running = True
         self.warning: 'GUIConfirmPopup' = None
         self.doing_fake_screen_refresh = False

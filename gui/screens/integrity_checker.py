@@ -1,13 +1,15 @@
 import os.path
 import subprocess
+import zipfile
+from functools import partial
 from queue import Queue
 from typing import TYPE_CHECKING
 
 import pygameextra as pe
 
 from gui.events import ResizeEvent
-from gui.gui import APP_NAME
-from gui.pp_helpers.popups import WarningPopup
+from gui.gui import APP_NAME, Defaults
+from gui.pp_helpers.popups import WarningPopup, InstallPopup
 from gui.screens.mixins import LogoMixin
 
 if TYPE_CHECKING:
@@ -18,7 +20,7 @@ class GitCheckException(Exception):
     pass
 
 
-class VersionChecker(pe.ChildContext, LogoMixin):
+class IntegrityChecker(pe.ChildContext, LogoMixin):
     LAYER = pe.AFTER_LOOP_LAYER
 
     def __init__(self, parent: "GUI"):
@@ -97,6 +99,27 @@ class VersionChecker(pe.ChildContext, LogoMixin):
                     "Failed to check for updates.",
                     "Failed to check for updates, please check manually for any new commits."
                 ))
+        for extension_name in os.listdir(Defaults.EXTENSIONS_DIR):
+            if extension_name.endswith('.zip'):
+                extension_directory = os.path.join(Defaults.EXTENSIONS_DIR, extension_name[:-4])
+                self.warnings.put(InstallPopup(
+                    self.parent_context, "Install extension from zip?",
+                    f"Moss has found a zip file in the extensions directory.\n"
+                    "Please make sure you trust this extension before installing it!\n\n"
+                    f"Would you like to install and enable {extension_name}?",
+                    partial(
+                        self.extract_zip,
+                        os.path.join(Defaults.EXTENSIONS_DIR, extension_name),
+                        extension_directory
+                    )
+                ))
+
+    def extract_zip(self, zip_path: str, extension_directory: str):
+        extension_name = os.path.basename(extension_directory)
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extension_directory)
+        self.config.extensions[extension_name] = True
+        os.remove(zip_path)
 
     def close(self):
         self.api.remove_hook('version_checker_resize_check')
