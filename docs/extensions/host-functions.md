@@ -744,3 +744,18 @@ moss_api_metadata_new(value: MetadataNew) -> int
 ```
 
 Creates a new standalone metadata object and returns the id of it.
+
+### Functions for content
+
+```python
+moss_api_content_new_notebook(page_count: int) -> int
+```
+
+This function creates a content object for a blank notebook with a specified page count. You must pass at minimum one page! Returns standalone content id
+
+```python
+moss_api_content_new_pdf() -> int
+moss_api_content_new_epub() -> int
+```
+
+These functions create blank content objects for pdf and epub. Notice that they do not identify any data, it's just a blank content template, the data for the pdf or epub would be on the document object. If you wanted to make a pdf or epub document check the document creation functions above. Returns standalone content id.
