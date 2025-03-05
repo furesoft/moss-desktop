@@ -15,7 +15,7 @@ from extism.extism import HOST_FN_REGISTRY
 
 from gui.defaults import Defaults
 from .host_functions import init_host_functions
-from .input_types import TContextButton
+from .shared_types import TContextButton
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -88,7 +88,8 @@ class ExtensionManager:
         for extension_name, extension in self.extensions.items():
             self.current_extension = extension_name
             try:
-                extension.call('moss_extension_unregister', b'')
+                with self.lock:
+                    extension.call('moss_extension_unregister', b'')
                 self.log(f"Unregisted extension {extension_name}")
             except ExtismError:
                 self.error(f"Extension {extension} failed to unregister")
@@ -196,14 +197,16 @@ class ExtensionManager:
         self.current_extension = extension_name
         if extension.function_exists('_start'):
             try:
-                extension.call('_start', b'')
+                with self.lock:
+                    extension.call('_start', b'')
             except ExtismError:
                 self.error(f"Extension {extension_name} failed to start")
                 print_exc()
                 return
         try:
-            extension.call('moss_extension_register', self.state,
-                           lambda output: self.handle_register_output(output, extension_name))
+            with self.lock:
+                extension.call('moss_extension_register', self.state,
+                               lambda output: self.handle_register_output(output, extension_name))
         except ExtismError:
             self.extensions.pop(extension_name)
             self.extension_count -= 1
