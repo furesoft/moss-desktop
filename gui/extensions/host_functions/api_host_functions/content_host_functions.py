@@ -2,8 +2,8 @@ from rm_api import Content
 from .. import definitions as d
 
 
-@d.host_fn(signature=([], []))
-def moss_api_content_new_notebook(page_count: int = 1):
+@d.host_fn()
+def moss_api_content_new_notebook(page_count: int = 1) -> int:
     content = Content.new_notebook(d.api.author_id, page_count)
 
     d.extension_manager.content_objects[id(content)] = content
@@ -11,8 +11,8 @@ def moss_api_content_new_notebook(page_count: int = 1):
     return id(content)
 
 
-@d.host_fn(signature=([], []))
-def moss_api_content_new_pdf():
+@d.host_fn()
+def moss_api_content_new_pdf() -> int:
     content = Content.new_pdf()
 
     d.extension_manager.content_objects[id(content)] = content
@@ -20,8 +20,8 @@ def moss_api_content_new_pdf():
     return id(content)
 
 
-@d.host_fn(signature=([], []))
-def moss_api_content_new_epub():
+@d.host_fn()
+def moss_api_content_new_epub() -> int:
     content = Content.new_epub()
 
     d.extension_manager.content_objects[id(content)] = content
