@@ -26,7 +26,7 @@ def output_to_dict(func):
         try:
             return func(self, json.loads(bytes(output).decode()), *args, **kwargs)
         except JSONDecodeError:
-            self.error(f"Expected a serializable object from {self.current_extension}. Instead got: {output}")
+            self.error(f"Expected a serializable object from {self.current_extension}. Instead got: {bytes(output)}")
             raise
 
     return wrapper
