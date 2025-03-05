@@ -1,8 +1,11 @@
 import base64
 import inspect
-from functools import wraps
-from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin
+import random
+from functools import wraps, partial
+from json import JSONDecodeError
+from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin, Callable
 
+import extism
 import pygameextra as pe
 from box import Box
 from colorama import Fore, Style
@@ -12,6 +15,7 @@ from extism.extism import HOST_FN_REGISTRY
 from rm_api.storage.common import FileHandle
 from ..export_types import TValue
 from ..input_types import color_from_tuple, color_to_tuple, TTextColors, TColor, text_colors_to_tuple
+from ...events import MossFatal
 
 if TYPE_CHECKING:
     from gui import GUI
@@ -22,12 +26,23 @@ extension_manager: 'ExtensionManager'
 host_functions = set()
 gui: 'GUI'
 api: 'API'
+
+_original_extism_map_arg: Callable[..., Tuple[ValType, Callable]] = getattr(extism.extism, '_map_arg')
+_original_extism_map_ret: Callable[..., Tuple[ValType, Callable]] = getattr(extism.extism, '_map_ret')
 ACTION_APPEND = '__em_action_'
 
 
 class InvalidAccessor(ValueError):
     def __init__(self):
         super().__init__("An invalid accessor was provided for this function or check.")
+
+
+def set_extism_map_arg(value=None):
+    setattr(extism.extism, '_map_arg', value or _original_extism_map_arg)
+
+
+def set_extism_map_ret(value=None):
+    setattr(extism.extism, '_map_ret', value or _original_extism_map_ret)
 
 
 def init_host_functions(_extension_manager: 'ExtensionManager'):
@@ -77,6 +92,53 @@ def host_fn(
         signature: Optional[Tuple[List[ValType], List[ValType]]] = None,
         user_data: Optional[Union[bytes, List[bytes]]] = None,
 ):
+    issue_occurred_parsing_arguments = False
+    argument_index = -1
+
+    @wraps(_original_extism_map_arg)
+    def handle_json_errors_arg(function_name, *args1, **kwargs1):
+        # Modify the mapper to add debugging to the lambda functions
+        nonlocal argument_index, issue_occurred_parsing_arguments
+        _, call_function = _original_extism_map_arg(*args1, **kwargs1)
+        argument_index += 1
+
+        @wraps(call_function)
+        def wrapped_call_function(index, *args2, **kwargs2):  # Modify the lambda function to add debugging
+            nonlocal issue_occurred_parsing_arguments
+            try:
+                return call_function(*args2, **kwargs2)
+            except JSONDecodeError:
+                extension_manager.error(
+                    f"Please check that you are passing the correct arguments for {function_name}. "
+                    f"Expected a serializable object for argument[{index}]")
+                api.spread_event(MossFatal)
+                issue_occurred_parsing_arguments = True
+
+        return _, partial(wrapped_call_function, argument_index)
+
+    @wraps(_original_extism_map_ret)
+    def handle_json_errors_ret(function_name, *args1, **kwargs1):
+        # Modify the mapper to add debugging to the lambda functions
+        nonlocal argument_index, issue_occurred_parsing_arguments
+        call_functions = _original_extism_map_ret(*args1, **kwargs1)
+
+        for i, (_, call_function) in enumerate(call_functions):
+            @wraps(call_function)
+            def wrapped_call_function(index, *args2, **kwargs2):  # Modify the lambda function to add debugging
+                nonlocal issue_occurred_parsing_arguments
+                try:
+                    return call_function(*args2, **kwargs2)
+                except AttributeError:
+                    extension_manager.error(
+                        f"Please check that you are accepting the correct returns for {function_name}. "
+                        f"Expected some object for return item[{index}]")
+                    api.spread_event(MossFatal)
+                    issue_occurred_parsing_arguments = True
+
+            call_functions[i] = (_, partial(wrapped_call_function, i))
+
+        return call_functions
+
     extism_wrapper = extism_host_fn(name, namespace, signature, user_data)
 
     @wraps(extism_wrapper)
@@ -104,7 +166,20 @@ def host_fn(
 
     @wraps(wrapped_extism)
     def wrapped(fn):
-        result = wrapped_extism(fn)
+        set_extism_map_arg(partial(handle_json_errors_arg, name or fn.__name__))
+        set_extism_map_ret(partial(handle_json_errors_ret, name or fn.__name__))
+
+        @wraps(fn)
+        def wrapped_fn(*args, **kwargs):
+            nonlocal issue_occurred_parsing_arguments
+            if issue_occurred_parsing_arguments:
+                issue_occurred_parsing_arguments = False
+                return
+            return fn(*args, **kwargs)
+
+        result = wrapped_extism(wrapped_fn)
+        set_extism_map_arg()
+        set_extism_map_ret()
         setattr(HOST_FN_REGISTRY[-1], 'moss', True)
 
         return result
@@ -202,3 +277,7 @@ def get_data_from_box(box: Box, key, is_list=False) -> Union[bytes, FileHandle, 
             ]
         return FileHandle(extension_manager.organize_path(box[file_key]))
     raise ValueError(f'No {key} data found in {box}')
+
+
+def make_task_id():
+    return random.randint(0, 2 ** 32 - 1)
