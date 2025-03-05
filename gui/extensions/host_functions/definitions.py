@@ -13,8 +13,8 @@ from extism import host_fn as extism_host_fn, Json, ValType
 from extism.extism import HOST_FN_REGISTRY
 
 from rm_api.storage.common import FileHandle
-from ..export_types import TValue
-from ..input_types import color_from_tuple, color_to_tuple, TTextColors, TColor, text_colors_to_tuple
+from ..shared_types import TValue
+from ..shared_types import color_from_tuple, color_to_tuple, TTextColors, TColor, text_colors_to_tuple
 from ...events import MossFatal
 
 if TYPE_CHECKING:

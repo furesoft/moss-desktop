@@ -6,7 +6,7 @@ from extism import Json
 
 from rm_api import Document
 from .accessor_handlers import AccessorTypes, AccessorInstanceBox
-from .import_types import DocumentNewNotebook, DocumentNewPDF, DocumentNewEPUB
+from .shared_types import DocumentNewNotebook, DocumentNewPDF, DocumentNewEPUB
 from .wrappers import document_wrapper
 from .. import definitions as d
 

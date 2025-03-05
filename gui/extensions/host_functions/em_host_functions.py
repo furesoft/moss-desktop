@@ -4,7 +4,7 @@ from typing import Any, Annotated
 from extism import Json
 
 from . import definitions as d
-from ..input_types import context_button_clean
+from ..shared_types import context_button_clean
 
 
 # Configs

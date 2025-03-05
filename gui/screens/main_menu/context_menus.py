@@ -10,7 +10,7 @@ import pyperclip
 from gui.cloud_action_helper import import_notebook_pages_to_cloud
 from gui.defaults import Defaults
 from gui.extensions.host_functions import ACTION_APPEND
-from gui.extensions.input_types import rect_from_pe_rect
+from gui.extensions.shared_types import rect_from_pe_rect
 from gui.file_prompts import notebook_prompt, import_debug
 from gui.pp_helpers import ContextMenu, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler

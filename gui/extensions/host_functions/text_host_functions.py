@@ -5,7 +5,7 @@ import pygameextra as pe
 from extism import Json
 
 from . import definitions as d
-from ..input_types import TTextColors, text_colors_to_tuple, TRect, rect_to_pe_rect, rect_from_pe_rect
+from ..shared_types import TTextColors, text_colors_to_tuple, TRect, rect_to_pe_rect, rect_from_pe_rect
 
 
 def text_wrap(fn):

@@ -4,7 +4,7 @@ from box import Box
 from extism import Json
 
 from rm_api import Metadata
-from .import_types import MetadataNew
+from .shared_types import MetadataNew
 from .. import definitions as d
 
 

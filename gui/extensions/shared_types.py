@@ -1,3 +1,4 @@
+from typing import Any
 from typing import TypedDict, List, Optional, Tuple
 
 import pygameextra as pe
@@ -118,3 +119,7 @@ def context_button_clean(button: TContextButton, append: str = '') -> TContextBu
 
 def text_colors_to_tuple(colors: TTextColors) -> Tuple[Tuple[int, ...], Optional[Tuple[int, ...]]]:
     return color_to_tuple(colors['foreground']), color_to_tuple(colors['background'])
+
+
+class TValue(TypedDict):
+    value: Any

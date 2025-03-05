@@ -1,11 +1,11 @@
 from functools import wraps
-from typing import TypedDict, Type, get_origin, Annotated
+from typing import TypedDict, Type, get_origin, Annotated, List
 
 from box import Box
 from extism import Json
 
 from .accessor_handlers import document_inferred
-from .export_types import AccessorInstance
+from .shared_types import AccessorInstance
 
 
 def check_ref(func):
@@ -48,7 +48,29 @@ def document_wrapper(func):
     def wrapper(accessor: Annotated[AccessorInstance, Json], *args, **kwargs):
         document, _ = document_inferred(box := Box(accessor))
         if needs_accessor:
-            args = (box, *args)
+            kwargs['accessor'] = box
         return func(document, *args, **kwargs)
+
+    return wrapper
+
+
+def many_document_wrapper(func):
+    """
+        This wrapper is for documents.
+        Takes in accessors.
+    """
+    func.__annotations__.pop('items')
+    needs_accessors = 'accessors' in func.__annotations__
+    if needs_accessors:
+        func.__annotations__.pop('accessors')
+    func.__annotations__ = {'accessors': Annotated[List[AccessorInstance], Json], **func.__annotations__}
+
+    @wraps(func)
+    def wrapper(accessors: Annotated[List[AccessorInstance], Json], *args, **kwargs):
+        boxes = [Box(accessor) for accessor in accessors]
+        documents = [document_inferred(accessor)[0] for accessor in boxes]
+        if needs_accessors:
+            kwargs['accessors'] = boxes
+        return func(documents, *args, **kwargs)
 
     return wrapper

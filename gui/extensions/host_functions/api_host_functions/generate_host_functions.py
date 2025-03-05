@@ -6,10 +6,11 @@ from box import Box
 from colorama import Style, Fore
 from extism import Json
 
-from rm_api import Document, DocumentCollection, Metadata, Content
-from . import export_types as et
-from .accessor_handlers import document_inferred, content_inferred, metadata_inferred, collection_inferred
-from .export_types import TRM_Tag, TRM_Zoom, AccessorTypes, AccessorInstanceBox, AccessorInstance
+from rm_api import Document, DocumentCollection, Metadata, Content, FileSyncProgress, DocumentSyncProgress
+from . import shared_types as et
+from .accessor_handlers import document_inferred, content_inferred, metadata_inferred, collection_inferred, \
+    file_sync_progress_inferred, document_sync_progress_inferred
+from .shared_types import TRM_Tag, TRM_Zoom, AccessorTypes, AccessorInstanceBox, AccessorInstance
 from .wrappers import check_is_dict
 from .. import definitions as d
 
@@ -118,6 +119,7 @@ def generate_for_type(prefix, list_of_types):
 
     # noinspection PyBroadException
     @d.host_fn(f"{prefix}_get_all")
+    @d.debug_result
     @d.transform_to_json
     def _func(accessor: Annotated[AccessorInstance, Json]) -> Annotated[Any, Json]:
         try:
@@ -167,6 +169,20 @@ generate_for_type('moss_api', [
             AccessorTypes.APIDocumentContent,
             AccessorTypes.StandaloneDocumentContent,
             AccessorTypes.StandaloneContent
+        ]
+    }, {
+        "t": et.TRM_FileSyncProgress,
+        "item_type": FileSyncProgress,
+        "item_infer": file_sync_progress_inferred,
+        "handles": [
+            AccessorTypes.FileSyncProgress
+        ]
+    }, {
+        "t": et.TRM_DocumentSyncProgress,
+        "item_type": DocumentSyncProgress,
+        "item_infer": document_sync_progress_inferred,
+        "handles": [
+            AccessorTypes.DocumentSyncProgress
         ]
     }
 ])

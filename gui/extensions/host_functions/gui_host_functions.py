@@ -4,7 +4,7 @@ from box import Box
 from extism import Json
 
 from . import definitions as d
-from ..input_types import TContextMenu, context_button_clean
+from ..shared_types import TContextMenu, context_button_clean
 from ...helpers import invert_icon
 from ...pp_helpers import ContextMenu
 

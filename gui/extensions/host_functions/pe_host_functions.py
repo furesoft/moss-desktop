@@ -5,7 +5,7 @@ from box import Box
 from extism import Json
 
 from . import definitions as d
-from ..input_types import color_to_tuple, rect_to_pe_rect, TPygameExtraRect, TScreen
+from ..shared_types import color_to_tuple, rect_to_pe_rect, TPygameExtraRect, TScreen
 
 
 @d.host_fn('_moss_pe_draw_rect')

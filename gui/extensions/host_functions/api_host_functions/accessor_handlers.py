@@ -2,7 +2,7 @@ from functools import partial
 from typing import Tuple, Union, Optional
 
 from rm_api import DocumentCollection, Document, Metadata
-from .export_types import AccessorInstanceBox, AccessorTypes
+from .shared_types import AccessorInstanceBox, AccessorTypes
 from .. import definitions as d
 
 
@@ -136,3 +136,41 @@ def content_inferred(accessor: AccessorInstanceBox):
         return getter(accessor)
     else:
         raise NotImplementedError("This accessor type is not supported for content inferring")
+
+
+def file_sync_progress_inferred(accessor: AccessorInstanceBox):
+    """
+        Infer the content object from the accessor instance.
+        :param accessor: A box of the accessor instance
+        :return: The FileSyncProgres object and a function to add the accessor to the dictionary
+    """
+    getters = {
+        AccessorTypes.FileSyncProgress: lambda _: (
+            obj := d.extension_manager.file_sync_progress_objects[_.id],
+            partial(parent_accessor_adder, _.type, None, object_id=id(obj))
+        )
+    }
+
+    if (getter := getters.get(AccessorTypes(accessor.type))) is not None:
+        return getter(accessor)
+    else:
+        raise NotImplementedError("This accessor type is not supported for FileSyncProgres inferring")
+
+
+def document_sync_progress_inferred(accessor: AccessorInstanceBox):
+    """
+        Infer the content object from the accessor instance.
+        :param accessor: A box of the accessor instance
+        :return: The DocumentSyncProgres object and a function to add the accessor to the dictionary
+    """
+    getters = {
+        AccessorTypes.DocumentSyncProgress: lambda _: (
+            obj := d.extension_manager.document_sync_progress_objects[_.id],
+            partial(parent_accessor_adder, _.type, None, object_id=id(obj))
+        )
+    }
+
+    if (getter := getters.get(AccessorTypes(accessor.type))) is not None:
+        return getter(accessor)
+    else:
+        raise NotImplementedError("This accessor type is not supported for DocumentSyncProgres inferring")
