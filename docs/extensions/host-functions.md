@@ -80,6 +80,12 @@ For example if I had an asset in my extension folder `assets/ico.svg` I could si
 
 Or if you wanted to do some manual evaluation of the cached sync files you could do something like `sync/{hash}` and so on...
 
+### Default configuration and assets
+
+Your extension is typically in `.wasm` format, but moss will automatically provide a folder for your extension. Moss will also accept `.zip` files too and even ask the user if they want to enable it.
+
+Your extension can provide a default config to the Moss extension manager by having a **valid** `options.json` file in its associated folder.
+
 ### Registering your extension
 
 Moss has 3 main functions that **must** be defined. These functions are your entrypoints.
