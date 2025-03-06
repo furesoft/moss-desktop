@@ -177,7 +177,6 @@ class Loader(pe.ChildContext, LogoMixin):
             else:
                 self.load_data(key, item)
             self.items_loaded += 1
-        self.extension_manager.extra_items.clear()
 
     def load(self):
         try:
@@ -271,9 +270,10 @@ class Loader(pe.ChildContext, LogoMixin):
 
     def post_loop(self):
         if self.current_progress == 1 and self.last_progress >= .98:
-            self.screens.put(MainMenu(self.parent_context))
-            self.api.connect_to_notifications()
-            self.api.add_hook('loader', self.loader_hook)
+            self.screens.put(MainMenu(self.parent_context))  # Open the main menu
+            self.api.connect_to_notifications()  # Connect to the reMarkable websocket
+            self.api.add_hook('loader', self.loader_hook)  # Add api event hook for loader
+            self.extension_manager.extra_items.clear()  # Allow extensions to finally loop
 
     def loader_hook(self, event):
         if isinstance(event, SyncCompleted):
