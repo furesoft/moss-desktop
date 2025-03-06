@@ -114,7 +114,7 @@ def generate_for_type(prefix, list_of_types):
             return setattr(obj, key, value)
         except Exception as e:
             d.extension_manager.error(
-                f"Failed to [set]<{key}><{value if len(value) < 100 else '...'}> with {accessor} {e.__class__.__name__}")
+                f"Failed to [set]<{key}><{value if d.try_len(value) < 100 else '...'}> with {accessor} {e.__class__.__name__}")
             raise e
 
     # noinspection PyBroadException

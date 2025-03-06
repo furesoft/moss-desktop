@@ -3,7 +3,7 @@ import inspect
 import random
 from functools import wraps, partial
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin, Callable
+from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin, Callable, Any
 
 import extism
 import pygameextra as pe
@@ -50,6 +50,13 @@ def init_host_functions(_extension_manager: 'ExtensionManager'):
     extension_manager = _extension_manager
     gui = _extension_manager.gui
     api = gui.api
+
+
+def try_len(obj: Any):
+    try:
+        return len(obj)
+    except TypeError:
+        return 0
 
 
 def transform_to_json(fn):

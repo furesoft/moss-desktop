@@ -441,9 +441,12 @@ def draw_bottom_loading_bar(
 
     # Make and show text of current / total
     if not finish:
-        prepend_text = gui.main_menu.texts[f'rm_api_stage_{stage or STAGE_SYNC}']
+        prepend_text = gui.main_menu.texts.get(
+            f'rm_api_stage_{stage or STAGE_SYNC}',
+            gui.main_menu.texts[f'rm_api_stage_{STAGE_SYNC}']
+        )
 
-        icon_key = f'{SYNC_STAGE_ICONS[stage or STAGE_SYNC]}'
+        icon_key = f'{SYNC_STAGE_ICONS.get(stage or STAGE_SYNC, SYNC_STAGE_ICONS[STAGE_SYNC])}'
         base_icon: pe.Image = gui.icons[icon_key]
         base_icon_rect = pe.Rect(0, 0, *base_icon.size)
 
