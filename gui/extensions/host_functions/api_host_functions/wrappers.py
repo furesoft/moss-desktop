@@ -114,3 +114,25 @@ def file_sync_progress_wrapper(accessor_field, func):
         return func(document, *args, **kwargs)
 
     return wrapper
+
+
+@accept_change_accessor_field("accessor")
+def event_wrapper(accessor_field, func):
+    """
+        This wrapper is for API notifactions / events
+        Takes in accessor.
+    """
+    func.__annotations__.pop('item')
+    needs_accessor = accessor_field in func.__annotations__
+    if needs_accessor:
+        func.__annotations__.pop(accessor_field)
+    func.__annotations__ = {accessor_field: Annotated[AccessorInstance, Json], **func.__annotations__}
+
+    @wraps(func)
+    def wrapper(accessor: Annotated[AccessorInstance, Json], *args, **kwargs):
+        document, _ = event_inferred(box := Box(accessor))
+        if needs_accessor:
+            kwargs[accessor_field] = box
+        return func(document, *args, **kwargs)
+
+    return wrapper

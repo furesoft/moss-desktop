@@ -5,8 +5,9 @@ from extism import Json
 
 import rm_api
 from rm_api import Document, FileSyncProgress
+from rm_api.notifications.models import Notification, DocumentSyncProgress
 from .shared_types import TRM_RootInfo, TRM_FileList
-from .wrappers import many_document_wrapper, document_wrapper, file_sync_progress_wrapper
+from .wrappers import many_document_wrapper, document_wrapper, file_sync_progress_wrapper, event_wrapper
 from .. import definitions as d
 
 
@@ -65,7 +66,7 @@ def moss_api_delete_many_documents(items: List[Document], callback: str, unload:
 
 @d.host_fn()
 def moss_api_new_file_sync_progress() -> int:
-    new = rm_api.FileSyncProgress()
+    new = FileSyncProgress()
     d.extension_manager.file_sync_progress_objects.append(new)
     return id(new)
 
@@ -73,9 +74,15 @@ def moss_api_new_file_sync_progress() -> int:
 @d.host_fn()
 @file_sync_progress_wrapper("file_sync_progress_accessor")
 def moss_api_new_document_sync_progress(item: FileSyncProgress, document_uuid: str) -> int:
-    new = rm_api.DocumentSyncProgress(document_uuid, item)
+    new = DocumentSyncProgress(document_uuid, item)
     d.extension_manager.document_sync_progress_objects.append(new)
     return id(new)
+
+
+@d.host_fn()
+@event_wrapper()
+def moss_api_spread_event(item: Notification):
+    d.api.spread_event(item)
 
 
 @d.host_fn()

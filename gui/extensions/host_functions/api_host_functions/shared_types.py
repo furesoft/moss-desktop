@@ -33,9 +33,13 @@ class AccessorTypes(Enum):
     StandaloneMetadata = 'metadata'
     StandaloneContent = 'content'
 
-    # Other
+    # Sync operations
     FileSyncProgress = 'file_sync_progress'
     DocumentSyncProgress = 'document_sync_progress'
+
+    # Events
+    EventMossFatal = 'moss_fatal'
+    EventApiFatal = 'api_fatal'
 
 
 class AccessorInstance(TypedDict):
@@ -86,20 +90,20 @@ class MetadataNew(TypedDict):
     document_type: Optional[Annotated[DocumentTypes, str]]
 
 
-class TRM_SyncProgresBase(TypedDict):
+class API_SyncProgresBase(TypedDict):
     done: int
     total: int
     stage: Optional[str]
     finished: bool
 
 
-class TRM_FileSyncProgress(TRM_SyncProgresBase):
+class API_FileSyncProgress(API_SyncProgresBase):
     pass
 
 
-class TRM_DocumentSyncProgress(TRM_SyncProgresBase):
+class API_DocumentSyncProgress(API_SyncProgresBase):
     document_uuid: str
-    file_sync_operation: TRM_FileSyncProgress
+    file_sync_operation: API_FileSyncProgress
     total_tasks: int
     finished_tasks: int
     _tasks_was_set_once: bool

@@ -1,7 +1,8 @@
 from functools import partial
 from typing import Tuple, Union, Optional
 
-from rm_api import DocumentCollection, Document, Metadata
+from gui.events import MossFatal
+from rm_api import DocumentCollection, Document, Metadata, APIFatal
 from .shared_types import AccessorInstanceBox, AccessorTypes
 from .. import definitions as d
 
@@ -174,3 +175,22 @@ def document_sync_progress_inferred(accessor: AccessorInstanceBox):
         return getter(accessor)
     else:
         raise NotImplementedError("This accessor type is not supported for DocumentSyncProgres inferring")
+
+
+def event_inferred(accessor: AccessorInstanceBox):
+    """
+        Infer the content object from the accessor instance.
+        :param accessor: A box of the accessor instance
+        :return: The Event object and a no function
+    """
+    getters = {
+        AccessorTypes.FileSyncProgress: lambda _: (d.extension_manager.file_sync_progress_objects[_.id], None),
+        AccessorTypes.DocumentSyncProgress: lambda _: (d.extension_manager.document_sync_progress_objects[_.id], None),
+        AccessorTypes.EventMossFatal: lambda _: (MossFatal(), None),
+        AccessorTypes.EventApiFatal: lambda _: (APIFatal(), None),
+    }
+
+    if (getter := getters.get(AccessorTypes(accessor.type))) is not None:
+        return getter(accessor)
+    else:
+        raise NotImplementedError("This accessor type is not supported for Event inferring")

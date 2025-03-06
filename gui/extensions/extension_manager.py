@@ -14,6 +14,7 @@ from extism import Plugin
 from extism.extism import HOST_FN_REGISTRY
 
 from gui.defaults import Defaults
+from rm_api import FileSyncProgress, DocumentSyncProgress
 from .host_functions import init_host_functions
 from .shared_types import TContextButton
 
@@ -289,7 +290,11 @@ class ExtensionManager:
             )
 
     def handle_hook(self, event):
-        ...
+        # Accept any sync progress to make accessible to extensions
+        if isinstance(event, FileSyncProgress):
+            self.file_sync_progress_objects[id(event)] = event
+        elif isinstance(event, DocumentSyncProgress):
+            self.document_sync_progress_objects[id(event)] = event
 
     def loop(self):
         if self.extra_items or len(self.loaded_extensions) < self.extension_count:

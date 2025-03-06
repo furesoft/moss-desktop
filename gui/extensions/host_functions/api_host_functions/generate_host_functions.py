@@ -171,14 +171,14 @@ generate_for_type('moss_api', [
             AccessorTypes.StandaloneContent
         ]
     }, {
-        "t": et.TRM_FileSyncProgress,
+        "t": et.API_FileSyncProgress,
         "item_type": FileSyncProgress,
         "item_infer": file_sync_progress_inferred,
         "handles": [
             AccessorTypes.FileSyncProgress
         ]
     }, {
-        "t": et.TRM_DocumentSyncProgress,
+        "t": et.API_DocumentSyncProgress,
         "item_type": DocumentSyncProgress,
         "item_infer": document_sync_progress_inferred,
         "handles": [
