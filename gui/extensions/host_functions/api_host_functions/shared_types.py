@@ -214,5 +214,8 @@ class TRM_FileList(TypedDict):
     files: List[TRM_File]
 
 
-class PutFile:
+class T_PutFile:
     file: TRM_File
+    content_data: Optional[str]
+    content_file: Optional[bytes]
+    document_sync_event: AccessorInstance

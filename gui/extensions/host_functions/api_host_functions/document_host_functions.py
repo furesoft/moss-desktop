@@ -60,7 +60,7 @@ def moss_api_document_new_epub(value: Annotated[DocumentNewEPUB, Json]) -> str:
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_duplicate(item: Document, accessor: AccessorInstanceBox) -> str:
     new_document = item.duplicate()
     if accessor.type == AccessorTypes.APIDocument.value:
@@ -73,7 +73,7 @@ def moss_api_document_duplicate(item: Document, accessor: AccessorInstanceBox) -
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_randomize_uuids(item: Document, accessor: AccessorInstanceBox) -> str:
     if accessor.type == AccessorTypes.APIDocument.value:
         d.api.documents.pop(item.uuid)
@@ -89,31 +89,31 @@ def moss_api_document_randomize_uuids(item: Document, accessor: AccessorInstance
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_unload_files(item: Document):
     item.unload_files()
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_load_files_from_cache(item: Document):
     item.load_files_from_cache()
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_ensure_download_and_callback(item: Document, callback: str):
     action = d.extension_manager.action(callback)
     item.ensure_download_and_callback(partial(action, _arg=item.uuid))
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_ensure_download(item: Document):
     item.ensure_download()
 
 
 @d.host_fn()
-@document_wrapper
+@document_wrapper()
 def moss_api_document_export(item: Document):
     item.export()
