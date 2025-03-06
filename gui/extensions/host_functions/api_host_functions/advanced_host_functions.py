@@ -67,7 +67,7 @@ def moss_api_delete_many_documents(items: List[Document], callback: str, unload:
 @d.host_fn()
 def moss_api_new_file_sync_progress() -> int:
     new = FileSyncProgress()
-    d.extension_manager.file_sync_progress_objects.append(new)
+    d.extension_manager.file_sync_progress_objects[id(new)] = new
     return id(new)
 
 
@@ -75,7 +75,7 @@ def moss_api_new_file_sync_progress() -> int:
 @file_sync_progress_wrapper("file_sync_progress_accessor")
 def moss_api_new_document_sync_progress(item: FileSyncProgress, document_uuid: str) -> int:
     new = DocumentSyncProgress(document_uuid, item)
-    d.extension_manager.document_sync_progress_objects.append(new)
+    d.extension_manager.document_sync_progress_objects[id(new)] = new
     return id(new)
 
 

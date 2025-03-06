@@ -93,7 +93,7 @@ class MetadataNew(TypedDict):
 class API_SyncProgresBase(TypedDict):
     done: int
     total: int
-    stage: Optional[str]
+    stage: str
     finished: bool
 
 
