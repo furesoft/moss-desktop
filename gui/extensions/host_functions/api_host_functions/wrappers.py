@@ -4,7 +4,7 @@ from typing import TypedDict, Type, get_origin, Annotated, List
 from box import Box
 from extism import Json
 
-from .accessor_handlers import document_inferred, file_sync_progress_inferred
+from .accessor_handlers import document_inferred, file_sync_progress_inferred, event_inferred
 from .shared_types import AccessorInstance
 
 
