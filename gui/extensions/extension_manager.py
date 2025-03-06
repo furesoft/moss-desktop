@@ -1,5 +1,6 @@
 import json
 import os.path
+import time
 from functools import lru_cache
 from io import StringIO
 from json import JSONDecodeError
@@ -89,9 +90,14 @@ class ExtensionManager:
         for extension_name, extension in self.extensions.items():
             self.current_extension = extension_name
             try:
+                if self.lock.locked():
+                    time.sleep(1)
+                    if self.lock.locked():
+                        self.error(f"Extension {extension_name} failed to unregister due to extension locking.")
+                        continue
                 with self.lock:
                     extension.call('moss_extension_unregister', b'')
-                self.log(f"Unregisted extension {extension_name}")
+                self.log(f"Unregister extension {extension_name}")
             except ExtismError:
                 self.error(f"Extension {extension} failed to unregister")
                 print_exc()
@@ -236,7 +242,7 @@ class ExtensionManager:
             self.extensions_to_load.append(extension_name)
         self.gathered_extensions = True
 
-    def load(self, loader):
+    def load(self):
         self.reset()
         self.gather_extensions()
         self._load()
@@ -244,6 +250,8 @@ class ExtensionManager:
     def _load(self):
         self.extension_count = len(self.extensions_to_load)
         for extension in self.extensions_to_load:
+            if not self.gui.running:
+                break
             self.log(f"Loading extension {extension}")
             if self.gui.config['extensions'].get(extension) is None:
                 self.gui.config['extensions'][extension] = False

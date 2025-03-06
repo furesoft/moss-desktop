@@ -187,7 +187,7 @@ class Loader(pe.ChildContext, LogoMixin):
 
     def load_extensions(self):
         try:
-            self.extension_manager.load(self)
+            self.extension_manager.load()
         except:
             print_exc()
 

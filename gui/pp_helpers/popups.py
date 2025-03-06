@@ -111,7 +111,7 @@ class GUISyncLockedPopup(GUIConfirmPopup):
             "It is recommended to wait until the sync is finished.\n\n"
             f"Are you sure you want to force close {APP_NAME} without waiting for the sync to finish?\n"
             f"Note: {APP_NAME} will proceed to close after the sync is finished.",
-            confirm_action=parent.quit
+            confirm_action=parent.soft_quit
         )
 
 

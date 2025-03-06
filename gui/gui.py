@@ -252,6 +252,7 @@ class GUI(pe.GameContext):
             self.screens.put(Installer(self))
         self.screens.put(IntegrityChecker(self))
         self.running = True
+        self.quit_next = False
         self.warning: 'GUIConfirmPopup' = None
         self.doing_fake_screen_refresh = False
         self.reset_fake_screen_refresh = True
@@ -321,6 +322,7 @@ class GUI(pe.GameContext):
 
     def loop(self):
         if not self.running:
+            self.display_quit_screen()
             return
         if not self.warning or not getattr(self.warning, 'wait', False):
             self.screens.queue[-1]()
@@ -384,6 +386,8 @@ class GUI(pe.GameContext):
         # A little memory leak check
         # print(sum(sys.getsizeof(document.content_data) for document in self.api.documents.values()))
         super().end_loop()
+        if self.quit_next:
+            self.quit_check()
 
     @property
     def center(self):
@@ -410,9 +414,27 @@ class GUI(pe.GameContext):
         self.extra_event(e)
         super().handle_event(e)
 
+    def soft_quit(self):
+        self.quit_next = True
+
+    def display_quit_screen(self):
+        from .screens.quit_screen import QuitScreen
+        _s = QuitScreen(self)
+        self.MODE = pe.display.DISPLAY_MODE_NORMAL
+        pe.fill.full(Defaults.BACKGROUND)
+        pe.fill.interlace(pe.colors.white, self.width / 100)
+        _s.parent_hooking()
+        pe.display.update()
+
     def quit(self):
+        self.display_quit_screen()
         self.running = False
-        self.extension_manager.unregister()
+        # noinspection PyBroadException
+        try:
+            self.extension_manager.unregister()
+        except:
+            # This is usually a runtime error if moss is closed while loading extensions
+            pass
         self.save_config_if_dirty()
 
     def quit_check(self):
@@ -424,11 +446,11 @@ class GUI(pe.GameContext):
 
     def handle_api_event(self, e):
         if isinstance(e, APIFatal):
-            self.quit_check()
+            self.quit_next = True
             self.api.log(msg := "A FATAL API ERROR OCCURRED, CRASHING!")
             raise AssertionError(msg)
         if isinstance(e, MossFatal):
-            self.quit_check()
+            self.quit_next = True
             self.api.log(msg := "A FATAL MOSS ERROR OCCURRED, CRASHING! May have been caused by an extension.")
             raise AssertionError(msg)
 
