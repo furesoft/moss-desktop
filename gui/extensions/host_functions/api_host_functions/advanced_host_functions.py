@@ -1,4 +1,3 @@
-from functools import partial
 from typing import List, Annotated
 
 from extism import Json
@@ -19,10 +18,10 @@ def moss_api_get_root() -> Annotated[TRM_RootInfo, Json]:
 @d.host_fn()
 @document_wrapper()
 def moss_api_upload(item: Document, callback: str, unload: bool) -> int:
-    task_id = d.make_task_id()
+    callback_function, task_id = d.extension_manager.callback(callback)
     d.api.upload(
         item,
-        partial(d.extension_manager.action(callback), task_id) if callback else None,
+        callback_function,
         unload or False
     )
     return task_id
@@ -31,10 +30,10 @@ def moss_api_upload(item: Document, callback: str, unload: bool) -> int:
 @d.host_fn()
 @many_document_wrapper()
 def moss_api_upload_many_documents(items: List[Document], callback: str, unload: bool) -> int:
-    task_id = d.make_task_id()
+    callback_function, task_id = d.extension_manager.callback(callback)
     d.api.upload_many_documents(
         items,
-        partial(d.extension_manager.action(callback), task_id) if callback else None,
+        callback_function,
         unload or False
     )
     return task_id
@@ -43,10 +42,10 @@ def moss_api_upload_many_documents(items: List[Document], callback: str, unload:
 @d.host_fn()
 @document_wrapper()
 def moss_api_delete(item: Document, callback: str, unload: bool) -> int:
-    task_id = d.make_task_id()
+    callback_function, task_id = d.extension_manager.callback(callback)
     d.api.delete(
         item,
-        partial(d.extension_manager.action(callback), task_id) if callback else None,
+        callback_function,
         unload or False
     )
     return task_id
@@ -55,10 +54,10 @@ def moss_api_delete(item: Document, callback: str, unload: bool) -> int:
 @d.host_fn()
 @many_document_wrapper()
 def moss_api_delete_many_documents(items: List[Document], callback: str, unload: bool) -> int:
-    task_id = d.make_task_id()
+    callback_function, task_id = d.extension_manager.callback(callback)
     d.api.delete_many_documents(
         items,
-        partial(d.extension_manager.action(callback), task_id) if callback else None,
+        callback_function,
         unload or False
     )
     return task_id
