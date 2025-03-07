@@ -52,7 +52,6 @@ class SyncExtensionFunctionHelper:
             text_obj.text = text
             text_obj.init()
         else:
-            print(f"Adding new text key: {text_key} = {text}")
             d.gui.main_menu.__class__.SMALL_HEADER_TEXTS[text_key] = text
             d.gui.main_menu.make_small_header_text(text_key, text)
 
