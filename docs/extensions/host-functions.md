@@ -486,12 +486,6 @@ RM_Document:
 - accessor: Accessor - Used to identify the location of the document
 ```
 
-```
-RM_RootInfo:
-- generation: int - A number for reference (IDK ask reMarkable)
-- hash: str - The hash of the file that is root / to be root
-```
-
 {% hint style="warning" %}
 The above are made for connectivity of the extensions, some data is only used by Moss!Changing some things may not result in permanent changes, especially if the value is not a reMarkable value to begin with, or if you forgot to upload to the cloud!
 {% endhint %}
@@ -591,6 +585,16 @@ ACCESSOR_STANDALONE_COLLECTION = "collection"
 
 ACCESSOR_STANDALONE_METADATA = "metadata
 ACCESSOR_STANDALONE_CONTENT= "content"
+
+// Sync operations
+ACCESSOR_FILE_SYNC_PROGRESS = "file_sync_progress"
+ACCESSOR_DOCUMENT_SYNC_PROGRESS = "file_sync_progress"
+
+ACCESSOR_SYNC_STAGE = "sync_stage"
+
+// Events - These do not contain physical objects
+ACCESSOR_E_MOSS_FATAL = "moss_fatal"
+ACCESSOR_E_API_FATAL = "api_fatal"
 ```
 
 ### Data models
@@ -765,3 +769,135 @@ moss_api_content_new_epub() -> int
 ```
 
 These functions create blank content objects for pdf and epub. Notice that they do not identify any data, it's just a blank content template, the data for the pdf or epub would be on the document object. If you wanted to make a pdf or epub document check the document creation functions above. Returns standalone content id.
+
+## Advance API usage
+
+This covers _**real**_ API interactions. So be careful what you do. Always test on a suitable secondary account if possible, and use the recovery tools provided by the open source version of Moss if you ever find yourself in a pickle.
+
+You'll notice that accessors are used here too. Extension manager will catch any loose sync progress objects and make them available to your extension. So you can receive external sync operations as well as start your own.
+
+### Advance API models
+
+```
+API_FileSyncProgress:
+- done: int - The amount of operations completed
+- total: int - The total amount of operations, this is dynamic
+- stage: Optional[str] - An optional stage, used by the menu to change indicator icon
+- finished: bool - Indicates that the sync operation is fully completed
+
+- accessor: Accessor - Uses ID, check above for the accessor types
+```
+
+```
+API_DocumentSyncProgress(API_FileSyncProgress): - Adds extra fields onto sync progress
+- document_uuid: str - Indicates which document the operation is for, used by menus
+- file_sync_operation: RM_FileSyncProgress - Indicates a progress of all files
+- total_tasks: int - Indicates the amount of files to upload
+- finished_tasks: int - Indicates the amount of files uploaded
+- _tasks_was_set_once: bool - This internally used to indicate that the sync began
+
+- accessor: Accessor - Uses ID, check above for the accessor types
+```
+
+```
+RM_RootInfo:
+- generation: int - A number for reference (IDK ask reMarkable)
+- hash: str - The hash of the file that is root / to be root
+```
+
+```
+RM_FileList:
+- version: int - It is usually 3 don't worry about it much
+- files: List[RM_File] - A list of content files or docfiles if it is the root
+```
+
+### Making sync operations
+
+Some API functions require you to define a sync operation before you call them. These are simple objects for tracking progress. Moss provides two functions for creating both sync operation types
+
+```python
+moss_api_new_file_sync_progress() -> int
+```
+
+In Moss a file sync operation contains all the tasks to be completed for this sync task. This returns the operation ID.
+
+```python
+moss_api_new_document_sync_progress(
+    file_sync_progress: Accessor, document_uuid: str,
+)
+```
+
+Document sync operations are more specific since they internally need a file sync operation too. They identify the document and have the top most amount of steps/files needed to upload the document. If this is sent to the menus it will display as a progress bar of the files being uploaded. The file sync progress on the other hand is usually contains the total amount of bytes.
+
+{% hint style="info" %}
+Please note that these operations need to be transmitted as events in the API for them to register in menus. API functions requesting sync progress object will usually do this for you. However you can also send events for these yourself if you has some custom sync event going on.
+{% endhint %}
+
+### Creating your own sync messages and icons
+
+Moss has an accessor for this but there are a few things to note.
+
+First off ALL stages of sync from 0 until 99 are reserved by **rm\_api** so you cannot set new ones under those indexes, but if you desire you can modify them.
+
+You can check what sync stages **rm\_api** has [here](https://github.com/RedTTGMoss/rm_api/blob/main/sync_stages.py). These are unlikely to change.\
+Your extension can create its own stage between 100 - 999.
+
+What you want to do is simply use the accessor `sync_stage` (id is the index) and set the individual icon and text using `moss_api_set`
+
+#### The result
+
+<figure><img src="../.gitbook/assets/custom_sync_stage.png" alt=""><figcaption><p>Rust SDK custom sync stage</p></figcaption></figure>
+
+### Raw API requests _<mark style="color:red;">BE CAREFUL!!!</mark>_
+
+These functions allow you to access the user cloud directly. The protective measures of Moss and **rm\_api** won't be there, so be very careful what you are doing and make sure to ask for user consent. Be careful how you test your extension, always use a test cloud for these kinds of things. Follow reMarkable's cloud conventions to protect the user from take down.
+
+```python
+moss_api_get_root() -> RM_RootInfo
+```
+
+This function will fetch the current root file from the cloud. Please note that if the generation is missing Moss is running in a semi-offline mode. You won't be able to perform any further actions except maybe getting cached files. Moss keeps track of the last synced root file and if it is offline this is what you will get, but without the generation.
+
+```python
+moss_api_get_file(file_hash: str, use_cache: bool) -> RM_FileList
+```
+
+This function is mainly for getting the list of files in one of the `.doc` entries, this includes the root file and all of the file it lists, after that they contain actual data files `root->docfile->*content`
+
+```python
+moss_api_get_file_contents(...) -> ...
+```
+
+
+
+```python
+moss_api_put_file(...)
+```
+
+
+
+```python
+moss_api_get_file_contents(...) -> ...
+```
+
+
+
+```python
+moss_api_check_file_exists(...) -> bool
+```
+
+
+
+```python
+moss_api_update_root(...)
+```
+
+Tells the cloud the file that should become your new root file. <mark style="color:red;">**Ensure it is uploaded!!!**</mark>
+
+### Miscellaneous functions
+
+```python
+moss_api_spread_event(accessor: Accessor)
+```
+
+This function will spread an event to any event subscriber on the **rm\_api**. These include the sync operation events but also other events which Moss can spread for you, check [accessors](host-functions.md#accessors) above.
