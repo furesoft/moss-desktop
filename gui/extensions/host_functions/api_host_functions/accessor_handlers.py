@@ -2,9 +2,72 @@ from functools import partial
 from typing import Tuple, Union, Optional
 
 from gui.events import MossFatal
+from gui.sync_stages import SYNC_STAGE_TEXTS, SYNC_STAGE_ICONS
 from rm_api import DocumentCollection, Document, Metadata, APIFatal
 from .shared_types import AccessorInstanceBox, AccessorTypes
 from .. import definitions as d
+
+
+class SyncExtensionFunctionHelper:
+    """
+        Custom Moss extension accessor for sync stages.
+    """
+
+    def __init__(self, accessor):
+        self.accessor = accessor
+        self.extension = d.extension_manager.current_extension_index
+
+    def add_accessor(self, dictionary):
+        pass  # The accessor is already added to the dictionary
+
+    @staticmethod
+    def get_index(accessor_index, extension_index):
+        index = accessor_index
+        if index > 999:
+            raise IndexError("Your extension cannot set custom sync stages above 999.")
+        if index > 99:
+            index = extension_index * 1000 + (index - 99)
+        return index
+
+    @property
+    def index(self):
+        return self.get_index(self.accessor['id'], self.extension)
+
+    def __dict__(self):
+        return {
+            'text': self.text,
+            'icon': self.icon,
+            'accessor': self.accessor
+        }
+
+    @property
+    def text(self):
+        return SYNC_STAGE_TEXTS[self.index]
+
+    @text.setter
+    def text(self, text):
+        SYNC_STAGE_TEXTS[self.index] = text
+        text_key = f'rm_api_stage_{self.index}'
+        if text_obj := d.gui.main_menu.texts.get(text_key):
+            text_obj.text = text
+            text_obj.init()
+        else:
+            print(f"Adding new text key: {text_key} = {text}")
+            d.gui.main_menu.__class__.SMALL_HEADER_TEXTS[text_key] = text
+            d.gui.main_menu.make_small_header_text(text_key, text)
+
+    @property
+    def icon(self):
+        return SYNC_STAGE_ICONS[self.index]
+
+    @icon.setter
+    def icon(self, icon):
+        SYNC_STAGE_ICONS[self.index] = icon
+
+    @classmethod
+    def set_stage(cls, obj, _, value):
+        index = cls.get_index(value, d.extension_manager.current_extension_index)
+        setattr(obj, 'stage', index)
 
 
 def uuid_accessor_adder(accessor_type: str, dictionary: dict):
@@ -188,6 +251,23 @@ def event_inferred(accessor: AccessorInstanceBox):
         AccessorTypes.DocumentSyncProgress: lambda _: (d.extension_manager.document_sync_progress_objects[_.id], None),
         AccessorTypes.EventMossFatal: lambda _: (MossFatal(), None),
         AccessorTypes.EventApiFatal: lambda _: (APIFatal(), None),
+    }
+
+    if (getter := getters.get(AccessorTypes(accessor.type))) is not None:
+        return getter(accessor)
+    else:
+        raise NotImplementedError("This accessor type is not supported for Event inferring")
+
+
+def sync_stage_inferred(accessor: AccessorInstanceBox):
+    """
+        Infer the content object from the accessor instance.
+        :param accessor: A box of the accessor instance
+        :return: The sync stage setter handler
+    """
+
+    getters = {
+        AccessorTypes.SyncStage: lambda _: (obj := SyncExtensionFunctionHelper(_), obj.add_accessor),
     }
 
     if (getter := getters.get(AccessorTypes(accessor.type))) is not None:

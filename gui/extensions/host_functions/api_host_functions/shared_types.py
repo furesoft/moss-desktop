@@ -37,6 +37,8 @@ class AccessorTypes(Enum):
     FileSyncProgress = 'file_sync_progress'
     DocumentSyncProgress = 'document_sync_progress'
 
+    SyncStage = 'sync_stage'
+
     # Events
     EventMossFatal = 'moss_fatal'
     EventApiFatal = 'api_fatal'
@@ -99,6 +101,11 @@ class API_SyncProgresBase(TypedDict):
 
 class API_FileSyncProgress(API_SyncProgresBase):
     pass
+
+
+class API_SyncStage(TypedDict):
+    text: str
+    icon: str
 
 
 class API_DocumentSyncProgress(API_SyncProgresBase):

@@ -109,8 +109,7 @@ class MainMenu(pe.ChildContext):
             self.texts[key].rect.topleft = (
                 self.ratios.main_menu_x_padding, self.ratios.main_menu_top_height + self.ratios.main_menu_top_padding)
         for key, text in self.SMALL_HEADER_TEXTS.items():
-            self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
-                                      (0, 0), Defaults.TEXT_COLOR_H)
+            self.make_small_header_text(key, text)
 
         self.context_menus = {}
 
@@ -132,6 +131,10 @@ class MainMenu(pe.ChildContext):
         self.resync_icon = self.icons['rotate']
         self.resync_icon_inverted = self.icons['rotate_inverted']
         self.rect_calculations()
+
+    def make_small_header_text(self, key, text):
+        self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
+                                  (0, 0), Defaults.TEXT_COLOR_H)
 
     @property
     def bar(self):

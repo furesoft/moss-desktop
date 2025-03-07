@@ -377,6 +377,10 @@ class ExtensionManager:
     def current_extension(self):
         return self._current_extension
 
+    @property
+    def current_extension_index(self):
+        return self.loaded_extensions.index(self.current_extension)
+
     @current_extension.setter
     def current_extension(self, extension_key: str):
         self._current_extension = extension_key
