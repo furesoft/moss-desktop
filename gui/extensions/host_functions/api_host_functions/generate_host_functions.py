@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import Annotated, get_origin, Any, Dict, Callable, Tuple
+from typing import Annotated, get_origin, Any, Dict, Callable, Tuple, get_args
 
 import pygameextra as pe
 from box import Box
@@ -106,7 +106,7 @@ def generate_for_type(prefix, list_of_types):
             value_type = item_info.can_set.get(key, None)
             if not value_type:
                 raise ValueError(f"Can't set {key} on {item_info.name}")
-            if type(value) is not value_type:
+            if not isinstance(value, get_args(value_type) or value_type):
                 raise ValueError(
                     f"Can't set {key} on {item_info.name} "
                     f"because type {type(value)} "
