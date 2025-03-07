@@ -1,12 +1,12 @@
 import json
 import os.path
 import time
-from functools import lru_cache
+from functools import lru_cache, partial
 from io import StringIO
 from json import JSONDecodeError
 from threading import Lock
 from traceback import print_exc
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Any, Union
 
 import extism
 from colorama import Fore
@@ -16,7 +16,7 @@ from extism.extism import HOST_FN_REGISTRY
 
 from gui.defaults import Defaults
 from rm_api import FileSyncProgress, DocumentSyncProgress
-from .host_functions import init_host_functions
+from .host_functions import init_host_functions, make_task_id
 from .shared_types import TContextButton
 
 if TYPE_CHECKING:
@@ -335,7 +335,7 @@ class ExtensionManager:
             with self.lock:
                 self.current_extension = extension_name
                 try:
-                    arg: Optional[str] = kwargs.get('_arg', None) if kwargs else None
+                    arg: Optional[str] = kwargs.pop('_arg') if '_arg' in kwargs else None
                     self.extensions[extension_name].call(action, arg if arg else json.dumps(
                         kwargs).encode('utf-8') if kwargs else b'')
                 except ExtismError:
@@ -343,6 +343,23 @@ class ExtensionManager:
                     print_exc()
 
         return _action
+
+    def callback(self, callback: str, extension_name: str = None, data: Any = None) -> Union[
+        None, tuple[partial[None], Union[int, Any]], partial[None]]:
+        if not data:
+            return_task_id, data = True, make_task_id()
+        else:
+            return_task_id = False
+        if not callback:
+            if return_task_id:
+                return None, -1
+            else:
+                return None
+        final_call = partial(self.action(callback, extension_name), _arg=data)
+        if return_task_id:
+            return final_call, data
+        else:
+            return final_call
 
     @property
     def raw_state(self):
