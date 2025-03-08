@@ -357,7 +357,7 @@ class ExtensionManager:
                 return None
         final_call = partial(
             self.action(callback, extension_name),
-            _arg=data.to_bytes(64, byteorder="little", signed=True) if return_task_id else data
+            _arg=data.to_bytes(8, byteorder="little", signed=False) if return_task_id else data
         )
         if return_task_id:
             return final_call, data

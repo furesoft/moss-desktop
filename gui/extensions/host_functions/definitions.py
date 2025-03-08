@@ -1,9 +1,9 @@
 import base64
 import inspect
+import random
 from functools import wraps, partial
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Annotated, Optional, Tuple, Union, List, get_origin, Callable, Any
-from uuid import uuid4
 
 import extism
 import pygameextra as pe
@@ -288,7 +288,7 @@ def get_data_from_box(box: Box, key, is_list=False) -> Union[bytes, FileHandle, 
 
 def make_task_id() -> int:
     """
-        Generates a random long integer to be used as a task id in extension callbacks.
+        Generates a random 64bit unsigned integer to be used as a task id in extension callbacks.
         :return: random task id
     """
-    return uuid4().int
+    return random.getrandbits(64)
