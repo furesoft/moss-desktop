@@ -50,7 +50,7 @@ Here are some planned extensions We will create!
 This section describes the steps for contributors to best setup their work environment
 
 **Moss is tested with python 3.9**
-*If you want to use your own cloud set it first in the config*
+*If you want to use your own cloud set it first in the config or in the gui*
 
 1. Fork this repository and clone it with submodules like `git clone --recursive `
 2. Run the moss.py file
