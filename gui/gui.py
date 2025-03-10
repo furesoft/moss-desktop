@@ -15,6 +15,7 @@ from box import Box
 from colorama import Fore, Style
 
 from rm_api.auth import FailedToRefreshToken
+from rm_api.models import make_uuid
 from rm_api.notifications.models import APIFatal
 from .events import ResizeEvent, MossFatal
 from .literals import PDF_RENDER_MODES, NOTEBOOK_RENDER_MODES, MAIN_MENU_MODES, MAIN_MENU_LOCATIONS, \
@@ -68,6 +69,7 @@ class ConfigDict(TypedDict):
     maintain_aspect_size: bool
     uri: str
     discovery_uri: str
+    author_id: Union[None, str]
     last_root: Union[None, str]
     last_guide: str
     pdf_render_mode: PDF_RENDER_MODES
@@ -101,6 +103,7 @@ DEFAULT_CONFIG: ConfigDict = {
     'maintain_aspect_size': True,
     'uri': 'https://webapp.cloud.remarkable.com/',
     'discovery_uri': 'https://service-manager-production-dot-remarkable-production.appspot.com/',
+    'author_id': None,
     'last_root': None,
     'last_guide': 'welcome',
     'pdf_render_mode': 'pymupdf',
@@ -269,13 +272,17 @@ class GUI(pe.GameContext):
 
     @property
     def api_kwargs(self):
+        if not self.config.author_id:
+            self.config.author_id = make_uuid()
+            self.dirty_config = True
         return {
             'require_token': False,
             'token_file_path': Defaults.TOKEN_FILE_PATH,
             'sync_file_path': Defaults.SYNC_FILE_PATH,
             'log_file': Defaults.LOG_FILE,
             'uri': self.config.uri,
-            'discovery_uri': self.config.discovery_uri
+            'discovery_uri': self.config.discovery_uri,
+            'author_id': self.config.author_id,
         }
 
     def pre_loop(self):
