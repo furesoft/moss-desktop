@@ -14,7 +14,7 @@ from gui.rendering import render_button_using_text
 from gui.screens.mixins import ButtonReadyMixin
 from gui.screens.name_field_screen import NameFieldScreen
 from rm_api import DEFAULT_REMARKABLE_URI, DEFAULT_REMARKABLE_DISCOVERY_URI
-from rm_api.auth import FailedToGetToken
+from rm_api.auth import FailedToGetToken, MissingTabletLink
 from gui.defaults import Defaults
 from gui.screens.loader import Loader
 from gui.gui import APP_NAME
@@ -28,6 +28,13 @@ class CloudPopup(ConfirmPopup):
     BUTTON_TEXTS = {
         **ConfirmPopup.BUTTON_TEXTS,
         'confirm': "Use custom cloud",
+    }
+
+class MissingTabletPopup(ConfirmPopup):
+    CLOSE_TEXT = "Link as a desktop (will need to link your tablet first)"
+    BUTTON_TEXTS = {
+        **ConfirmPopup.BUTTON_TEXTS,
+        'confirm': "Link as a tablet",
     }
 
 
@@ -71,9 +78,13 @@ class CodeScreen(ButtonReadyMixin, pe.ChildContext):
             colors=Defaults.TEXT_COLOR_T
         )
         self.get_website_info()
-        self.share_icon = pe.Image(os.path.join(Defaults.ICON_DIR, 'share.svg'))
+        self.loader = Loader(self.parent_context)
+        self.loader.load_one('tablet')
+        self.loader.load_one('desktop')
+        self.loader.load_one('share')
         self.update_code_text_positions()
         self.api.add_hook(self.EVENT_HOOK_NAME, self.resize_check_hook)
+        self.remarkable = False  # Wether to authenticate as a tablet or desktop
         self.code = []
         self.code_text = []
         self.code_failed = False
@@ -154,13 +165,30 @@ class CodeScreen(ButtonReadyMixin, pe.ChildContext):
 
     def check_code_thread(self):
         try:
-            self.api.get_token("".join(self.code))
-            self.screens.put(Loader(self.parent_context))
+            self.api.get_token("".join(self.code), self.remarkable)
+            self.screens.put(self.loader)
             self.api.remove_hook(self.EVENT_HOOK_NAME)
             del self.screens.queue[0]
+        except MissingTabletLink:
+            self.warning = MissingTabletPopup(
+                self.parent_context, 
+                "Your tablet is not linked yet.", 
+                f"{APP_NAME} typically identifies as a desktop app.\n"
+                "However it can identify as a tablet to pass this check\n"
+                "Would you like to identify as a tablet. You have to get a new pair code.\n"
+                f"Alternatively, link your tablet before using {APP_NAME} and then pair as a desktop app.",
+                self.switch_link_mode, None)
         except FailedToGetToken:
             self.code_failed = True
         self.checking_code = False
+
+    def switch_link_mode(self):
+        self.remarkable = not self.remarkable
+        self.clear()
+
+    def clear(self):
+        self.code.clear()
+        self.code_text.clear()
 
     def pre_loop(self):
         if self.warning and self.warning.closed:
@@ -183,10 +211,13 @@ class CodeScreen(ButtonReadyMixin, pe.ChildContext):
         self.code_info.display()
         self.website_info.display()
         if self.connecting_to_real_remarkable():
-            self.share_icon.display((
-                self.website_info.rect.right + self.ratios.code_screen_spacing,
-                self.website_info.rect.top + self.share_icon.height // 5
-            ))
+            link_icon = self.icons['tablet'] if self.remarkable else self.icons['desktop']
+            share_rect = pe.Rect(
+                self.website_info.rect.right,
+                self.website_info.rect.top,
+                *self.icons['share'].size
+            )
+            self.icons['share'].display(share_rect.topleft)
             pe.button.rect(
                 self.ratios.pad_button_rect(self.website_info.rect),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
@@ -194,7 +225,18 @@ class CodeScreen(ButtonReadyMixin, pe.ChildContext):
                 data=("https://my.remarkable.com/#desktop", 0, True),
                 name='code_screen.webopen<rm>'
             )
+            share_rect.left = share_rect.right + self.ratios.code_screen_spacing * 3
+            link_icon.display(share_rect.topleft)
+            pe.button.rect(
+                link_button_rect := self.ratios.pad_button_rect(share_rect),
+                Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,
+                action=self.switch_link_mode,
+                name='code_screen.switch_link_mode'
+            )
+            pe.draw.rect(Defaults.OUTLINE_COLOR, link_button_rect, self.ratios.outline)
         else:
+            if self.remarkable:
+                self.remarkable = False
             pe.button.rect(
                 self.ratios.pad_button_rect(self.website_info.rect),
                 Defaults.TRANSPARENT_COLOR, Defaults.BUTTON_ACTIVE_COLOR,

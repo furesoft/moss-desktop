@@ -46,6 +46,8 @@ AcceptedLoadTypes = Union[str, ReusedIcon, ResizedIcon, InvertedIcon, TreatAsDat
 class Loader(pe.ChildContext, LogoMixin):
     TO_LOAD = {
         # Icons and Images
+        'tablet': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'tablet.svg')),
+        'desktop': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'desktop.svg')),
         'folder': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'folder.svg')),
         'folder_add': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'folder_add.svg')),
         'folder_empty': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'folder_empty.svg')),
@@ -128,14 +130,16 @@ class Loader(pe.ChildContext, LogoMixin):
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()
 
-    def __load(self, key: str, item: AcceptedLoadTypes):
+    def load_one(self, key: str, item: AcceptedLoadTypes = None):
+        if not item:
+            item = self.TO_LOAD[key]
         if isinstance(item, ReusedIcon):
             self.icons[key] = self.icons[item.key].copy()
             self.icons[key].resize(tuple(v * item.scale for v in self.icons[key].size))
         elif isinstance(item, ResizedIcon):
             self.load_image(key, item.item, item.scale)
         elif isinstance(item, InvertedIcon):
-            self.__load(key, item.item)
+            self.load_one(key, item.item)
             key_inverted = f'{key}_inverted'
             invert_icon(self, key, key_inverted)
         elif isinstance(item, TreatAsData):
@@ -143,10 +147,7 @@ class Loader(pe.ChildContext, LogoMixin):
         elif not isinstance(item, str):
             return
         elif item.endswith('.svg'):
-            # SVGs are 40px, but we use 1000px height, so they are 23px
-            # 23 / 40 = 0.575
-            # but, I find 0.5 to better match
-            self.load_image(key, item, 0.5)
+            self.load_svg(key, item)
         elif item.endswith('.png'):
             self.load_image(key, item)
         else:
@@ -154,7 +155,7 @@ class Loader(pe.ChildContext, LogoMixin):
 
     def _load(self):
         for key, item in self.TO_LOAD.items():
-            self.__load(key, item)
+            self.load_one(key, item)
             self.items_loaded += 1
 
         # Begin loading extensions
@@ -211,6 +212,12 @@ class Loader(pe.ChildContext, LogoMixin):
     def load_image(self, key, file, multiplier: float = 1):
         self.icons[key] = pe.Image(file)
         self.icons[key].resize(tuple(self.ratios.pixel(v * multiplier) for v in self.icons[key].size))
+
+    def load_svg(self, key, file):
+        # SVGs are 40px, but we use 1000px height, so they are 23px
+        # 23 / 40 = 0.575
+        # but, I find 0.5 to better match
+        self.load_image(key, file, 0.5)
 
     def load_data(self, key, file):
         with open(file, 'rb') as f:
