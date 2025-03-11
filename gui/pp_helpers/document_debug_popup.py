@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Tuple
 
 import pygameextra as pe
 import pyperclip
-from colorama import Fore
+from colorama import Fore, Style
 
 import rm_api.models as models
 from gui.defaults import Defaults
@@ -49,6 +49,11 @@ class DocumentDebugPopup(ContextMenu):
             "text": "Copy UUID",
             "icon": "copy",
             "action": 'copy_uuid'
+        },
+        {
+            "text": "Print debug info",
+            "icon": "info",
+            "action": 'debug_info'
         }
     )
 
@@ -187,3 +192,16 @@ class DocumentDebugPopup(ContextMenu):
 
     def copy_uuid(self):
         pyperclip.copy(self.document.uuid)
+
+    def debug_info(self):
+        print(
+            f"{Fore.LIGHTBLACK_EX}"
+            f"{Style.BRIGHT}DEBUG INFO FOR '{self.document.metadata.visible_name}'"
+            f"{Style.RESET_ALL}\n"
+            f"{Fore.LIGHTCYAN_EX}Content data: {Fore.YELLOW}{list(self.document.content_data.keys())}\n"
+            f"{Fore.LIGHTCYAN_EX}Files: {Fore.YELLOW}{[file.uuid for file in self.document.files]}\n"
+            f"{Fore.LIGHTCYAN_EX}"
+            f"Files available: {Fore.YELLOW}{list(self.document.files_available.keys())}\n"
+            f"{Fore.LIGHTCYAN_EX}Provision: {Fore.YELLOW}{self.document.provision}\n"
+            f"{Fore.LIGHTCYAN_EX}Available: {Fore.YELLOW}{self.document.available}\n"
+        )
