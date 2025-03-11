@@ -29,6 +29,7 @@ class Ratios:
 
         # LOADER
         self.loader_logo_text_size = int(50 * scale)
+        self.loader_motivational_text_size = int(15 * scale)
         self.loader_loading_bar_width = int(200 * scale)
         self.loader_loading_bar_height = int(10 * scale)
         self.loader_loading_bar_big_width = int(500 * scale)
@@ -36,6 +37,8 @@ class Ratios:
         self.loader_loading_bar_padding = int(20 * scale)
         self.loader_loading_bar_rounding = int(10 * scale)
         self.loader_loading_bar_thickness = int(2 * scale)
+
+        # CODE SCREEN
         self.code_screen_header_padding = int(50 * scale)
         self.code_screen_spacing = int(10 * scale)
         self.code_screen_info_size = int(30 * scale)

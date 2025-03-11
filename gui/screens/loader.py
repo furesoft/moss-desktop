@@ -1,4 +1,5 @@
 import os
+import random
 import threading
 import time
 from traceback import print_exc
@@ -6,6 +7,7 @@ from typing import TYPE_CHECKING, Union, Dict
 
 import pygameextra as pe
 
+from gui import APP_NAME
 from gui.defaults import Defaults
 from gui.helpers import invert_icon
 from gui.screens.main_menu import MainMenu
@@ -114,7 +116,6 @@ class Loader(pe.ChildContext, LogoMixin):
 
     def __init__(self, parent: 'GUI'):
         super().__init__(parent)
-        self.initialize_logo_and_line()
         self.api.add_hook('loader_resize_check', self.resize_check_hook)
         self.items_loaded = 0
         self.files_loaded = 0
@@ -126,6 +127,17 @@ class Loader(pe.ChildContext, LogoMixin):
         self.initialized = False
         self.to_load = len(self.TO_LOAD)
         parent.loader = self
+        # noinspection PyBroadException
+        try:
+            with open(os.path.join(Defaults.DATA_DIR, 'messages.txt'), 'r') as f:
+                messages = f.readlines()
+                self.motivational_message = random.choice(messages)
+        except:
+            self.motivational_message = ""
+        finally:
+            self.motivational_message = self.motivational_message.replace('%APP_NAME%', APP_NAME)
+        self.motivational_text = None
+        self.initialize_logo_and_line()
 
     def start_syncing(self):
         threading.Thread(target=self.get_documents, daemon=True).start()
@@ -255,6 +267,7 @@ class Loader(pe.ChildContext, LogoMixin):
 
     def loop(self):
         self.logo.display()
+        self.motivational_text.display()
         progress = self.progress()
         if progress:
             pe.draw.rect(Defaults.LINE_GRAY, self.line_rect, self.ratios.loader_loading_bar_thickness,
@@ -291,3 +304,15 @@ class Loader(pe.ChildContext, LogoMixin):
             threading.Thread(target=self.load, daemon=True).start()
             self.start_syncing()
             self.initialized = True
+
+    def initialize_logo_and_line(self):
+        self.motivational_text = pe.Text(
+            self.motivational_message,
+            Defaults.CUSTOM_FONT,
+            self.ratios.loader_motivational_text_size,
+            colors=Defaults.TEXT_COLOR
+        )
+        super().initialize_logo_and_line()
+        self.motivational_text.color = Defaults.TEXT_COLOR
+        self.motivational_text.rect.midtop = self.line_rect.midbottom
+        self.motivational_text.rect.top += self.ratios.loader_loading_bar_padding
