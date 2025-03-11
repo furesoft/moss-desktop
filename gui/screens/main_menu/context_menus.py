@@ -14,8 +14,8 @@ from gui.extensions.shared_types import rect_from_pe_rect
 from gui.file_prompts import notebook_prompt, import_debug
 from gui.pp_helpers import ContextMenu, DocumentDebugPopup
 from gui.preview_handler import PreviewHandler
-from gui.screens.guides import Guides
 from gui.screens.name_field_screen import NameFieldScreen
+from gui.screens.settings import Settings
 from gui.screens.viewer import DocumentViewer
 from rm_api import make_hash
 from rm_api.models import Document, DocumentCollection, Content, Metadata
@@ -378,15 +378,10 @@ class SideBar(ContextMenu):
             "action": None
         },
         {
-            "text": "Guides",
-            "icon": "compass",
-            "action": "guides"
-        },
-        {
             "text": "Settings",
             "icon": "cog",
             "action": "settings",
-            "disabled": True
+            "disabled": False
         }
     )
 
@@ -419,10 +414,7 @@ class SideBar(ContextMenu):
         self.close()
 
     def settings(self):
-        self.close()
-
-    def guides(self):
-        self.screens.put(Guides(self.parent_context))
+        self.screens.put(Settings(self.parent_context))
         self.close()
 
     def debug(self):
