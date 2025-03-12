@@ -202,6 +202,8 @@ class DocumentDebugPopup(ContextMenu):
             f"{Fore.LIGHTCYAN_EX}Files: {Fore.YELLOW}{[file.uuid for file in self.document.files]}\n"
             f"{Fore.LIGHTCYAN_EX}"
             f"Files available: {Fore.YELLOW}{list(self.document.files_available.keys())}\n"
+            f"{Fore.LIGHTCYAN_EX}"
+            f"Content files: {Fore.YELLOW}{self.document.content_files}\n"
             f"{Fore.LIGHTCYAN_EX}Provision: {Fore.YELLOW}{self.document.provision}\n"
             f"{Fore.LIGHTCYAN_EX}Available: {Fore.YELLOW}{self.document.available}\n"
         )
