@@ -91,8 +91,6 @@ class Loader(pe.ChildContext, LogoMixin):
         'move': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'move.svg')),
         'x_medium': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'x_medium.svg')),
         'x_small': InvertedIcon(os.path.join(Defaults.ICON_DIR, 'x_small.svg')),
-        'discord_qr_code': ResizedIcon(os.path.join(Defaults.IMAGES_DIR, 'discord_qr_code.png'), 0.253),
-
         # 'screenshot': 'Screenshot_20241023_162027.png',
 
         # Data files
