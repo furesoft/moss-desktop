@@ -136,12 +136,24 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         return
     sub_text: Optional[pe.Text]
     if document.content.file_type == 'notebook':
-        sub_text = texts.get(f'page_count_{document.get_page_count()}{inverse_key}')
+        page_count = document.get_page_count()
+        if page_count < 0:
+            sub_text = texts.get('page_info_unknown')
+        else:
+            sub_text = texts.get(f'page_count_{page_count}{inverse_key}')
     elif document.content.file_type == 'pdf':
-        sub_text = texts.get(
-            f'page_of_{document.metadata.last_opened_page + 1}_{document.get_page_count()}{inverse_key}')
+        page_count = document.get_page_count()
+        if page_count < 0:
+            sub_text = texts.get('page_info_unknown')
+        else:
+            sub_text = texts.get(
+                f'page_of_{document.metadata.last_opened_page + 1}_{page_count}{inverse_key}')
     elif document.content.file_type == 'epub':
-        sub_text = texts.get(f'page_read_{document.get_read()}{inverse_key}')
+        read_percent = document.get_read()
+        if read_percent < 0:
+            sub_text = texts.get('page_info_unknown')
+        else:
+            sub_text = texts.get(f'page_read_{read_percent}{inverse_key}')
     else:
         sub_text = None
 
