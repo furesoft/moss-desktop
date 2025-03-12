@@ -80,7 +80,6 @@ class MainMenu(pe.ChildContext):
         self.file_sync_operation = None
         self.previous_t = 0
         self.rotate_angle = 0
-        parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
         # TODO: Maybe load from settings
         self.current_sorting_mode = 'last_modified'
         # reversed is equivalent to descending
@@ -131,6 +130,7 @@ class MainMenu(pe.ChildContext):
         self.resync_icon = self.icons['rotate']
         self.resync_icon_inverted = self.icons['rotate_inverted']
         self.rect_calculations()
+        parent.api.add_hook("main_menu_cache_invalidator", self.api_event_hook)
 
     def make_small_header_text(self, key, text):
         self.texts[key] = pe.Text(text, Defaults.MAIN_MENU_BAR_FONT, self.ratios.main_menu_bar_size,
