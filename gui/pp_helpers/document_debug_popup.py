@@ -206,4 +206,5 @@ class DocumentDebugPopup(ContextMenu):
             f"Content files: {Fore.YELLOW}{self.document.content_files}\n"
             f"{Fore.LIGHTCYAN_EX}Provision: {Fore.YELLOW}{self.document.provision}\n"
             f"{Fore.LIGHTCYAN_EX}Available: {Fore.YELLOW}{self.document.available}\n"
+            f"{Fore.LIGHTCYAN_EX}Content usable: {Fore.YELLOW}{self.document.content.usable}\n"
         )
