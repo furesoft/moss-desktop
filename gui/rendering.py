@@ -227,7 +227,7 @@ def render_document(gui: 'GUI', rect: pe.Rect, texts, document: 'Document',
         preview.display(rect.topleft)
 
     # Render the availability cloud icon
-    is_problematic = document.uuid in DocumentViewer.PROBLEMATIC_DOCUMENTS
+    is_problematic = not document.content.usable or document.uuid in DocumentViewer.PROBLEMATIC_DOCUMENTS
     if is_problematic or not document.available:
         if document.downloading:
             cloud_icon: pe.Image = gui.icons['cloud_download']
