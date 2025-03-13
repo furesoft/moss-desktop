@@ -588,7 +588,7 @@ ACCESSOR_STANDALONE_CONTENT= "content"
 
 // Sync operations
 ACCESSOR_FILE_SYNC_PROGRESS = "file_sync_progress"
-ACCESSOR_DOCUMENT_SYNC_PROGRESS = "file_sync_progress"
+ACCESSOR_DOCUMENT_SYNC_PROGRESS = document_sync_progress"
 
 ACCESSOR_SYNC_STAGE = "sync_stage"
 
